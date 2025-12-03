@@ -52,11 +52,11 @@ const Hero = () => {
             <div className="mt-10 pt-8 border-t border-border animate-fade-up" style={{
             animationDelay: "0.4s"
           }}>
-              <p className="text-sm text-muted-foreground mb-4 font-body">Confiado por centenas de lojistas em todo o Brasil</p>
+              <p className="text-sm text-muted-foreground mb-4 font-body">Confiado por centenas de lojas em todo o Brasil</p>
               <div className="flex flex-wrap gap-6 justify-center lg:justify-start">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-primary" />
-                  <span className="text-sm font-medium text-foreground">Envio Nacional</span>
+                  <span className="text-sm font-medium text-foreground">Envio para todoBrasil </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-secondary" />

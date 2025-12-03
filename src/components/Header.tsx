@@ -61,7 +61,7 @@ const Header = () => {
             <Button 
               size="default" 
               asChild
-              className="bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737] hover:opacity-90 text-white border-0"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-6"
             >
               <a
                 href="https://www.instagram.com/cartaonaporta/"
@@ -109,7 +109,7 @@ const Header = () => {
               <div className="px-4 pt-4">
                 <Button 
                   size="default" 
-                  className="w-full bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737] hover:opacity-90 text-white border-0" 
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full" 
                   asChild
                 >
                   <a

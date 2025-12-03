@@ -17,10 +17,10 @@ const Hero = () => {
               <span className="text-sm font-medium text-accent-foreground">Tags Personalizadas para Joias</span>
             </div>
             
-            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6 animate-fade-up" style={{ animationDelay: "0.1s" }}>
+            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-extrabold text-foreground leading-tight mb-6 animate-fade-up" style={{ animationDelay: "0.1s" }}>
               Deixe sua loja{" "}
               <span className="text-gradient">profissional</span>{" "}
-              e impressione seus clientes
+              e impressione seus clientes.
             </h1>
             
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0 font-body animate-fade-up" style={{ animationDelay: "0.2s" }}>

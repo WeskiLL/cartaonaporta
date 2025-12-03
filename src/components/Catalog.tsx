@@ -30,7 +30,7 @@ const Catalog = () => {
     },
     {
       id: 4,
-      name: "Tag para Brincos",
+      name: "Tag para trio de brincos",
       description: "Tags especiais para expor brincos com elegância.",
       image: produto4,
     },

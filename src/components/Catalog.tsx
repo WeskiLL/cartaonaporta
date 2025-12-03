@@ -24,7 +24,7 @@ const Catalog = () => {
     },
     {
       id: 3,
-      name: "Tag para Joias",
+      name: "Tag para 1 par de brinco",
       description: "Acabamento sofisticado para joias de alto padrão.",
       image: produto3,
     },

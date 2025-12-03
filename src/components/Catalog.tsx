@@ -12,7 +12,7 @@ const Catalog = () => {
   const products = [
     {
       id: 1,
-      name: "Tag para 2 pares de brinco",
+      name: "Tag para 2 pares de brincos",
       description: "Tags elegantes e resistentes para destacar suas bijuterias.",
       image: produto1,
     },

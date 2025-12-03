@@ -36,13 +36,13 @@ const Catalog = () => {
     },
     {
       id: 5,
-      name: "Tag para Colares",
+      name: "Tag para trio de brincos e colar",
       description: "Resistente à água, não desbota nem mancha quando molha.",
       image: produto5,
     },
     {
       id: 6,
-      name: "Certificado de Garantia",
+      name: "Mini certificado de garantia",
       description: "Profissionalize sua marca com certificados personalizados.",
       image: produto6,
     },
@@ -126,13 +126,13 @@ const Catalog = () => {
           </p>
           <Button variant="hero" size="lg" asChild>
             <a
-              href="https://wa.me/5574981138033?text=Olá! Gostaria de um orçamento personalizado."
+              href="https://wa.me/c/557481138033"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2"
             >
               <MessageCircle className="w-5 h-5" />
-              Orçamento Personalizado
+              Ver Catálogo Completo
             </a>
           </Button>
         </div>

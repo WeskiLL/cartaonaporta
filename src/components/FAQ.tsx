@@ -19,7 +19,7 @@ const FAQ = () => {
     },
     {
       question: "Vocês fazem a arte ou preciso enviar pronta?",
-      answer: "Você pode enviar sua arte pronta ou podemos ajudar a criar! Oferecemos suporte na criação de artes simples. Para designs mais elaborados, consulte nossos valores.",
+      answer: "Criamos a arte totalmente personalizada da maneira que preferir, sem nenhum custo adicional. Você também pode enviar sua arte pronta, se preferir!",
     },
     {
       question: "As tags são realmente resistentes à água?",
@@ -38,8 +38,8 @@ const FAQ = () => {
       answer: "Enviamos para todo o Brasil através dos Correios, com código de rastreamento. O frete é calculado de acordo com o destino e pode ser consultado no momento do orçamento.",
     },
     {
-      question: "Vocês emitem nota fiscal?",
-      answer: "Sim, emitimos nota fiscal para todos os pedidos. Basta informar seus dados no momento da compra.",
+      question: "De onde vocês são?",
+      answer: "Temos produção na Bahia, em São Paulo e no Paraná. Enviamos de onde o frete for mais barato e a entrega mais rápida, garantindo o melhor custo-benefício para você.",
     },
   ];
 
@@ -69,7 +69,7 @@ const FAQ = () => {
                 className="flex items-center gap-2"
               >
                 <MessageCircle className="w-5 h-5" />
-                Falar com Especialista
+                Fale com a gente
               </a>
             </Button>
           </div>

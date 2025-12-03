@@ -18,7 +18,7 @@ const Catalog = () => {
     },
     {
       id: 2,
-      name: "Tag para Semijoias",
+      name: "Tag para brinco e colar",
       description: "Material premium que valoriza cada peça da sua coleção.",
       image: produto2,
     },

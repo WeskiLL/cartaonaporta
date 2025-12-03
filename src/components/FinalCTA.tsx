@@ -1,5 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { MessageCircle, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
+import whatsappIcon from "@/assets/whatsapp-icon.png";
+
+const WHATSAPP_MESSAGE = "Olá! Vim pelo site e gostaria de saber mais sobre as tags para joias personalizadas.";
 
 const FinalCTA = () => {
   return (
@@ -39,12 +42,12 @@ const FinalCTA = () => {
               asChild
             >
               <a
-                href="https://wa.me/5574981138033?text=Olá! Vim pelo site e quero um orçamento para tags personalizadas."
+                href={`https://wa.me/5574981138033?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2"
               >
-                <MessageCircle className="w-6 h-6" />
+                <img src={whatsappIcon} alt="WhatsApp" className="w-6 h-6" />
                 Solicitar Orçamento Grátis
               </a>
             </Button>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, MessageCircle } from "lucide-react";
+import { Menu, X, Instagram } from "lucide-react";
 import logoPrimePrint from "@/assets/logo-prime-print.png";
 import logoCartaoNaPorta from "@/assets/logo-cartao-na-porta.png";
 
@@ -56,17 +56,21 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* CTA Button */}
+          {/* Instagram Button */}
           <div className="hidden md:block">
-            <Button variant="whatsapp" size="default" asChild>
+            <Button 
+              size="default" 
+              asChild
+              className="bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737] hover:opacity-90 text-white border-0"
+            >
               <a
-                href="https://wa.me/5574981138033"
+                href="https://www.instagram.com/cartaonaporta/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2"
               >
-                <MessageCircle className="w-5 h-5" />
-                Fale Conosco
+                <Instagram className="w-5 h-5" />
+                Siga-nos
               </a>
             </Button>
           </div>
@@ -103,15 +107,19 @@ const Header = () => {
                 </button>
               ))}
               <div className="px-4 pt-4">
-                <Button variant="whatsapp" size="default" className="w-full" asChild>
+                <Button 
+                  size="default" 
+                  className="w-full bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737] hover:opacity-90 text-white border-0" 
+                  asChild
+                >
                   <a
-                    href="https://wa.me/5574981138033"
+                    href="https://www.instagram.com/cartaonaporta/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-2"
                   >
-                    <MessageCircle className="w-5 h-5" />
-                    Fale Conosco
+                    <Instagram className="w-5 h-5" />
+                    Siga-nos
                   </a>
                 </Button>
               </div>

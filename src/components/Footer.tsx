@@ -1,4 +1,6 @@
-import { MessageCircle, Instagram, Mail, MapPin, Phone } from "lucide-react";
+import { MessageCircle, Instagram, MapPin, Phone } from "lucide-react";
+import logoPrimePrint from "@/assets/logo-prime-print.png";
+import logoCartaoNaPorta from "@/assets/logo-cartao-na-porta.png";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -33,9 +35,17 @@ const Footer = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Brand Column */}
           <div className="lg:col-span-1">
-            <div className="mb-6">
-              <h3 className="font-display text-2xl font-bold mb-1">Prime Print</h3>
-              <p className="text-sm text-primary-foreground/70 font-body">by Cartão na Porta</p>
+            <div className="mb-6 flex flex-col gap-3">
+              <img 
+                src={logoPrimePrint} 
+                alt="Prime Print" 
+                className="h-12 w-auto object-contain brightness-0 invert"
+              />
+              <img 
+                src={logoCartaoNaPorta} 
+                alt="Cartão na Porta" 
+                className="h-10 w-auto object-contain brightness-0 invert"
+              />
             </div>
             <p className="text-primary-foreground/80 font-body mb-6">
               Tags personalizadas de alta qualidade para lojas de bijuterias, semijoias e joias em todo o Brasil.

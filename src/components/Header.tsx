@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, MessageCircle } from "lucide-react";
+import logoPrimePrint from "@/assets/logo-prime-print.png";
+import logoCartaoNaPorta from "@/assets/logo-cartao-na-porta.png";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -27,20 +29,27 @@ const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logos */}
-          <div className="flex items-center gap-4">
-            <div className="flex flex-col items-start">
-              <span className="font-display text-xl font-bold text-primary">Prime Print</span>
-              <span className="text-xs text-muted-foreground font-body">by Cartão na Porta</span>
-            </div>
+          <div className="flex items-center gap-3">
+            <img 
+              src={logoPrimePrint} 
+              alt="Prime Print - Tags Personalizadas" 
+              className="h-12 w-auto object-contain"
+            />
+            <div className="hidden sm:block w-px h-8 bg-border" />
+            <img 
+              src={logoCartaoNaPorta} 
+              alt="Cartão na Porta" 
+              className="hidden sm:block h-10 w-auto object-contain"
+            />
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-6">
             {navLinks.map((link) => (
               <button
                 key={link.name}
                 onClick={() => scrollToSection(link.href)}
-                className="text-foreground/80 hover:text-primary transition-colors font-medium font-body"
+                className="text-foreground/80 hover:text-primary transition-colors font-medium font-body text-sm"
               >
                 {link.name}
               </button>
@@ -64,7 +73,7 @@ const Header = () => {
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden p-2 text-foreground"
+            className="lg:hidden p-2 text-foreground"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Menu"
           >
@@ -74,8 +83,16 @@ const Header = () => {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden absolute top-20 left-0 right-0 bg-card border-b border-border animate-fade-in">
+          <div className="lg:hidden absolute top-20 left-0 right-0 bg-card border-b border-border animate-fade-in">
             <nav className="flex flex-col py-4">
+              {/* Mobile Logo Cartão na Porta */}
+              <div className="px-4 pb-4 border-b border-border mb-2">
+                <img 
+                  src={logoCartaoNaPorta} 
+                  alt="Cartão na Porta" 
+                  className="h-8 w-auto object-contain sm:hidden"
+                />
+              </div>
               {navLinks.map((link) => (
                 <button
                   key={link.name}

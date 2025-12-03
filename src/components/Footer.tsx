@@ -1,6 +1,9 @@
-import { MessageCircle, Instagram, MapPin, Phone } from "lucide-react";
+import { Instagram, MapPin, Phone } from "lucide-react";
 import logoPrimePrint from "@/assets/logo-prime-print.png";
 import logoCartaoNaPorta from "@/assets/logo-cartao-na-porta.png";
+import whatsappIcon from "@/assets/whatsapp-icon.png";
+
+const WHATSAPP_MESSAGE = "Olá! Vim pelo site e gostaria de saber mais sobre as tags para joias personalizadas.";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -14,11 +17,12 @@ const Footer = () => {
   ];
 
   const products = [
-    "Tags para Bijuterias",
-    "Tags para Semijoias",
     "Tags para Joias",
-    "Cartões de Visita",
-    "Tags Personalizadas",
+    "Tags para Roupas",
+    "Certificado de Garantia",
+    "Cartão de Visita",
+    "Cartão de Agradecimento",
+    "Adesivos",
   ];
 
   const scrollToSection = (href: string) => {
@@ -35,7 +39,7 @@ const Footer = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Brand Column */}
           <div className="lg:col-span-1">
-            <div className="mb-6 flex flex-col gap-3">
+            <div className="mb-6 flex items-center gap-4">
               <img 
                 src={logoPrimePrint} 
                 alt="Prime Print" 
@@ -52,13 +56,13 @@ const Footer = () => {
             </p>
             <div className="flex gap-4">
               <a
-                href="https://wa.me/5574981138033"
+                href={`https://wa.me/5574981138033?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-primary-foreground/10 hover:bg-primary hover:text-primary-foreground flex items-center justify-center transition-colors"
                 aria-label="WhatsApp"
               >
-                <MessageCircle className="w-5 h-5" />
+                <img src={whatsappIcon} alt="WhatsApp" className="w-5 h-5" />
               </a>
               <a
                 href="https://www.instagram.com/cartaonaporta/"
@@ -107,7 +111,7 @@ const Footer = () => {
             <ul className="space-y-4">
               <li>
                 <a
-                  href="https://wa.me/5574981138033"
+                  href={`https://wa.me/5574981138033?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 text-primary-foreground/70 hover:text-primary transition-colors font-body"

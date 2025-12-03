@@ -1,4 +1,6 @@
 import { Users, Award, Heart, Target } from "lucide-react";
+import wesleyPhoto from "@/assets/wesley.png";
+import jacquelinePhoto from "@/assets/jacqueline.jpeg";
 
 const About = () => {
   const values = [
@@ -54,12 +56,16 @@ const About = () => {
             {/* Founders */}
             <div className="flex items-center gap-6 p-6 rounded-2xl bg-accent/50 border border-border">
               <div className="flex -space-x-4">
-                <div className="w-16 h-16 rounded-full gradient-brand flex items-center justify-center text-primary-foreground font-bold text-lg border-4 border-card">
-                  WR
-                </div>
-                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground font-bold text-lg border-4 border-card">
-                  JR
-                </div>
+                <img 
+                  src={wesleyPhoto} 
+                  alt="Wesley Rocha" 
+                  className="w-16 h-16 rounded-full object-cover border-4 border-card"
+                />
+                <img 
+                  src={jacquelinePhoto} 
+                  alt="Jacqueline Rodrigues" 
+                  className="w-16 h-16 rounded-full object-cover border-4 border-card"
+                />
               </div>
               <div>
                 <p className="font-display font-semibold text-foreground">Wesley Rocha & Jacqueline Rodrigues</p>

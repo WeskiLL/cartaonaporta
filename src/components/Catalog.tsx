@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { MessageCircle } from "lucide-react";
+import whatsappIcon from "@/assets/whatsapp-icon.png";
 
 import produto1 from "@/assets/produto-1.png";
 import produto2 from "@/assets/produto-2.png";
@@ -7,6 +7,8 @@ import produto3 from "@/assets/produto-3.png";
 import produto4 from "@/assets/produto-4.png";
 import produto5 from "@/assets/produto-5.png";
 import produto6 from "@/assets/produto-6.png";
+
+const WHATSAPP_MESSAGE = "Olá! Vim pelo site e gostaria de saber mais sobre as tags para joias personalizadas.";
 
 const Catalog = () => {
   const products = [
@@ -85,7 +87,7 @@ const Catalog = () => {
                 <div className="absolute inset-0 bg-primary/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                   <Button variant="secondary" size="sm" asChild>
                     <a
-                      href={`https://wa.me/5574981138033?text=Olá! Gostaria de saber mais sobre o produto: ${product.name}`}
+                      href={`https://wa.me/5574981138033?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -105,12 +107,12 @@ const Catalog = () => {
                 </p>
                 <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80" asChild>
                   <a
-                    href={`https://wa.me/5574981138033?text=Olá! Gostaria de saber mais sobre: ${product.name}`}
+                    href={`https://wa.me/5574981138033?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2"
                   >
-                    <MessageCircle className="w-4 h-4" />
+                    <img src={whatsappIcon} alt="WhatsApp" className="w-4 h-4" />
                     Saiba mais
                   </a>
                 </Button>
@@ -131,7 +133,7 @@ const Catalog = () => {
               rel="noopener noreferrer"
               className="flex items-center gap-2"
             >
-              <MessageCircle className="w-5 h-5" />
+              <img src={whatsappIcon} alt="WhatsApp" className="w-5 h-5" />
               Ver Catálogo Completo
             </a>
           </Button>

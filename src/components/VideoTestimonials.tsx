@@ -2,11 +2,11 @@ const VideoTestimonials = () => {
   const videos = [
     {
       id: 1,
-      embedUrl: "https://www.instagram.com/reel/DR2GAGGjlxP/embed/captioned/",
+      embedUrl: "https://www.instagram.com/p/DR2GAGGjlxP/embed/",
     },
     {
       id: 2,
-      embedUrl: "https://www.instagram.com/reel/DR2KIwIkdM0/embed/captioned/",
+      embedUrl: "https://www.instagram.com/p/DR2VgqAErVY/embed/",
     },
   ];
 

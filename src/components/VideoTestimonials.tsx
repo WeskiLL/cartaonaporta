@@ -2,11 +2,11 @@ const VideoTestimonials = () => {
   const videos = [
     {
       id: 1,
-      embedUrl: "https://www.instagram.com/reel/DR2GAGGjlxP/embed/?hidecaption=true&autoplay=false",
+      embedUrl: "https://www.instagram.com/reel/DR2GAGGjlxP/embed/captioned/",
     },
     {
       id: 2,
-      embedUrl: "https://www.instagram.com/reel/DR2KIwIkdM0/embed/?hidecaption=true&autoplay=false",
+      embedUrl: "https://www.instagram.com/reel/DR2KIwIkdM0/embed/captioned/",
     },
   ];
 
@@ -31,28 +31,37 @@ const VideoTestimonials = () => {
           {videos.map((video) => (
             <div
               key={video.id}
-              className="relative w-full max-w-[350px] rounded-2xl overflow-hidden bg-card border-2 border-brand-primary/20 shadow-brand-lg"
-              style={{ height: '620px' }}
+              className="relative w-full max-w-[350px] rounded-2xl bg-card border-2 border-brand-primary/20 shadow-brand-lg"
+              style={{ 
+                height: '580px',
+                overflow: 'hidden',
+                clipPath: 'inset(0 0 0 0 round 16px)'
+              }}
             >
               {/* Decorative frame */}
               <div className="absolute inset-0 rounded-2xl border-4 border-brand-primary/10 pointer-events-none z-10" />
               
-              {/* Instagram Embed - with overflow hidden to crop bottom */}
-              <div className="w-full h-full overflow-hidden">
-                <iframe
-                  src={video.embedUrl}
-                  className="w-full"
-                  style={{ height: '750px', marginBottom: '-130px' }}
-                  frameBorder="0"
-                  scrolling="no"
-                  allowTransparency={true}
-                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                  title={`Vídeo depoimento ${video.id}`}
-                />
-              </div>
+              {/* Instagram Embed - cropped to hide bottom */}
+              <iframe
+                src={video.embedUrl}
+                className="w-full absolute top-0 left-0"
+                style={{ 
+                  height: '750px',
+                  border: 'none'
+                }}
+                scrolling="no"
+                allowTransparency={true}
+                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                title={`Vídeo depoimento ${video.id}`}
+              />
             </div>
           ))}
         </div>
+
+        {/* Note about videos */}
+        <p className="text-center text-muted-foreground text-sm mt-8 font-body">
+          Clique no vídeo para reproduzir
+        </p>
       </div>
     </section>
   );

@@ -1,5 +1,4 @@
 import { Users, Award, Heart, Target } from "lucide-react";
-import wesleyPhoto from "@/assets/wesley.png";
 import jacquelinePhoto from "@/assets/jacqueline.jpeg";
 
 const About = () => {
@@ -47,29 +46,21 @@ const About = () => {
             </p>
             
             <p className="text-muted-foreground text-lg mb-8 font-body leading-relaxed">
-              Fundada por <strong className="text-foreground">Wesley Rocha</strong> e{" "}
-              <strong className="text-foreground">Jacqueline Rodrigues</strong>, nossa missão é ajudar 
+              Fundada por <strong className="text-foreground">Jacqueline Rodrigues</strong>, nossa missão é ajudar 
               empreendedores a profissionalizar suas lojas com materiais que transmitem credibilidade 
               e valorizam cada peça.
             </p>
 
-            {/* Founders */}
+            {/* Founder */}
             <div className="flex items-center gap-6 p-6 rounded-2xl bg-accent/50 border border-border">
-              <div className="flex -space-x-4">
-                <img 
-                  src={wesleyPhoto} 
-                  alt="Wesley Rocha" 
-                  className="w-16 h-16 rounded-full object-cover border-4 border-card"
-                />
-                <img 
-                  src={jacquelinePhoto} 
-                  alt="Jacqueline Rodrigues" 
-                  className="w-16 h-16 rounded-full object-cover border-4 border-card"
-                />
-              </div>
+              <img 
+                src={jacquelinePhoto} 
+                alt="Jacqueline Rodrigues" 
+                className="w-16 h-16 rounded-full object-cover border-4 border-card"
+              />
               <div>
-                <p className="font-display font-semibold text-foreground">Wesley Rocha & Jacqueline Rodrigues</p>
-                <p className="text-sm text-muted-foreground font-body">Fundadores da Prime Print</p>
+                <p className="font-display font-semibold text-foreground">Jacqueline Rodrigues</p>
+                <p className="text-sm text-muted-foreground font-body">Fundadora da Prime Print</p>
               </div>
             </div>
           </div>

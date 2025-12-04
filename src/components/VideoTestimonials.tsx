@@ -2,11 +2,11 @@ const VideoTestimonials = () => {
   const videos = [
     {
       id: 1,
-      embedUrl: "https://www.instagram.com/reel/DR2GAGGjlxP/embed/",
+      embedUrl: "https://www.instagram.com/reel/DR2GAGGjlxP/embed/?hidecaption=true&autoplay=false",
     },
     {
       id: 2,
-      embedUrl: "https://www.instagram.com/reel/DR2KIwIkdM0/embed/",
+      embedUrl: "https://www.instagram.com/reel/DR2KIwIkdM0/embed/?hidecaption=true&autoplay=false",
     },
   ];
 
@@ -31,21 +31,25 @@ const VideoTestimonials = () => {
           {videos.map((video) => (
             <div
               key={video.id}
-              className="relative w-full max-w-[350px] aspect-[9/16] rounded-2xl overflow-hidden bg-card border-2 border-brand-primary/20 shadow-brand-lg"
+              className="relative w-full max-w-[350px] rounded-2xl overflow-hidden bg-card border-2 border-brand-primary/20 shadow-brand-lg"
+              style={{ height: '620px' }}
             >
               {/* Decorative frame */}
               <div className="absolute inset-0 rounded-2xl border-4 border-brand-primary/10 pointer-events-none z-10" />
               
-              {/* Instagram Embed */}
-              <iframe
-                src={video.embedUrl}
-                className="w-full h-full"
-                frameBorder="0"
-                scrolling="no"
-                allowTransparency={true}
-                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                title={`Vídeo depoimento ${video.id}`}
-              />
+              {/* Instagram Embed - with overflow hidden to crop bottom */}
+              <div className="w-full h-full overflow-hidden">
+                <iframe
+                  src={video.embedUrl}
+                  className="w-full"
+                  style={{ height: '750px', marginBottom: '-130px' }}
+                  frameBorder="0"
+                  scrolling="no"
+                  allowTransparency={true}
+                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                  title={`Vídeo depoimento ${video.id}`}
+                />
+              </div>
             </div>
           ))}
         </div>

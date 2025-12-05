@@ -6,7 +6,11 @@ import {
   Truck, 
   Shield,
   Clock,
-  ThumbsUp
+  ThumbsUp,
+  Scissors,
+  Layers,
+  Sun,
+  Star
 } from "lucide-react";
 
 const Benefits = () => {
@@ -96,6 +100,40 @@ const Benefits = () => {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Premium Finishes Section */}
+        <div className="mb-16 p-8 rounded-2xl bg-gradient-to-br from-accent/80 to-accent/30 border border-primary/20">
+          <div className="text-center mb-8">
+            <h3 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-3">
+              Acabamentos <span className="text-gradient">Diferenciados</span>
+            </h3>
+            <p className="text-muted-foreground font-body">
+              Para você que deseja se destacar ainda mais, oferecemos opções premium:
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {[
+              { icon: Scissors, title: "Corte Especial" },
+              { icon: Layers, title: "Papel Couchê 300g" },
+              { icon: Sun, title: "Papel Fosco" },
+              { icon: Sparkles, title: "Verniz Localizado" },
+              { icon: Star, title: "Hot Stamping" },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="flex flex-col items-center text-center p-4 rounded-xl bg-background/60 backdrop-blur-sm border border-border hover:border-primary/40 hover:shadow-brand-sm transition-all duration-300"
+              >
+                <div className="w-12 h-12 rounded-full gradient-brand flex items-center justify-center mb-3 shadow-brand-sm">
+                  <item.icon className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <span className="font-body font-semibold text-foreground text-sm">
+                  {item.title}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Additional Benefits Bar */}

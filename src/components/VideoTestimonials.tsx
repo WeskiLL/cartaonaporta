@@ -1,12 +1,15 @@
+import video1 from "@/assets/video-depoimento-1.mp4";
+import video2 from "@/assets/video-depoimento-2.mp4";
+
 const VideoTestimonials = () => {
   const videos = [
     {
       id: 1,
-      embedUrl: "https://www.instagram.com/p/DR2GAGGjlxP/embed/",
+      src: video1,
     },
     {
       id: 2,
-      embedUrl: "https://www.instagram.com/p/DR2VgqAErVY/embed/",
+      src: video2,
     },
   ];
 
@@ -31,27 +34,19 @@ const VideoTestimonials = () => {
           {videos.map((video) => (
             <div
               key={video.id}
-              className="relative w-full max-w-[350px] rounded-2xl bg-card border-2 border-brand-primary/20 shadow-brand-lg"
-              style={{ 
-                height: '580px',
-                overflow: 'hidden',
-                clipPath: 'inset(0 0 0 0 round 16px)'
-              }}
+              className="relative w-full max-w-[350px] rounded-2xl bg-card border-2 border-brand-primary/20 shadow-brand-lg overflow-hidden"
             >
               {/* Decorative frame */}
               <div className="absolute inset-0 rounded-2xl border-4 border-brand-primary/10 pointer-events-none z-10" />
               
-              {/* Instagram Embed - cropped to hide bottom */}
-              <iframe
-                src={video.embedUrl}
-                className="w-full absolute top-0 left-0"
-                style={{ 
-                  height: '750px',
-                  border: 'none'
-                }}
-                scrolling="no"
-                allowTransparency={true}
-                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+              {/* Video Player */}
+              <video
+                src={video.src}
+                className="w-full h-auto"
+                autoPlay
+                loop
+                muted
+                playsInline
                 title={`Vídeo depoimento ${video.id}`}
               />
             </div>
@@ -60,7 +55,7 @@ const VideoTestimonials = () => {
 
         {/* Note about videos */}
         <p className="text-center text-muted-foreground text-sm mt-8 font-body">
-          Clique no vídeo para reproduzir
+          Vídeos em reprodução automática
         </p>
       </div>
     </section>

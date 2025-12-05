@@ -50,11 +50,11 @@ const Testimonials = () => {
               className="relative rounded-2xl bg-card border border-border overflow-hidden hover:shadow-brand-md transition-all duration-300"
             >
               {/* WhatsApp Screenshot */}
-              <div className="aspect-[3/4] relative overflow-hidden">
+              <div className="relative bg-muted/30">
                 <img
                   src={testimonial.image}
                   alt={`Depoimento de ${testimonial.name}`}
-                  className="w-full h-full object-cover"
+                  className="w-full h-auto object-contain"
                 />
               </div>
 

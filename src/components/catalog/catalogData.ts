@@ -9,6 +9,18 @@ import tagAnel2 from "@/assets/catalog/tag-anel-2.jpeg";
 import tagBrincos1 from "@/assets/catalog/tag-brincos-1.jpeg";
 import tagBrincos2 from "@/assets/catalog/tag-brincos-2.jpeg";
 import tagBrincos3 from "@/assets/catalog/tag-brincos-3.jpeg";
+import tagGravata from "@/assets/catalog/tag-gravata.jpeg";
+
+// Kits
+import kitEmpreendedor from "@/assets/catalog/kit-empreendedor-iniciante.jpeg";
+import kitEmpreendedor100 from "@/assets/catalog/kit-empreendedor-100.jpeg";
+
+// Cartões
+import miniCertificado from "@/assets/catalog/mini-certificado-garantia.jpeg";
+import certificadoGarantia from "@/assets/catalog/certificado-garantia.jpeg";
+
+// Adesivos
+import tagAdesivaAnel from "@/assets/catalog/tag-adesiva-anel.jpeg";
 
 export interface Product {
   id: string;
@@ -16,11 +28,14 @@ export interface Product {
   size: string;
   image: string;
   category: "tags" | "kits" | "cartoes" | "adesivos" | "outros";
+  isKit?: boolean; // Para kits que não têm seleção de quantidade
+  kitDescription?: string; // Descrição do conteúdo do kit
+  availableQuantities?: number[]; // Quantidades disponíveis (se diferente do padrão)
   prices: {
-    qty100: number;
-    qty250: number;
-    qty500: number;
-    qty1000: number;
+    qty100?: number;
+    qty250?: number;
+    qty500?: number;
+    qty1000?: number;
   };
 }
 
@@ -35,10 +50,10 @@ export const products: Product[] = [
     image: tagTrioArgolas,
     category: "tags",
     prices: {
-      qty100: 0,  // Editar preço
-      qty250: 0,  // Editar preço
-      qty500: 0,  // Editar preço
-      qty1000: 0, // Editar preço
+      qty100: 0,
+      qty250: 0,
+      qty500: 0,
+      qty1000: 0,
     },
   },
   {
@@ -158,15 +173,87 @@ export const products: Product[] = [
       qty1000: 0,
     },
   },
+  {
+    id: "tag-gravata",
+    name: "Tag gravata",
+    size: "5x13",
+    image: tagGravata,
+    category: "tags",
+    availableQuantities: [500, 1000], // Somente 500 e 1000
+    prices: {
+      qty500: 0,
+      qty1000: 0,
+    },
+  },
 
   // ===== KITS =====
-  // Adicione produtos de kits aqui quando tiver as imagens
+  {
+    id: "kit-empreendedor-iniciante",
+    name: "Kit Empreendedor Iniciante",
+    size: "Vários tamanhos",
+    image: kitEmpreendedor,
+    category: "kits",
+    isKit: true,
+    kitDescription: "200un Mini certificado de garantia + 100un Tag colar e brinco (9x5) + 100un Tag trio de brincos (4x5)",
+    prices: {
+      qty100: 0, // Preço único do kit
+    },
+  },
+  {
+    id: "kit-empreendedor-100",
+    name: "Kit Empreendedor Iniciante 100 unidades",
+    size: "Vários tamanhos",
+    image: kitEmpreendedor100,
+    category: "kits",
+    isKit: true,
+    kitDescription: "Tag para colar e trio de brincos (9x5) + Tag trio de brincos (4x5)",
+    prices: {
+      qty100: 0, // Preço único do kit
+    },
+  },
 
   // ===== CARTÕES =====
-  // Adicione cartões aqui quando tiver as imagens
+  {
+    id: "mini-certificado-garantia",
+    name: "Mini certificado de garantia",
+    size: "4,5x5",
+    image: miniCertificado,
+    category: "cartoes",
+    prices: {
+      qty100: 0,
+      qty250: 0,
+      qty500: 0,
+      qty1000: 0,
+    },
+  },
+  {
+    id: "certificado-garantia",
+    name: "Certificado de garantia",
+    size: "5x9",
+    image: certificadoGarantia,
+    category: "cartoes",
+    prices: {
+      qty100: 0,
+      qty250: 0,
+      qty500: 0,
+      qty1000: 0,
+    },
+  },
 
   // ===== ADESIVOS =====
-  // Adicione adesivos aqui quando tiver as imagens
+  {
+    id: "tag-adesiva-anel",
+    name: "Tag adesiva para anel",
+    size: "7x4",
+    image: tagAdesivaAnel,
+    category: "adesivos",
+    availableQuantities: [250, 500, 1000], // A partir de 250
+    prices: {
+      qty250: 0,
+      qty500: 0,
+      qty1000: 0,
+    },
+  },
 
   // ===== OUTROS =====
   // Adicione outros produtos aqui quando tiver as imagens

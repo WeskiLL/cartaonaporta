@@ -31,6 +31,7 @@ export interface Product {
   isKit?: boolean; // Para kits que não têm seleção de quantidade
   kitDescription?: string; // Descrição do conteúdo do kit
   availableQuantities?: number[]; // Quantidades disponíveis (se diferente do padrão)
+  customSpecs?: string[]; // Especificações customizadas (ex: ["Couchê 90g"])
   prices: {
     qty100?: number;
     qty250?: number;
@@ -248,6 +249,7 @@ export const products: Product[] = [
     image: tagAdesivaAnel,
     category: "adesivos",
     availableQuantities: [250, 500, 1000], // A partir de 250
+    customSpecs: ["Frente e Verso", "Couchê 90g", "Verniz Total"],
     prices: {
       qty250: 0,
       qty500: 0,

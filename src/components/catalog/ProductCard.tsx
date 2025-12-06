@@ -12,6 +12,7 @@ interface ProductCardProps {
   isKit?: boolean;
   kitDescription?: string;
   availableQuantities?: number[];
+  customSpecs?: string[];
   prices: {
     qty100?: number;
     qty250?: number;
@@ -27,14 +28,16 @@ const DEFAULT_QUANTITIES = [
   { value: 1000, label: "1.000 un" },
 ];
 
+const DEFAULT_SPECS = ["Frente e Verso", "Couchê 250g", "Verniz Total"];
+
 const ProductCard = ({
-  id,
   name,
   size,
   image,
   isKit,
   kitDescription,
   availableQuantities,
+  customSpecs,
   prices,
 }: ProductCardProps) => {
   // Determinar opções de quantidade disponíveis
@@ -127,15 +130,14 @@ const ProductCard = ({
         {/* Features - Não mostrar para kits */}
         {!isKit && (
           <div className="flex flex-wrap gap-2 mb-4">
-            <span className="text-xs bg-accent/50 text-accent-foreground px-2 py-1 rounded-full">
-              Frente e Verso
-            </span>
-            <span className="text-xs bg-accent/50 text-accent-foreground px-2 py-1 rounded-full">
-              Couchê 250g
-            </span>
-            <span className="text-xs bg-accent/50 text-accent-foreground px-2 py-1 rounded-full">
-              Verniz Total
-            </span>
+            {(customSpecs || DEFAULT_SPECS).map((spec, index) => (
+              <span
+                key={index}
+                className="text-xs bg-accent/50 text-accent-foreground px-2 py-1 rounded-full"
+              >
+                {spec}
+              </span>
+            ))}
           </div>
         )}
 

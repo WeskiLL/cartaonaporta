@@ -46,9 +46,9 @@ const CartPanel = () => {
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border bg-primary/5">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
             <ShoppingBag className="w-5 h-5 text-primary" />
-            <h3 className="font-display font-bold text-lg">Seu Kit</h3>
+            <h3 className="font-display font-bold text-lg">Meu Carrinho</h3>
           </div>
           <button
             onClick={() => setIsCartOpen(false)}

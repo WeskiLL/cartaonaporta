@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
-import { X, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { X, ShoppingBag, Trash2 } from "lucide-react";
 import whatsappIcon from "@/assets/whatsapp-icon.png";
 
 const CartPanel = () => {
@@ -23,21 +23,6 @@ const CartPanel = () => {
 
   return (
     <>
-      {/* Toggle Button - Always visible */}
-      <button
-        onClick={() => setIsCartOpen(!isCartOpen)}
-        className={`fixed left-0 top-1/2 -translate-y-1/2 z-40 bg-primary text-primary-foreground p-3 rounded-r-xl shadow-brand-lg transition-all duration-300 hover:bg-primary/90 ${
-          isCartOpen ? "translate-x-80" : ""
-        }`}
-      >
-        <ShoppingBag className="w-6 h-6" />
-        {items.length > 0 && (
-          <span className="absolute -top-2 -right-2 bg-secondary text-secondary-foreground text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
-            {items.length}
-          </span>
-        )}
-      </button>
-
       {/* Cart Panel */}
       <div
         className={`fixed left-0 top-0 h-full w-80 bg-card border-r border-border shadow-2xl z-50 transition-transform duration-300 ${

@@ -249,7 +249,7 @@ export const products: Product[] = [
     image: tagAdesivaAnel,
     category: "adesivos",
     availableQuantities: [250, 500, 1000], // A partir de 250
-    customSpecs: ["Frente e Verso", "Couchê 90g"],
+    customSpecs: ["Frente e Verso", "Couchê 90g", "Verniz Total"],
     prices: {
       qty250: 0,
       qty500: 0,

@@ -125,13 +125,13 @@ const Catalog = () => {
           </p>
           <Button variant="outline" size="lg" asChild>
             <a
-              href={`https://wa.me/5574981138033?text=${encodeURIComponent("Não encontrei o que quero no catálogo, desejo fazer um orçamento personalizado")}`}
+              href="https://wa.me/c/557481138033"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2"
             >
               <img src={whatsappIcon} alt="WhatsApp" className="w-5 h-5" />
-              Fazer Orçamento Personalizado
+              Ver Catálogo Completo no WhatsApp
             </a>
           </Button>
         </div>

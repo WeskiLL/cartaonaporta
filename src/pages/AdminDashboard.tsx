@@ -12,8 +12,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
-import { LogOut, Plus, Save, Trash2, Package, AlertCircle, Loader2 } from "lucide-react";
+import { LogOut, Plus, Save, Trash2, Package, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import ImageUpload from "@/components/admin/ImageUpload";
 
 interface Product {
   id: string;
@@ -352,13 +353,11 @@ const AdminDashboard = () => {
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="image_url">URL da Imagem</Label>
-                    <Input
-                      id="image_url"
+                  <div className="md:col-span-2">
+                    <ImageUpload
                       value={formData.image_url}
-                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                      placeholder="https://..."
+                      onChange={(url) => setFormData({ ...formData, image_url: url })}
+                      productName={formData.name}
                     />
                   </div>
 

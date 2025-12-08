@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShoppingBag, Package } from "lucide-react";
+import { ShoppingBag, Package, Loader2 } from "lucide-react";
 import ProductCard from "./catalog/ProductCard";
 import CartPanel from "./catalog/CartPanel";
-import { products, categories } from "./catalog/catalogData";
+import { categories } from "./catalog/catalogData";
+import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
 import whatsappIcon from "@/assets/whatsapp-icon.png";
 
 const Catalog = () => {
   const [activeCategory, setActiveCategory] = useState("tags");
   const { setIsCartOpen, items } = useCart();
+  const { data: products = [], isLoading } = useProducts();
 
   const filteredProducts = products.filter(
     (product) => product.category === activeCategory
@@ -92,7 +93,11 @@ const Catalog = () => {
         </div>
 
         {/* Products Grid */}
-        {filteredProducts.length > 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : filteredProducts.length > 0 ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
               <ProductCard
@@ -102,6 +107,10 @@ const Catalog = () => {
                 size={product.size}
                 image={product.image}
                 prices={product.prices}
+                isKit={product.isKit}
+                kitDescription={product.kitDescription}
+                availableQuantities={product.availableQuantities}
+                customSpecs={product.customSpecs}
               />
             ))}
           </div>

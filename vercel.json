@@ -1,5 +1,5 @@
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/admin" }
+    { "source": https://tagsparajoias.lovable.app/admin, "destination": /admin }
   ]
 }

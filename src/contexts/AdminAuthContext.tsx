@@ -20,8 +20,9 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   // Check if user has admin role
-  const checkAdminRole = async (userId: string): Promise<boolean> => {
+  const checkAdminRole = async (userId: string): Promise<{ isAdmin: boolean; error?: string }> => {
     try {
+      console.log("Checking admin role for user:", userId);
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
@@ -31,13 +32,14 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error("Error checking admin role:", error);
-        return false;
+        return { isAdmin: false, error: error.message };
       }
 
-      return !!data;
+      console.log("Admin role check result:", data);
+      return { isAdmin: !!data };
     } catch (error) {
       console.error("Error checking admin role:", error);
-      return false;
+      return { isAdmin: false, error: "Erro ao verificar permissões" };
     }
   };
 
@@ -51,7 +53,7 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
         // Defer admin check to avoid deadlock
         if (session?.user) {
           setTimeout(() => {
-            checkAdminRole(session.user.id).then(setIsAdmin);
+            checkAdminRole(session.user.id).then((result) => setIsAdmin(result.isAdmin));
           }, 0);
         } else {
           setIsAdmin(false);
@@ -65,8 +67,8 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        checkAdminRole(session.user.id).then((isAdmin) => {
-          setIsAdmin(isAdmin);
+        checkAdminRole(session.user.id).then((result) => {
+          setIsAdmin(result.isAdmin);
           setIsLoading(false);
         });
       } else {
@@ -79,12 +81,14 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      console.log("Attempting login for:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error("Auth error:", error);
         return { success: false, error: error.message };
       }
 
@@ -92,10 +96,18 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
         return { success: false, error: "Erro ao fazer login" };
       }
 
-      // Check if user is admin
-      const hasAdminRole = await checkAdminRole(data.user.id);
+      console.log("User authenticated, checking admin role...");
       
-      if (!hasAdminRole) {
+      // Check if user is admin
+      const adminCheck = await checkAdminRole(data.user.id);
+      
+      if (adminCheck.error) {
+        console.error("Admin check error:", adminCheck.error);
+        await supabase.auth.signOut();
+        return { success: false, error: adminCheck.error };
+      }
+      
+      if (!adminCheck.isAdmin) {
         // Sign out if not admin
         await supabase.auth.signOut();
         return { success: false, error: "Acesso não autorizado. Apenas administradores podem acessar." };

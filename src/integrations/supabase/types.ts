@@ -14,7 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admin_users: {
+        Row: {
+          created_at: string
+          id: string
+          password_hash: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          password_hash: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          password_hash?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          available_quantities: number[] | null
+          category: Database["public"]["Enums"]["product_category"]
+          created_at: string
+          custom_specs: string[] | null
+          display_order: number | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          is_kit: boolean | null
+          kit_description: string | null
+          name: string
+          price_qty100: number | null
+          price_qty1000: number | null
+          price_qty250: number | null
+          price_qty500: number | null
+          size: string
+          updated_at: string
+        }
+        Insert: {
+          available_quantities?: number[] | null
+          category?: Database["public"]["Enums"]["product_category"]
+          created_at?: string
+          custom_specs?: string[] | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_kit?: boolean | null
+          kit_description?: string | null
+          name: string
+          price_qty100?: number | null
+          price_qty1000?: number | null
+          price_qty250?: number | null
+          price_qty500?: number | null
+          size: string
+          updated_at?: string
+        }
+        Update: {
+          available_quantities?: number[] | null
+          category?: Database["public"]["Enums"]["product_category"]
+          created_at?: string
+          custom_specs?: string[] | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_kit?: boolean | null
+          kit_description?: string | null
+          name?: string
+          price_qty100?: number | null
+          price_qty1000?: number | null
+          price_qty250?: number | null
+          price_qty500?: number | null
+          size?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +103,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      product_category: "tags" | "kits" | "cartoes" | "adesivos" | "outros"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +230,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      product_category: ["tags", "kits", "cartoes", "adesivos", "outros"],
+    },
   },
 } as const

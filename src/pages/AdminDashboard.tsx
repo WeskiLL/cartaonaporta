@@ -27,9 +27,11 @@ interface Product {
   available_quantities: number[] | null;
   custom_specs: string[] | null;
   price_qty100: number;
+  price_qty200: number;
   price_qty250: number;
   price_qty500: number;
   price_qty1000: number;
+  price_qty2000: number;
   display_order: number;
   is_active: boolean;
 }
@@ -62,9 +64,11 @@ const AdminDashboard = () => {
     available_quantities: "",
     custom_specs: "",
     price_qty100: 0,
+    price_qty200: 0,
     price_qty250: 0,
     price_qty500: 0,
     price_qty1000: 0,
+    price_qty2000: 0,
     is_active: true,
   });
 
@@ -110,9 +114,11 @@ const AdminDashboard = () => {
       available_quantities: product.available_quantities?.join(", ") || "",
       custom_specs: product.custom_specs?.join(", ") || "",
       price_qty100: product.price_qty100,
+      price_qty200: product.price_qty200,
       price_qty250: product.price_qty250,
       price_qty500: product.price_qty500,
       price_qty1000: product.price_qty1000,
+      price_qty2000: product.price_qty2000,
       is_active: product.is_active,
     });
     setIsEditing(true);
@@ -130,9 +136,11 @@ const AdminDashboard = () => {
       available_quantities: "",
       custom_specs: "",
       price_qty100: 0,
+      price_qty200: 0,
       price_qty250: 0,
       price_qty500: 0,
       price_qty1000: 0,
+      price_qty2000: 0,
       is_active: true,
     });
     setIsEditing(true);
@@ -155,9 +163,11 @@ const AdminDashboard = () => {
           ? formData.custom_specs.split(",").map((s) => s.trim()).filter(s => s)
           : null,
         price_qty100: formData.price_qty100,
+        price_qty200: formData.price_qty200,
         price_qty250: formData.price_qty250,
         price_qty500: formData.price_qty500,
         price_qty1000: formData.price_qty1000,
+        price_qty2000: formData.price_qty2000,
         is_active: formData.is_active,
       };
 
@@ -401,6 +411,19 @@ const AdminDashboard = () => {
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="price_qty200">Preço 200 un (R$)</Label>
+                    <Input
+                      id="price_qty200"
+                      type="number"
+                      step="0.01"
+                      value={formData.price_qty200}
+                      onChange={(e) =>
+                        setFormData({ ...formData, price_qty200: parseFloat(e.target.value) || 0 })
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="price_qty250">Preço 250 un (R$)</Label>
                     <Input
                       id="price_qty250"
@@ -427,7 +450,7 @@ const AdminDashboard = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="price_qty1000">Preço 1000 un (R$)</Label>
+                    <Label htmlFor="price_qty1000">Preço 1.000 un (R$)</Label>
                     <Input
                       id="price_qty1000"
                       type="number"
@@ -435,6 +458,19 @@ const AdminDashboard = () => {
                       value={formData.price_qty1000}
                       onChange={(e) =>
                         setFormData({ ...formData, price_qty1000: parseFloat(e.target.value) || 0 })
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="price_qty2000">Preço 2.000 un (R$)</Label>
+                    <Input
+                      id="price_qty2000"
+                      type="number"
+                      step="0.01"
+                      value={formData.price_qty2000}
+                      onChange={(e) =>
+                        setFormData({ ...formData, price_qty2000: parseFloat(e.target.value) || 0 })
                       }
                     />
                   </div>

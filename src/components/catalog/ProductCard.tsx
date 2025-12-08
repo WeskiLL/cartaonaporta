@@ -15,17 +15,21 @@ interface ProductCardProps {
   customSpecs?: string[];
   prices: {
     qty100?: number;
+    qty200?: number;
     qty250?: number;
     qty500?: number;
     qty1000?: number;
+    qty2000?: number;
   };
 }
 
-const DEFAULT_QUANTITIES = [
+const ALL_QUANTITIES = [
   { value: 100, label: "100 un" },
+  { value: 200, label: "200 un" },
   { value: 250, label: "250 un" },
   { value: 500, label: "500 un" },
   { value: 1000, label: "1.000 un" },
+  { value: 2000, label: "2.000 un" },
 ];
 
 const DEFAULT_SPECS = ["Frente e Verso", "Couchê 250g", "Verniz Total na Frente"];
@@ -42,10 +46,13 @@ const ProductCard = ({
 }: ProductCardProps) => {
   // Determinar opções de quantidade disponíveis
   const quantityOptions = availableQuantities
-    ? DEFAULT_QUANTITIES.filter((opt) =>
+    ? ALL_QUANTITIES.filter((opt) =>
         availableQuantities.includes(opt.value)
       )
-    : DEFAULT_QUANTITIES;
+    : ALL_QUANTITIES.filter((opt) => 
+        // Mostrar apenas as quantidades que têm preço > 0 ou são padrão (100, 250, 500, 1000)
+        [100, 250, 500, 1000].includes(opt.value)
+      );
 
   // Pre-select 250 if available, otherwise first option
   const defaultQty = quantityOptions.find(q => q.value === 250)?.value || quantityOptions[0]?.value || 100;
@@ -63,12 +70,16 @@ const ProductCard = ({
     switch (qty) {
       case 100:
         return prices.qty100 || 0;
+      case 200:
+        return prices.qty200 || 0;
       case 250:
         return prices.qty250 || 0;
       case 500:
         return prices.qty500 || 0;
       case 1000:
         return prices.qty1000 || 0;
+      case 2000:
+        return prices.qty2000 || 0;
       default:
         return 0;
     }
@@ -175,22 +186,21 @@ const ProductCard = ({
         {/* Actions */}
         <div className="flex gap-2 mt-auto">
           <Button
-            onClick={handleBuy}
+            onClick={handleAddToKit}
             variant="hero"
             className="flex-1 gap-2"
             size="sm"
           >
-            <img src={whatsappIcon} alt="WhatsApp" className="w-4 h-4" />
-            Comprar
+            <Plus className="w-4 h-4" />
+            Adicionar ao Carrinho
           </Button>
           <Button
-            onClick={handleAddToKit}
+            onClick={handleBuy}
             variant="outline"
             size="sm"
             className="gap-1"
           >
-            <Plus className="w-4 h-4" />
-            Kit
+            <img src={whatsappIcon} alt="WhatsApp" className="w-4 h-4" />
           </Button>
         </div>
       </div>

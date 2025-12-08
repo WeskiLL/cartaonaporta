@@ -15,9 +15,11 @@ const mapDbProduct = (dbProduct: any): Product => ({
   customSpecs: dbProduct.custom_specs || undefined,
   prices: {
     qty100: dbProduct.price_qty100 || 0,
+    qty200: dbProduct.price_qty200 || 0,
     qty250: dbProduct.price_qty250 || 0,
     qty500: dbProduct.price_qty500 || 0,
     qty1000: dbProduct.price_qty1000 || 0,
+    qty2000: dbProduct.price_qty2000 || 0,
   },
 });
 

@@ -29,6 +29,8 @@ export type Database = {
           name: string
           price_qty100: number | null
           price_qty1000: number | null
+          price_qty200: number | null
+          price_qty2000: number | null
           price_qty250: number | null
           price_qty500: number | null
           size: string
@@ -48,6 +50,8 @@ export type Database = {
           name: string
           price_qty100?: number | null
           price_qty1000?: number | null
+          price_qty200?: number | null
+          price_qty2000?: number | null
           price_qty250?: number | null
           price_qty500?: number | null
           size: string
@@ -67,6 +71,8 @@ export type Database = {
           name?: string
           price_qty100?: number | null
           price_qty1000?: number | null
+          price_qty200?: number | null
+          price_qty2000?: number | null
           price_qty250?: number | null
           price_qty500?: number | null
           size?: string

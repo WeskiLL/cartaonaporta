@@ -499,7 +499,7 @@ const AdminDashboard = () => {
               </div>
             ) : (
               <div className="bg-card rounded-xl border border-border p-8 flex flex-col items-center justify-center text-center min-h-[400px]">
-                <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
+                <Package className="w-12 h-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">
                   Selecione um produto para editar ou clique em "Novo" para adicionar.
                 </p>

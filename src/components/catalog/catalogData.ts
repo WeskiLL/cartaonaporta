@@ -34,9 +34,11 @@ export interface Product {
   customSpecs?: string[]; // Especificações customizadas (ex: ["Couchê 90g"])
   prices: {
     qty100?: number;
+    qty200?: number;
     qty250?: number;
     qty500?: number;
     qty1000?: number;
+    qty2000?: number;
   };
 }
 

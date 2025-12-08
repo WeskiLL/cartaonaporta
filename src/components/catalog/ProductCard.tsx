@@ -47,9 +47,9 @@ const ProductCard = ({
       )
     : DEFAULT_QUANTITIES;
 
-  const [selectedQty, setSelectedQty] = useState(
-    quantityOptions[0]?.value || 100
-  );
+  // Pre-select 250 if available, otherwise first option
+  const defaultQty = quantityOptions.find(q => q.value === 250)?.value || quantityOptions[0]?.value || 100;
+  const [selectedQty, setSelectedQty] = useState(defaultQty);
   const { addItem } = useCart();
 
   // Atualizar selectedQty se as opções mudarem

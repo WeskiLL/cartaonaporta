@@ -1,31 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
-import { Lock, User, AlertCircle } from "lucide-react";
+import { Lock, Mail, AlertCircle, Loader2 } from "lucide-react";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  email: z.string().email("Email inválido"),
+  password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
+});
 
 const AdminLogin = () => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login, isAuthenticated } = useAdminAuth();
+  const { login, isAuthenticated, isLoading } = useAdminAuth();
   const navigate = useNavigate();
 
-  // Redirect if already authenticated
-  if (isAuthenticated) {
-    navigate("/admin/dashboard");
-    return null;
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/admin/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    // Validate input
+    const validation = loginSchema.safeParse({ email, password });
+    if (!validation.success) {
+      setError(validation.error.errors[0].message);
+      return;
+    }
+
     setIsSubmitting(true);
 
-    const result = await login(username, password);
+    const result = await login(email, password);
     
     if (result.success) {
       navigate("/admin/dashboard");
@@ -35,6 +49,14 @@ const AdminLogin = () => {
     
     setIsSubmitting(false);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -61,18 +83,18 @@ const AdminLogin = () => {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="username">Usuário</Label>
+              <Label htmlFor="email">Email</Label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Digite seu usuário"
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@exemplo.com"
                   className="pl-10"
                   required
-                  autoComplete="username"
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -101,7 +123,14 @@ const AdminLogin = () => {
               className="w-full"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Entrando..." : "Entrar"}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Entrando...
+                </>
+              ) : (
+                "Entrar"
+              )}
             </Button>
           </form>
 

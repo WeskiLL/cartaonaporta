@@ -43,7 +43,7 @@ const CATEGORIES = [
 ];
 
 const AdminDashboard = () => {
-  const { isAuthenticated, username, logout, isLoading: authLoading } = useAdminAuth();
+  const { isAuthenticated, user, logout, isLoading: authLoading } = useAdminAuth();
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -216,8 +216,8 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/admin");
   };
 
@@ -241,8 +241,8 @@ const AdminDashboard = () => {
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              Olá, <strong>{username}</strong>
+            <span className="text-sm text-muted-foreground hidden sm:inline">
+              Olá, <strong>{user?.email?.split("@")[0]}</strong>
             </span>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-2" />

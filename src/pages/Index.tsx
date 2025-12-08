@@ -9,6 +9,8 @@ import VideoTestimonials from "@/components/VideoTestimonials";
 import FAQ from "@/components/FAQ";
 import FinalCTA from "@/components/FinalCTA";
 import Footer from "@/components/Footer";
+import WhatsAppFloat from "@/components/WhatsAppFloat";
+import { CartProvider } from "@/contexts/CartContext";
 
 
 const Index = () => {
@@ -86,21 +88,23 @@ const Index = () => {
         </script>
       </Helmet>
 
-      <div className="min-h-screen">
-        <Header />
-        <main>
-          <Hero />
-          <About />
-          <Catalog />
-          <Benefits />
-          <Testimonials />
-          <VideoTestimonials />
-          <FAQ />
-          <FinalCTA />
-        </main>
-        <Footer />
-        
-      </div>
+      <CartProvider>
+        <div className="min-h-screen">
+          <Header />
+          <main>
+            <Hero />
+            <About />
+            <Catalog />
+            <Benefits />
+            <Testimonials />
+            <VideoTestimonials />
+            <FAQ />
+            <FinalCTA />
+          </main>
+          <Footer />
+          <WhatsAppFloat />
+        </div>
+      </CartProvider>
     </>
   );
 };

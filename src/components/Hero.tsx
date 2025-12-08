@@ -1,9 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import heroImage from "@/assets/hero-tags.png";
-import whatsappIcon from "@/assets/whatsapp-icon.png";
-
-const WHATSAPP_MESSAGE = "Olá! Vim pelo site e gostaria de saber mais sobre as tags para joias personalizadas.";
 
 const Hero = () => {
   return (
@@ -36,28 +32,6 @@ const Hero = () => {
               Materiais premium com impressão de alta qualidade que elevam o valor da sua vitrine.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-up" style={{
-              animationDelay: "0.3s"
-            }}>
-              <Button variant="hero" size="xl" asChild>
-                <a 
-                  href={`https://wa.me/5574981138033?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="flex items-center gap-2"
-                >
-                  <img src={whatsappIcon} alt="WhatsApp" className="w-6 h-6" />
-                  Solicitar Orçamento
-                </a>
-              </Button>
-              
-              <Button variant="outline" size="xl" asChild>
-                <a href="#catalogo" className="flex items-center gap-2">
-                  Ver Catálogo
-                  <ArrowRight className="w-5 h-5" />
-                </a>
-              </Button>
-            </div>
 
             {/* Trust Indicators */}
             <div className="mt-10 pt-8 border-t border-border animate-fade-up" style={{

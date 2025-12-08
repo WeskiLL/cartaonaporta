@@ -28,7 +28,7 @@ const DEFAULT_QUANTITIES = [
   { value: 1000, label: "1.000 un" },
 ];
 
-const DEFAULT_SPECS = ["Frente e Verso", "Couchê 250g", "Verniz Total"];
+const DEFAULT_SPECS = ["Frente e Verso", "Couchê 250g", "Verniz Total na Frente"];
 
 const ProductCard = ({
   name,

@@ -1,17 +1,9 @@
-import video1 from "@/assets/video-depoimento-1.mp4";
-import video2 from "@/assets/video-depoimento-2.mp4";
+import { useVideoTestimonials } from "@/hooks/useVideoTestimonials";
 
 const VideoTestimonials = () => {
-  const videos = [
-    {
-      id: 1,
-      src: video1,
-    },
-    {
-      id: 2,
-      src: video2,
-    },
-  ];
+  const { data: videos = [] } = useVideoTestimonials();
+
+  if (videos.length === 0) return null;
 
   return (
     <section className="py-16 lg:py-24 bg-muted/30">
@@ -30,7 +22,7 @@ const VideoTestimonials = () => {
         </div>
 
         {/* Videos Grid */}
-        <div className="flex flex-col md:flex-row justify-center items-center gap-8 max-w-4xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-center items-center gap-8 max-w-5xl mx-auto flex-wrap">
           {videos.map((video) => (
             <div
               key={video.id}
@@ -41,13 +33,13 @@ const VideoTestimonials = () => {
               
               {/* Video Player */}
               <video
-                src={video.src}
+                src={video.video_url || ""}
                 className="w-full h-auto"
                 autoPlay
                 loop
                 muted
                 playsInline
-                title={`Vídeo depoimento ${video.id}`}
+                title={video.title || "Vídeo depoimento"}
               />
             </div>
           ))}

@@ -180,8 +180,8 @@ const Catalogo = () => {
 
         {/* Company Info Bar */}
         <div className={`border-b shadow-sm transition-colors duration-300 ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white"}`}>
-          <div className="max-w-4xl mx-auto px-3 sm:px-4 py-3 sm:py-4 flex flex-col items-center gap-3 sm:gap-4">
-            <div className="flex items-center gap-2 sm:gap-3 w-full justify-center sm:justify-start">
+          <div className="max-w-4xl mx-auto px-3 sm:px-4 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <img src={logoPrimePrint} alt="Prime Print" className="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-contain bg-white shadow" />
                 <img src={logoCartaoNaPorta} alt="Cartão na Porta" className="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-contain bg-white shadow" />
@@ -193,8 +193,8 @@ const Catalogo = () => {
                 </p>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto">
-              <button onClick={handleWhatsAppContact} className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap w-full sm:w-auto justify-center">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <button onClick={handleWhatsAppContact} className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap">
                 <img src={whatsappIcon} alt="WhatsApp" className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                 <span>Chame no WhatsApp</span>
               </button>
@@ -241,6 +241,7 @@ const Catalogo = () => {
             const selectedQty = getSelectedQty(product);
             const selectedPrice = getPriceForQty(product, selectedQty);
             const formattedSelectedPrice = formatPrice(selectedPrice);
+            const isInCart = items.some(item => item.name === product.name && item.selectedQty === selectedQty);
             return <div key={product.id} className={`rounded-2xl shadow-sm border p-4 sm:p-5 hover:shadow-md transition-all ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white"}`}>
                     {/* Header: Image + Name + Buttons */}
                     <div className="flex items-center gap-3 mb-3">
@@ -267,10 +268,16 @@ const Catalogo = () => {
                           </button>
                           <button 
                             onClick={() => handleAddToCart(product)} 
-                            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] sm:text-xs font-medium transition-colors border ${isDarkMode ? "border-primary/50 text-primary hover:bg-primary/10" : "border-primary/40 text-primary hover:bg-primary/5"}`}
+                            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] sm:text-xs font-medium transition-all border ${
+                              isInCart 
+                                ? "bg-green-500 border-green-500 text-white" 
+                                : isDarkMode 
+                                  ? "border-primary/50 text-primary hover:bg-primary/10" 
+                                  : "border-primary/40 text-primary hover:bg-primary/5"
+                            }`}
                           >
                             <ShoppingCart className="h-3 w-3" />
-                            Adicionar ao carrinho
+                            {isInCart ? "Adicionado ✓" : "Adicionar ao carrinho"}
                           </button>
                         </div>
                       </div>

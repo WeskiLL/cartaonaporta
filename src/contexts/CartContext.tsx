@@ -38,7 +38,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setItems([...items, { ...item, id, quantity: 1 }]);
     }
-    setIsCartOpen(true);
   };
 
   const removeItem = (id: string) => {

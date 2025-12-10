@@ -171,15 +171,17 @@ const Catalogo = () => {
 
       <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "bg-gray-900" : "bg-gray-50"}`}>
         {/* Hero Header with Pattern */}
-        <div 
-          className="relative py-12 px-4 overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80"
-          style={{
-            backgroundImage: `url(${stationeryPattern})`,
-            backgroundSize: '200px 200px',
-            backgroundRepeat: 'repeat',
-            backgroundBlendMode: 'soft-light'
-          }}
-        >
+        <div className="relative py-12 px-4 overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80">
+          {/* Pattern Overlay */}
+          <div 
+            className="absolute inset-0 opacity-30"
+            style={{
+              backgroundImage: `url(${stationeryPattern})`,
+              backgroundSize: '80px 80px',
+              backgroundRepeat: 'repeat',
+            }}
+          />
+
           {/* Dark Mode Toggle */}
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}

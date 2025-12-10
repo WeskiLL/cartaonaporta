@@ -112,7 +112,7 @@ const CartPanel = () => {
                 size="lg"
               >
                 <img src={whatsappIcon} alt="WhatsApp" className="w-5 h-5" />
-                Comprar Kit
+                Comprar
               </Button>
               <Button
                 onClick={clearCart}
@@ -120,7 +120,7 @@ const CartPanel = () => {
                 className="w-full text-muted-foreground"
                 size="sm"
               >
-                Limpar Kit
+                Limpar Carrinho
               </Button>
             </>
           )}

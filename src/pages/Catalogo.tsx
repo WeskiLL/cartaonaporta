@@ -270,7 +270,7 @@ const Catalogo = () => {
                             className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] sm:text-xs font-medium transition-colors border ${isDarkMode ? "border-primary/50 text-primary hover:bg-primary/10" : "border-primary/40 text-primary hover:bg-primary/5"}`}
                           >
                             <ShoppingCart className="h-3 w-3" />
-                            Carrinho
+                            Adicionar ao carrinho
                           </button>
                         </div>
                       </div>

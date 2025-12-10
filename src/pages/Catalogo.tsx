@@ -241,70 +241,79 @@ const Catalogo = () => {
             const selectedQty = getSelectedQty(product);
             const selectedPrice = getPriceForQty(product, selectedQty);
             const formattedSelectedPrice = formatPrice(selectedPrice);
-            return <div key={product.id} className={`rounded-xl shadow-sm border p-3 sm:p-4 hover:shadow-md transition-all ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white"}`}>
-                    <div className="flex gap-3 sm:gap-4">
-                      {/* Product Image - Clickable */}
-                      <div className="flex-shrink-0">
-                        <img src={product.image || "/placeholder.svg"} alt={product.name} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setSelectedImage(product.image || "/placeholder.svg")} />
-                      </div>
-
-                      {/* Product Info */}
-                      <div className="flex-1 min-w-0">
-                        {/* Product Name + Comprar Button inline */}
-                        <div className="flex items-start gap-2 flex-wrap mb-1.5">
-                          <h3 className={`text-sm sm:text-base font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
-                            {product.name}
-                          </h3>
-                          <button onClick={() => handleWhatsAppBuy(product)} className="flex items-center gap-1 bg-primary hover:bg-primary/90 text-white px-2 py-0.5 rounded text-[10px] sm:text-xs font-medium transition-colors">
+            return <div key={product.id} className={`rounded-2xl shadow-sm border p-4 sm:p-5 hover:shadow-md transition-all ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white"}`}>
+                    {/* Header: Image + Name + Buttons */}
+                    <div className="flex items-center gap-3 mb-3">
+                      {/* Product Image - Small */}
+                      <img 
+                        src={product.image || "/placeholder.svg"} 
+                        alt={product.name} 
+                        className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-lg bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0" 
+                        onClick={() => setSelectedImage(product.image || "/placeholder.svg")} 
+                      />
+                      
+                      {/* Name + Buttons */}
+                      <div className="flex items-center flex-wrap gap-2">
+                        <h3 className={`text-sm sm:text-base font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
+                          {product.name}
+                        </h3>
+                        <div className="flex gap-1.5">
+                          <button 
+                            onClick={() => handleWhatsAppBuy(product)} 
+                            className="flex items-center gap-1 bg-primary hover:bg-primary/90 text-white px-2.5 py-1 rounded-md text-[10px] sm:text-xs font-medium transition-colors"
+                          >
                             <ShoppingCart className="h-3 w-3" />
                             Comprar
                           </button>
-                        </div>
-
-                        {/* Specs */}
-                        <div className={`flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] sm:text-xs mb-2 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
-                          {product.size && <span className="flex items-center gap-0.5">
-                              <Tag className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                              {product.size}
-                            </span>}
-                          {getProductSpecs(product).map((spec: string, index: number) => <span key={index} className="flex items-center gap-0.5">
-                              <span className={isDarkMode ? "text-gray-600" : "text-gray-300"}>⊙</span>
-                              <span>{spec}</span>
-                            </span>)}
-                          <span className="flex items-center gap-0.5">
-                            <span className={isDarkMode ? "text-gray-600" : "text-gray-300"}>⊙</span>
-                            <span>5 a 7 dias úteis</span>
-                          </span>
-                        </div>
-
-                        {/* Kit Description */}
-                        {product.isKit && product.kitDescription && <p className={`text-[10px] sm:text-xs mb-2 p-1 sm:p-1.5 rounded ${isDarkMode ? "bg-gray-700 text-gray-300" : "bg-gray-50 text-gray-600"}`}>
-                            📦 {product.kitDescription}
-                          </p>}
-
-                        {/* Quantity/Price Pills */}
-                        {!product.isKit && <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                            {availableQtys.map((qty: number) => {
-                      const price = getPriceForQty(product, qty);
-                      const formattedPrice = formatPrice(price);
-                      if (!formattedPrice) return null;
-                      return <button key={qty} onClick={() => {
-                        handleQuantityChange(product.id, qty);
-                      }} className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all border-2 ${selectedQty === qty ? "bg-primary/10 text-primary border-primary" : isDarkMode ? "bg-transparent text-primary border-primary/50 hover:border-primary" : "bg-transparent text-primary border-primary/40 hover:border-primary"}`}>
-                                  {qty} unid. - {formattedPrice}
-                                </button>;
-                    })}
-                          </div>}
-
-                        {/* Add to Cart Button */}
-                        <div className="mt-2">
-                          <button onClick={() => handleAddToCart(product)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-colors border ${isDarkMode ? "border-gray-600 text-gray-300 hover:bg-gray-700" : "border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
-                            <ShoppingCart className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                            Adicionar ao Carrinho
+                          <button 
+                            onClick={() => handleAddToCart(product)} 
+                            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] sm:text-xs font-medium transition-colors border ${isDarkMode ? "border-primary/50 text-primary hover:bg-primary/10" : "border-primary/40 text-primary hover:bg-primary/5"}`}
+                          >
+                            <ShoppingCart className="h-3 w-3" />
+                            Carrinho
                           </button>
                         </div>
                       </div>
                     </div>
+
+                    {/* Specs Line */}
+                    <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] sm:text-xs mb-3 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
+                      {product.size && <span className="flex items-center gap-1">
+                          <Tag className="h-3 w-3" />
+                          {product.size}
+                        </span>}
+                      {getProductSpecs(product).map((spec: string, index: number) => <span key={index} className="flex items-center gap-1">
+                          ✦ {spec}
+                        </span>)}
+                      <span className="flex items-center gap-1">
+                        ⏱ 5 a 7 dias úteis
+                      </span>
+                    </div>
+
+                    {/* Kit Description */}
+                    {product.isKit && product.kitDescription && <p className={`text-[10px] sm:text-xs mb-3 p-2 rounded-lg ${isDarkMode ? "bg-gray-700 text-gray-300" : "bg-gray-50 text-gray-600"}`}>
+                        📦 {product.kitDescription}
+                      </p>}
+
+                    {/* Quantity/Price Pills - Grid */}
+                    {!product.isKit && <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {availableQtys.map((qty: number) => {
+                          const price = getPriceForQty(product, qty);
+                          const formattedPrice = formatPrice(price);
+                          if (!formattedPrice) return null;
+                          return <button 
+                            key={qty} 
+                            onClick={() => handleQuantityChange(product.id, qty)} 
+                            className={`px-3 py-2 rounded-full text-[11px] sm:text-xs font-medium transition-all border-2 ${selectedQty === qty 
+                              ? "bg-primary/10 text-primary border-primary" 
+                              : isDarkMode 
+                                ? "bg-transparent text-primary border-primary/30 hover:border-primary/60" 
+                                : "bg-primary/5 text-primary border-primary/20 hover:border-primary/50"}`}
+                          >
+                            {qty} unid. - {formattedPrice}
+                          </button>;
+                        })}
+                      </div>}
                   </div>;
           })}
             </div>}

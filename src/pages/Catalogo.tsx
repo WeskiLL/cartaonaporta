@@ -250,60 +250,59 @@ const Catalogo = () => {
 
                       {/* Product Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex flex-col gap-2">
-                          <div className="flex-1">
-                            <h3 className={`text-sm sm:text-base font-bold mb-1 ${isDarkMode ? "text-white" : "text-gray-800"}`}>
-                              {product.name}
-                            </h3>
-
-                            {/* Specs */}
-                            <div className={`flex flex-wrap gap-1 sm:gap-1.5 text-[10px] sm:text-xs ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
-                              {product.size && <span className="flex items-center gap-0.5 sm:gap-1">
-                                  <Tag className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                                  {product.size}
-                                </span>}
-                              {getProductSpecs(product).map((spec: string, index: number) => <span key={index} className="flex items-center gap-0.5 sm:gap-1">
-                                  •
-                                  <span>{spec}</span>
-                                </span>)}
-                              <span className="flex items-center gap-0.5 sm:gap-1">
-                                •
-                                <span>5 a 7 dias úteis</span>
-                              </span>
-                            </div>
-
-                            {/* Kit Description */}
-                            {product.isKit && product.kitDescription && <p className={`text-[10px] sm:text-xs mt-1.5 sm:mt-2 p-1 sm:p-1.5 rounded ${isDarkMode ? "bg-gray-700 text-gray-300" : "bg-gray-50 text-gray-600"}`}>
-                                📦 {product.kitDescription}
-                              </p>}
-                          </div>
-
-                          {/* Action Buttons */}
-                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                            <button onClick={() => handleAddToCart(product)} className="flex items-center gap-1 sm:gap-1.5 bg-primary hover:bg-primary/90 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-medium transition-colors">
-                              <ShoppingCart className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                              Adicionar
-                            </button>
-                            <button onClick={() => handleWhatsAppBuy(product)} className="flex items-center gap-1 sm:gap-1.5 bg-green-500 hover:bg-green-600 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-medium transition-colors whitespace-nowrap">
-                              <img src={whatsappIcon} alt="WhatsApp" className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                              Comprar {selectedQty}
-                            </button>
-                          </div>
+                        {/* Product Name + Comprar Button inline */}
+                        <div className="flex items-start gap-2 flex-wrap mb-1.5">
+                          <h3 className={`text-sm sm:text-base font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
+                            {product.name}
+                          </h3>
+                          <button onClick={() => handleWhatsAppBuy(product)} className="flex items-center gap-1 bg-primary hover:bg-primary/90 text-white px-2 py-0.5 rounded text-[10px] sm:text-xs font-medium transition-colors">
+                            <ShoppingCart className="h-3 w-3" />
+                            Comprar
+                          </button>
                         </div>
 
-                        {/* Quantity Selection */}
-                        {!product.isKit && <div className="mt-2 sm:mt-3">
-                            <div className="flex flex-wrap gap-1 sm:gap-1.5">
-                              {availableQtys.map((qty: number) => {
-                        const price = getPriceForQty(product, qty);
-                        const formattedPrice = formatPrice(price);
-                        if (!formattedPrice) return null;
-                        return <button key={qty} onClick={() => handleQuantityChange(product.id, qty)} className={`px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all border ${selectedQty === qty ? "bg-primary text-white border-primary shadow-md" : isDarkMode ? "bg-gray-700 text-gray-200 border-gray-600 hover:border-primary" : "bg-gray-50 text-gray-700 border-gray-200 hover:border-primary"}`}>
-                                    {qty} - {formattedPrice}
-                                  </button>;
-                      })}
-                            </div>
+                        {/* Specs */}
+                        <div className={`flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] sm:text-xs mb-2 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
+                          {product.size && <span className="flex items-center gap-0.5">
+                              <Tag className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                              {product.size}
+                            </span>}
+                          {getProductSpecs(product).map((spec: string, index: number) => <span key={index} className="flex items-center gap-0.5">
+                              <span className={isDarkMode ? "text-gray-600" : "text-gray-300"}>⊙</span>
+                              <span>{spec}</span>
+                            </span>)}
+                          <span className="flex items-center gap-0.5">
+                            <span className={isDarkMode ? "text-gray-600" : "text-gray-300"}>⊙</span>
+                            <span>5 a 7 dias úteis</span>
+                          </span>
+                        </div>
+
+                        {/* Kit Description */}
+                        {product.isKit && product.kitDescription && <p className={`text-[10px] sm:text-xs mb-2 p-1 sm:p-1.5 rounded ${isDarkMode ? "bg-gray-700 text-gray-300" : "bg-gray-50 text-gray-600"}`}>
+                            📦 {product.kitDescription}
+                          </p>}
+
+                        {/* Quantity/Price Pills */}
+                        {!product.isKit && <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                            {availableQtys.map((qty: number) => {
+                      const price = getPriceForQty(product, qty);
+                      const formattedPrice = formatPrice(price);
+                      if (!formattedPrice) return null;
+                      return <button key={qty} onClick={() => {
+                        handleQuantityChange(product.id, qty);
+                      }} className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all border-2 ${selectedQty === qty ? "bg-primary/10 text-primary border-primary" : isDarkMode ? "bg-transparent text-primary border-primary/50 hover:border-primary" : "bg-transparent text-primary border-primary/40 hover:border-primary"}`}>
+                                  {qty} unid. - {formattedPrice}
+                                </button>;
+                    })}
                           </div>}
+
+                        {/* Add to Cart Button */}
+                        <div className="mt-2">
+                          <button onClick={() => handleAddToCart(product)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-colors border ${isDarkMode ? "border-gray-600 text-gray-300 hover:bg-gray-700" : "border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
+                            <ShoppingCart className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                            Adicionar ao Carrinho
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>;

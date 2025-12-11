@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
-import { LogOut, Plus, Save, Trash2, Package, Loader2, Video } from "lucide-react";
+import { LogOut, Plus, Save, Trash2, Package, Loader2, Video, ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import ImageUpload from "@/components/admin/ImageUpload";
 import VideoTestimonialsManager from "@/components/admin/VideoTestimonialsManager";
@@ -229,6 +229,45 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleMoveProduct = async (index: number, direction: "up" | "down") => {
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= products.length) return;
+
+    const newProducts = [...products];
+    [newProducts[index], newProducts[newIndex]] = [newProducts[newIndex], newProducts[index]];
+    
+    // Update local state immediately for better UX
+    setProducts(newProducts);
+
+    // Update display_order for affected products
+    const orders = newProducts.map((p, i) => ({
+      id: p.id,
+      display_order: i,
+    }));
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-products`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orders }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update order");
+      }
+      
+      toast.success("Ordem atualizada!");
+    } catch (error) {
+      console.error("Error updating order:", error);
+      toast.error("Erro ao atualizar ordem");
+      // Revert on error
+      fetchProducts();
+    }
+  };
+
   const handleLogout = async () => {
     await logout();
     navigate("/admin");
@@ -292,7 +331,7 @@ const AdminDashboard = () => {
                   </div>
 
                   <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                    {products.map((product) => (
+                    {products.map((product, index) => (
                       <div
                         key={product.id}
                         onClick={() => handleSelectProduct(product)}
@@ -303,13 +342,41 @@ const AdminDashboard = () => {
                         } border`}
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-foreground truncate">
-                              {product.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {product.category} • {product.size}
-                            </p>
+                          <div className="flex items-center gap-2">
+                            <div className="flex flex-col gap-0.5">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-5 w-5 text-muted-foreground hover:text-foreground"
+                                disabled={index === 0}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMoveProduct(index, "up");
+                                }}
+                              >
+                                <ChevronUp className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-5 w-5 text-muted-foreground hover:text-foreground"
+                                disabled={index === products.length - 1}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMoveProduct(index, "down");
+                                }}
+                              >
+                                <ChevronDown className="w-3 h-3" />
+                              </Button>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm text-foreground truncate">
+                                {product.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {product.category} • {product.size}
+                              </p>
+                            </div>
                           </div>
                           <Button
                             variant="ghost"

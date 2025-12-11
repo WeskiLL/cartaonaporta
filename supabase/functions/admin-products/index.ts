@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
 };
 
 Deno.serve(async (req) => {
@@ -94,6 +94,40 @@ Deno.serve(async (req) => {
 
       return new Response(
         JSON.stringify(data),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PATCH - Update display order for multiple products
+    if (req.method === "PATCH") {
+      const { orders } = await req.json();
+      console.log("Updating display orders for", orders?.length, "products");
+
+      if (!orders || !Array.isArray(orders)) {
+        return new Response(
+          JSON.stringify({ error: "Orders array required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Update each product's display_order
+      for (const order of orders) {
+        const { error } = await supabase
+          .from("products")
+          .update({ display_order: order.display_order })
+          .eq("id", order.id);
+
+        if (error) {
+          console.error("Error updating order for product:", order.id, error);
+          return new Response(
+            JSON.stringify({ error: error.message }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ success: true }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

@@ -6,10 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useManagement } from '@/contexts/ManagementContext';
-import { Quote, Order, QuoteItem, Client, ManagementProduct } from '@/types/management';
-import { Plus, Trash2, Loader2, Search } from 'lucide-react';
-import { maskCurrency, unmask } from '@/lib/masks';
+import { Quote, Order, QuoteItem, Client, DeliveryAddress } from '@/types/management';
+import { Plus, Trash2, Loader2, Search, UserPlus } from 'lucide-react';
+import { maskCurrency, unmask, maskCPFOrCNPJ, maskCEP, maskPhone, validateCPFOrCNPJ } from '@/lib/masks';
+import { fetchAddressByCep } from '@/lib/cep-service';
+import { toast } from 'sonner';
 
 interface OrderFormProps {
   open: boolean;
@@ -18,14 +21,53 @@ interface OrderFormProps {
   onSave: () => void;
 }
 
+interface NewClientData {
+  name: string;
+  email: string;
+  phone: string;
+  document: string;
+}
+
+interface DeliveryAddressData {
+  zip_code: string;
+  street: string;
+  number: string;
+  complement: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+}
+
 export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) {
-  const { clients, products, fetchClients, fetchProducts, addQuote, addOrder } = useManagement();
+  const { clients, products, fetchClients, fetchProducts, addQuote, addOrder, addClient } = useManagement();
   const [loading, setLoading] = useState(false);
   const [clientSearch, setClientSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [items, setItems] = useState<Omit<QuoteItem, 'id' | 'quote_id' | 'order_id'>[]>([]);
   const [discount, setDiscount] = useState('');
   const [notes, setNotes] = useState('');
+  
+  // New client inline creation
+  const [clientMode, setClientMode] = useState<'select' | 'new'>('select');
+  const [newClient, setNewClient] = useState<NewClientData>({
+    name: '',
+    email: '',
+    phone: '',
+    document: '',
+  });
+  const [documentError, setDocumentError] = useState('');
+  
+  // Delivery address (only for orders)
+  const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddressData>({
+    zip_code: '',
+    street: '',
+    number: '',
+    complement: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+  });
+  const [loadingCep, setLoadingCep] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -35,6 +77,10 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
       setItems([]);
       setDiscount('');
       setNotes('');
+      setClientMode('select');
+      setNewClient({ name: '', email: '', phone: '', document: '' });
+      setDeliveryAddress({ zip_code: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '' });
+      setDocumentError('');
     }
   }, [open, fetchClients, fetchProducts]);
 
@@ -83,21 +129,118 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
   const discountValue = parseFloat(unmask(discount)) / 100 || 0;
   const total = subtotal - discountValue;
 
+  // Handle CEP lookup
+  const handleCepChange = async (value: string) => {
+    const maskedCep = maskCEP(value);
+    setDeliveryAddress(prev => ({ ...prev, zip_code: maskedCep }));
+    
+    const cleanCep = unmask(maskedCep);
+    if (cleanCep.length === 8) {
+      setLoadingCep(true);
+      const address = await fetchAddressByCep(cleanCep);
+      if (address) {
+        setDeliveryAddress(prev => ({
+          ...prev,
+          street: address.logradouro,
+          neighborhood: address.bairro,
+          city: address.localidade,
+          state: address.uf,
+        }));
+      }
+      setLoadingCep(false);
+    }
+  };
+
+  // Handle document validation
+  const handleDocumentChange = (value: string) => {
+    const masked = maskCPFOrCNPJ(value);
+    setNewClient(prev => ({ ...prev, document: masked }));
+    
+    const cleaned = unmask(masked);
+    if (cleaned.length === 11 || cleaned.length === 14) {
+      const result = validateCPFOrCNPJ(cleaned);
+      if (!result.valid) {
+        setDocumentError(`${result.type?.toUpperCase() || 'Documento'} inválido`);
+      } else {
+        setDocumentError('');
+      }
+    } else {
+      setDocumentError('');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedClient || items.length === 0) return;
+    
+    let clientId = selectedClient?.id;
+    let clientName = selectedClient?.name || '';
+    
+    // If creating new client
+    if (clientMode === 'new') {
+      if (!newClient.name.trim()) {
+        toast.error('Nome do cliente é obrigatório');
+        return;
+      }
+      
+      // Validate document if provided
+      if (newClient.document) {
+        const cleaned = unmask(newClient.document);
+        if (cleaned.length === 11 || cleaned.length === 14) {
+          const result = validateCPFOrCNPJ(cleaned);
+          if (!result.valid) {
+            toast.error(`${result.type?.toUpperCase() || 'Documento'} inválido`);
+            return;
+          }
+        }
+      }
+      
+      // Create client
+      const createdClient = await addClient({
+        name: newClient.name,
+        email: newClient.email || '',
+        phone: newClient.phone || '',
+        document: newClient.document || '',
+        address: '',
+        city: '',
+        state: '',
+        zip_code: '',
+      });
+      
+      if (!createdClient) {
+        toast.error('Erro ao criar cliente');
+        return;
+      }
+      
+      clientId = createdClient.id;
+      clientName = createdClient.name;
+    }
+    
+    if (!clientName && !clientId) {
+      toast.error('Selecione ou cadastre um cliente');
+      return;
+    }
+    
+    if (items.length === 0) {
+      toast.error('Adicione pelo menos um item');
+      return;
+    }
 
     setLoading(true);
     
-    const data = {
-      client_id: selectedClient.id,
-      client_name: selectedClient.name,
+    const data: any = {
+      client_id: clientId || undefined,
+      client_name: clientName,
       subtotal,
       discount: discountValue,
       total,
       notes: notes || undefined,
       status: mode === 'quote' ? 'pending' as const : 'awaiting_payment' as const,
     };
+    
+    // Add delivery address for orders
+    if (mode === 'order' && deliveryAddress.zip_code) {
+      data.delivery_address = deliveryAddress;
+    }
 
     const itemsData = items.map(item => ({
       product_id: item.product_id || undefined,
@@ -109,9 +252,9 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
 
     let result;
     if (mode === 'quote') {
-      result = await addQuote(data as any, itemsData);
+      result = await addQuote(data, itemsData);
     } else {
-      result = await addOrder(data as any, itemsData);
+      result = await addOrder(data, itemsData);
     }
 
     setLoading(false);
@@ -134,50 +277,185 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Client Selection */}
+          {/* Client Selection/Creation */}
           <div className="space-y-2">
-            <Label>Cliente *</Label>
-            {selectedClient ? (
-              <Card>
-                <CardContent className="p-3 flex justify-between items-center">
-                  <div>
-                    <p className="font-medium">{selectedClient.name}</p>
-                    <p className="text-sm text-muted-foreground">{selectedClient.email}</p>
+            <div className="flex items-center justify-between">
+              <Label>Cliente *</Label>
+              <Tabs value={clientMode} onValueChange={(v) => setClientMode(v as 'select' | 'new')}>
+                <TabsList className="h-8">
+                  <TabsTrigger value="select" className="text-xs px-2 py-1">Selecionar</TabsTrigger>
+                  <TabsTrigger value="new" className="text-xs px-2 py-1">
+                    <UserPlus className="w-3 h-3 mr-1" />
+                    Novo
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            
+            {clientMode === 'select' ? (
+              selectedClient ? (
+                <Card>
+                  <CardContent className="p-3 flex justify-between items-center">
+                    <div>
+                      <p className="font-medium">{selectedClient.name}</p>
+                      <p className="text-sm text-muted-foreground">{selectedClient.email}</p>
+                    </div>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedClient(null)}>
+                      Alterar
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar cliente..."
+                      value={clientSearch}
+                      onChange={(e) => setClientSearch(e.target.value)}
+                      className="pl-10"
+                    />
                   </div>
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedClient(null)}>
-                    Alterar
-                  </Button>
+                  <div className="max-h-40 overflow-y-auto border rounded-lg">
+                    {filteredClients.map(client => (
+                      <div
+                        key={client.id}
+                        className="p-2 hover:bg-muted cursor-pointer"
+                        onClick={() => setSelectedClient(client)}
+                      >
+                        <p className="font-medium text-sm">{client.name}</p>
+                        <p className="text-xs text-muted-foreground">{client.email}</p>
+                      </div>
+                    ))}
+                    {filteredClients.length === 0 && (
+                      <p className="p-2 text-sm text-muted-foreground">Nenhum cliente encontrado</p>
+                    )}
+                  </div>
+                </div>
+              )
+            ) : (
+              <Card>
+                <CardContent className="p-4 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <Label className="text-xs">Nome *</Label>
+                      <Input
+                        value={newClient.name}
+                        onChange={(e) => setNewClient(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Nome do cliente"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">CPF/CNPJ</Label>
+                      <Input
+                        value={newClient.document}
+                        onChange={(e) => handleDocumentChange(e.target.value)}
+                        placeholder="000.000.000-00"
+                        maxLength={18}
+                      />
+                      {documentError && (
+                        <p className="text-xs text-destructive mt-1">{documentError}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-xs">Telefone</Label>
+                      <Input
+                        value={newClient.phone}
+                        onChange={(e) => setNewClient(prev => ({ ...prev, phone: maskPhone(e.target.value) }))}
+                        placeholder="(00) 00000-0000"
+                        maxLength={15}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs">Email</Label>
+                      <Input
+                        type="email"
+                        value={newClient.email}
+                        onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))}
+                        placeholder="email@exemplo.com"
+                      />
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
-            ) : (
-              <div className="space-y-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar cliente..."
-                    value={clientSearch}
-                    onChange={(e) => setClientSearch(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <div className="max-h-40 overflow-y-auto border rounded-lg">
-                  {filteredClients.map(client => (
-                    <div
-                      key={client.id}
-                      className="p-2 hover:bg-muted cursor-pointer"
-                      onClick={() => setSelectedClient(client)}
-                    >
-                      <p className="font-medium text-sm">{client.name}</p>
-                      <p className="text-xs text-muted-foreground">{client.email}</p>
-                    </div>
-                  ))}
-                  {filteredClients.length === 0 && (
-                    <p className="p-2 text-sm text-muted-foreground">Nenhum cliente encontrado</p>
-                  )}
-                </div>
-              </div>
             )}
           </div>
+
+          {/* Delivery Address (only for orders) */}
+          {mode === 'order' && (
+            <div className="space-y-2">
+              <Label>Endereço de Entrega</Label>
+              <Card>
+                <CardContent className="p-4 space-y-3">
+                  <div className="grid grid-cols-4 gap-3">
+                    <div className="col-span-1">
+                      <Label className="text-xs">CEP</Label>
+                      <div className="relative">
+                        <Input
+                          value={deliveryAddress.zip_code}
+                          onChange={(e) => handleCepChange(e.target.value)}
+                          placeholder="00000-000"
+                          maxLength={9}
+                        />
+                        {loadingCep && (
+                          <Loader2 className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 animate-spin text-muted-foreground" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="col-span-3">
+                      <Label className="text-xs">Rua</Label>
+                      <Input
+                        value={deliveryAddress.street}
+                        onChange={(e) => setDeliveryAddress(prev => ({ ...prev, street: e.target.value }))}
+                        placeholder="Nome da rua"
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Label className="text-xs">Número</Label>
+                      <Input
+                        value={deliveryAddress.number}
+                        onChange={(e) => setDeliveryAddress(prev => ({ ...prev, number: e.target.value }))}
+                        placeholder="Nº"
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Label className="text-xs">Complemento</Label>
+                      <Input
+                        value={deliveryAddress.complement}
+                        onChange={(e) => setDeliveryAddress(prev => ({ ...prev, complement: e.target.value }))}
+                        placeholder="Apto, sala..."
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs">Bairro</Label>
+                      <Input
+                        value={deliveryAddress.neighborhood}
+                        onChange={(e) => setDeliveryAddress(prev => ({ ...prev, neighborhood: e.target.value }))}
+                        placeholder="Bairro"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs">Cidade</Label>
+                      <Input
+                        value={deliveryAddress.city}
+                        onChange={(e) => setDeliveryAddress(prev => ({ ...prev, city: e.target.value }))}
+                        placeholder="Cidade"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs">Estado</Label>
+                      <Input
+                        value={deliveryAddress.state}
+                        onChange={(e) => setDeliveryAddress(prev => ({ ...prev, state: e.target.value }))}
+                        placeholder="UF"
+                        maxLength={2}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* Items */}
           <div className="space-y-2">
@@ -295,7 +573,7 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading || !selectedClient || items.length === 0}>
+            <Button type="submit" disabled={loading || items.length === 0}>
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Criar {mode === 'quote' ? 'Orçamento' : 'Pedido'}
             </Button>

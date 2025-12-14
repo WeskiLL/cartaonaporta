@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
-import { LogOut, Plus, Save, Trash2, Package, Loader2, Video, GripVertical, Filter, Settings } from "lucide-react";
+import { LogOut, Plus, Save, Trash2, Package, Loader2, Video, GripVertical, Filter, Settings, Sun, Moon } from "lucide-react";
 import { toast } from "sonner";
 import ImageUpload from "@/components/admin/ImageUpload";
 import VideoTestimonialsManager from "@/components/admin/VideoTestimonialsManager";
@@ -307,13 +307,24 @@ const AdminDashboard = () => {
               Painel Administrativo
             </h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+              }}
+            >
+              <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            </Button>
             <Button variant="outline" size="sm" onClick={() => navigate('/admin/gestao')}>
               <Settings className="w-4 h-4 mr-2" />
-              Sistema de Gestão
+              Gestão
             </Button>
             <span className="text-sm text-muted-foreground hidden sm:inline">
-              Olá, <strong>{user?.email?.split("@")[0]}</strong>
+              <strong>{user?.email?.split("@")[0]}</strong>
             </span>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-2" />

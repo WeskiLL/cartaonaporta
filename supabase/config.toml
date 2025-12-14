@@ -2,3 +2,9 @@ project_id = "qjuyqnkcafmetlbmcjqv"
 
 [functions.admin-products]
 verify_jwt = false
+
+[functions.admin-video-testimonials]
+verify_jwt = false
+
+[functions.check-tracking]
+verify_jwt = false

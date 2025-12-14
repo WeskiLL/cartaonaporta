@@ -20,6 +20,8 @@ import MockupsPage from "./pages/management/MockupsPage";
 import CompanyPage from "./pages/management/CompanyPage";
 import ReportsPage from "./pages/management/ReportsPage";
 import UsersPage from "./pages/management/UsersPage";
+import TrackingPage from "./pages/management/TrackingPage";
+import TrackingPublic from "./pages/TrackingPublic";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,12 +45,15 @@ const App = () => (
                   <Route path="/admin/gestao" element={<ManagementDashboard />} />
                   <Route path="/admin/gestao/clientes" element={<ClientsPage />} />
                   <Route path="/admin/gestao/pedidos" element={<OrdersPage />} />
+                  <Route path="/admin/gestao/rastreio" element={<TrackingPage />} />
                   <Route path="/admin/gestao/financeiro" element={<FinancialPage />} />
                   <Route path="/admin/gestao/produtos" element={<ProductsPage />} />
                   <Route path="/admin/gestao/relatorios" element={<ReportsPage />} />
                   <Route path="/admin/gestao/mockups" element={<MockupsPage />} />
                   <Route path="/admin/gestao/usuarios" element={<UsersPage />} />
                   <Route path="/admin/gestao/empresa" element={<CompanyPage />} />
+                  {/* Public Tracking */}
+                  <Route path="/rastreio/:id" element={<TrackingPublic />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

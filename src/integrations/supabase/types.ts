@@ -170,6 +170,59 @@ export type Database = {
         }
         Relationships: []
       }
+      order_trackings: {
+        Row: {
+          carrier: string
+          client_email: string | null
+          client_name: string
+          created_at: string
+          events: Json | null
+          id: string
+          last_update: string | null
+          order_id: string | null
+          order_number: string | null
+          status: string
+          tracking_code: string
+          updated_at: string
+        }
+        Insert: {
+          carrier?: string
+          client_email?: string | null
+          client_name: string
+          created_at?: string
+          events?: Json | null
+          id?: string
+          last_update?: string | null
+          order_id?: string | null
+          order_number?: string | null
+          status?: string
+          tracking_code: string
+          updated_at?: string
+        }
+        Update: {
+          carrier?: string
+          client_email?: string | null
+          client_name?: string
+          created_at?: string
+          events?: Json | null
+          id?: string
+          last_update?: string | null
+          order_id?: string | null
+          order_number?: string | null
+          status?: string
+          tracking_code?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_trackings_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           client_id: string | null

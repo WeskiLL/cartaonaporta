@@ -14,6 +14,7 @@ import { useManagement } from '@/contexts/ManagementContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { maskPhone } from '@/lib/masks';
 
 interface TrackingEvent {
   date: string;
@@ -160,7 +161,7 @@ export default function TrackingPage() {
     setRefreshing(tracking.id);
     try {
       const { data, error } = await supabase.functions.invoke('check-tracking', {
-        body: { trackingCode: tracking.tracking_code, carrier: tracking.carrier },
+        body: { tracking_code: tracking.tracking_code, tracking_id: tracking.id },
       });
 
       if (error) throw error;
@@ -294,8 +295,9 @@ export default function TrackingPage() {
                   <Input
                     type="tel"
                     value={formData.client_phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, client_phone: e.target.value }))}
+                    onChange={(e) => setFormData(prev => ({ ...prev, client_phone: maskPhone(e.target.value) }))}
                     placeholder="(74) 98113-8033"
+                    maxLength={15}
                   />
                 </div>
 

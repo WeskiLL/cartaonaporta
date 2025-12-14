@@ -48,7 +48,7 @@ export default function TrackingPage() {
   const [formData, setFormData] = useState({
     order_id: '',
     client_name: '',
-    client_email: '',
+    client_phone: '',
     tracking_code: '',
     carrier: 'correios',
   });
@@ -108,7 +108,7 @@ export default function TrackingPage() {
           order_id: formData.order_id || null,
           order_number: order?.number || null,
           client_name: formData.client_name,
-          client_email: formData.client_email || null,
+          client_phone: formData.client_phone || null,
           tracking_code: formData.tracking_code,
           carrier: formData.carrier,
           status: 'pending',
@@ -127,7 +127,7 @@ export default function TrackingPage() {
       setFormData({
         order_id: '',
         client_name: '',
-        client_email: '',
+        client_phone: '',
         tracking_code: '',
         carrier: 'correios',
       });
@@ -184,18 +184,10 @@ export default function TrackingPage() {
             : t
         ));
 
-        // Send email notification if there are new events
-        if (tracking.client_email && data.events.length > (tracking.events?.length || 0)) {
-          await supabase.functions.invoke('send-tracking-notification', {
-            body: {
-              email: tracking.client_email,
-              clientName: tracking.client_name,
-              trackingCode: tracking.tracking_code,
-              orderNumber: tracking.order_number,
-              latestEvent: data.events[0],
-            },
-          });
-          toast.success('Notificação enviada por email!');
+        // Send WhatsApp notification if there are new events
+        if ((tracking as any).client_phone && data.events.length > (tracking.events?.length || 0)) {
+          sendWhatsAppNotification(tracking, data.events[0]);
+          toast.success('Rastreio atualizado! Clique para enviar notificação via WhatsApp.');
         } else {
           toast.success('Rastreio atualizado!');
         }
@@ -213,6 +205,32 @@ export default function TrackingPage() {
     const shareLink = `${baseUrl}/rastreio/${tracking.id}`;
     navigator.clipboard.writeText(shareLink);
     toast.success('Link copiado!');
+  };
+
+  const sendWhatsAppNotification = (tracking: TrackingItem, latestEvent?: TrackingEvent) => {
+    const phone = (tracking as any).client_phone?.replace(/\D/g, '');
+    if (!phone) {
+      toast.error('Cliente não tem WhatsApp cadastrado');
+      return;
+    }
+    
+    const baseUrl = window.location.origin;
+    const shareLink = `${baseUrl}/rastreio/${tracking.id}`;
+    
+    let message = `Olá ${tracking.client_name}! 📦\n\n`;
+    message += `Atualização do seu pedido${tracking.order_number ? ` ${tracking.order_number}` : ''}:\n\n`;
+    
+    if (latestEvent) {
+      message += `📍 ${latestEvent.description}\n`;
+      if (latestEvent.location) message += `📌 ${latestEvent.location}\n`;
+      message += `🕐 ${latestEvent.date} às ${latestEvent.time}\n\n`;
+    }
+    
+    message += `Acompanhe seu pedido: ${shareLink}\n\n`;
+    message += `Prime Print - Sua marca, nossa impressão! ✨`;
+    
+    const whatsappUrl = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const getStatusBadge = (status: string) => {
@@ -272,12 +290,12 @@ export default function TrackingPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Email do Cliente (para notificações)</Label>
+                  <Label>WhatsApp do Cliente (para notificações)</Label>
                   <Input
-                    type="email"
-                    value={formData.client_email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, client_email: e.target.value }))}
-                    placeholder="cliente@email.com"
+                    type="tel"
+                    value={formData.client_phone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, client_phone: e.target.value }))}
+                    placeholder="(74) 98113-8033"
                   />
                 </div>
 

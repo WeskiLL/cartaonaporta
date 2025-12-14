@@ -41,7 +41,7 @@ const addHeader = (doc: jsPDF, company: Company | null, title: string) => {
   return 62;
 };
 
-export const exportQuoteToPDF = (quote: Quote, company: Company | null) => {
+export const generateQuotePDF = (quote: Quote, company: Company | null): jsPDF => {
   const doc = new jsPDF();
   let y = addHeader(doc, company, `Orçamento ${quote.number}`);
   
@@ -102,10 +102,15 @@ export const exportQuoteToPDF = (quote: Quote, company: Company | null) => {
   doc.setFillColor(...BRAND_ORANGE_LIGHT);
   doc.rect(0, 285, 210, 12, 'F');
   
+  return doc;
+};
+
+export const exportQuoteToPDF = (quote: Quote, company: Company | null) => {
+  const doc = generateQuotePDF(quote, company);
   doc.save(`orcamento-${quote.number}.pdf`);
 };
 
-export const exportOrderToPDF = (order: Order, company: Company | null) => {
+export const generateOrderPDF = (order: Order, company: Company | null): jsPDF => {
   const doc = new jsPDF();
   let y = addHeader(doc, company, `Pedido ${order.number}`);
   
@@ -178,15 +183,20 @@ export const exportOrderToPDF = (order: Order, company: Company | null) => {
   doc.setFillColor(...BRAND_ORANGE_LIGHT);
   doc.rect(0, 285, 210, 12, 'F');
   
+  return doc;
+};
+
+export const exportOrderToPDF = (order: Order, company: Company | null) => {
+  const doc = generateOrderPDF(order, company);
   doc.save(`pedido-${order.number}.pdf`);
 };
 
-export const exportFinancialReportToPDF = (
+export const generateFinancialReportPDF = (
   transactions: Transaction[],
   company: Company | null,
   period: { start: string; end: string },
   reportType: 'all' | 'income' | 'expense' = 'all'
-) => {
+): jsPDF => {
   const doc = new jsPDF();
   
   const titleMap = {
@@ -260,6 +270,16 @@ export const exportFinancialReportToPDF = (
   doc.setFillColor(...BRAND_ORANGE_LIGHT);
   doc.rect(0, 285, 210, 12, 'F');
   
+  return doc;
+};
+
+export const exportFinancialReportToPDF = (
+  transactions: Transaction[],
+  company: Company | null,
+  period: { start: string; end: string },
+  reportType: 'all' | 'income' | 'expense' = 'all'
+) => {
+  const doc = generateFinancialReportPDF(transactions, company, period, reportType);
   doc.save(`relatorio-${reportType === 'all' ? 'financeiro' : reportType === 'income' ? 'receitas' : 'despesas'}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
 };
 

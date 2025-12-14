@@ -27,6 +27,7 @@ const menuItems = [
   { path: '/admin/gestao/financeiro', label: 'Financeiro', icon: DollarSign },
   { path: '/admin/gestao/relatorios', label: 'Relatórios', icon: BarChart3 },
   { path: '/admin/gestao/mockups', label: 'Mockups', icon: Image },
+  { path: '/admin/gestao/usuarios', label: 'Usuários', icon: Users },
   { path: '/admin/gestao/empresa', label: 'Minha Empresa', icon: Building2 },
 ];
 

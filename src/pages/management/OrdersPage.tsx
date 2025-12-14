@@ -15,7 +15,8 @@ import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Order, Quote, OrderStatus, QuoteStatus } from '@/types/management';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { exportOrderToPDF, exportQuoteToPDF } from '@/lib/pdf-export';
+import { PdfPreviewDialog } from '@/components/management/PdfPreviewDialog';
+import { generateOrderPDF, generateQuotePDF } from '@/lib/pdf-export';
 
 const ORDER_STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
   { value: 'awaiting_payment', label: 'Aguardando Pagamento' },
@@ -44,6 +45,9 @@ export default function OrdersPage() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'quote' | 'order'>('order');
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [pdfItem, setPdfItem] = useState<Order | Quote | null>(null);
+  const [pdfType, setPdfType] = useState<'order' | 'quote'>('order');
 
   useEffect(() => {
     fetchOrders();
@@ -102,6 +106,12 @@ export default function OrdersPage() {
 
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
+  const openPdfPreview = (item: Order | Quote, type: 'order' | 'quote') => {
+    setPdfItem(item);
+    setPdfType(type);
+    setPdfPreviewOpen(true);
+  };
 
   const isLoading = loadingOrders || loadingQuotes;
 
@@ -192,7 +202,7 @@ export default function OrdersPage() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <Button variant="outline" size="icon" onClick={() => exportOrderToPDF(order, company)}>
+                        <Button variant="outline" size="icon" onClick={() => openPdfPreview(order, 'order')}>
                           <Download className="w-4 h-4" />
                         </Button>
                         <Button variant="outline" size="icon" onClick={() => { setSelectedItem(order); setDetailsOpen(true); }}>
@@ -260,7 +270,7 @@ export default function OrdersPage() {
                             Converter
                           </Button>
                         )}
-                        <Button variant="outline" size="icon" onClick={() => exportQuoteToPDF(quote, company)}>
+                        <Button variant="outline" size="icon" onClick={() => openPdfPreview(quote, 'quote')}>
                           <Download className="w-4 h-4" />
                         </Button>
                         <Button variant="outline" size="icon" onClick={() => { setSelectedItem(quote); setDetailsOpen(true); }}>
@@ -331,6 +341,19 @@ export default function OrdersPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* PDF Preview */}
+      <PdfPreviewDialog
+        open={pdfPreviewOpen}
+        onOpenChange={setPdfPreviewOpen}
+        title={pdfItem ? (pdfType === 'order' ? `Pedido ${(pdfItem as Order).number}` : `Orçamento ${(pdfItem as Quote).number}`) : ''}
+        generatePdf={() => {
+          if (!pdfItem) return new (require('jspdf').default)();
+          return pdfType === 'order' 
+            ? generateOrderPDF(pdfItem as Order, company)
+            : generateQuotePDF(pdfItem as Quote, company);
+        }}
+      />
     </ManagementLayout>
   );
 }

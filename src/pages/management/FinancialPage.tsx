@@ -11,18 +11,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { DollarSign, TrendingUp, TrendingDown, Plus, Trash2, Loader2, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { DollarSign, TrendingUp, TrendingDown, Plus, Trash2, Loader2, ArrowUpCircle, ArrowDownCircle, FileText, Calendar } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Transaction, TransactionType } from '@/types/management';
 import { maskCurrency, unmask } from '@/lib/masks';
+import { exportFinancialReportToPDF } from '@/lib/pdf-export';
 
 const INCOME_CATEGORIES = ['Vendas', 'Serviços', 'Outros'];
 const EXPENSE_CATEGORIES = ['Material', 'Frete', 'Marketing', 'Salários', 'Aluguel', 'Impostos', 'Outros'];
 
 export default function FinancialPage() {
-  const { transactions, loadingTransactions, fetchTransactions, addTransaction, deleteTransaction } = useManagement();
+  const { transactions, loadingTransactions, fetchTransactions, addTransaction, deleteTransaction, company } = useManagement();
   const [activeTab, setActiveTab] = useState<'all' | 'income' | 'expense'>('all');
   const [formOpen, setFormOpen] = useState(false);
   const [formType, setFormType] = useState<TransactionType>('income');
@@ -33,6 +34,12 @@ export default function FinancialPage() {
     date: format(new Date(), 'yyyy-MM-dd'),
     notes: '',
   });
+  
+  // Report filters
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportType, setReportType] = useState<'all' | 'income' | 'expense'>('all');
+  const [reportStartDate, setReportStartDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+  const [reportEndDate, setReportEndDate] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
 
   useEffect(() => {
     fetchTransactions();
@@ -91,6 +98,32 @@ export default function FinancialPage() {
     }
   };
 
+  const handleGenerateReport = () => {
+    // Filter transactions by date range
+    const start = parseISO(reportStartDate);
+    const end = parseISO(reportEndDate);
+    
+    const filteredByDate = transactions.filter(t => {
+      const date = parseISO(t.date);
+      return isWithinInterval(date, { start, end });
+    });
+    
+    if (filteredByDate.length === 0) {
+      toast.error('Nenhuma transação encontrada no período selecionado');
+      return;
+    }
+    
+    exportFinancialReportToPDF(
+      filteredByDate,
+      company,
+      { start: reportStartDate, end: reportEndDate },
+      reportType
+    );
+    
+    toast.success('Relatório gerado com sucesso!');
+    setReportOpen(false);
+  };
+
   return (
     <ManagementLayout>
       <PageHeader
@@ -98,6 +131,10 @@ export default function FinancialPage() {
         description="Controle de receitas e despesas"
         actions={
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setReportOpen(true)}>
+              <FileText className="w-4 h-4 mr-2" />
+              Gerar Relatório
+            </Button>
             <Button variant="outline" onClick={() => openNewTransaction('expense')}>
               <ArrowDownCircle className="w-4 h-4 mr-2" />
               Nova Despesa
@@ -260,6 +297,62 @@ export default function FinancialPage() {
               <Button type="submit">Adicionar</Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Report Generator Dialog */}
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              Gerar Relatório Financeiro
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Tipo de Relatório</Label>
+              <Select value={reportType} onValueChange={(v) => setReportType(v as typeof reportType)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Completo (Receitas e Despesas)</SelectItem>
+                  <SelectItem value="income">Apenas Receitas</SelectItem>
+                  <SelectItem value="expense">Apenas Despesas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Data Inicial</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={reportStartDate}
+                  onChange={(e) => setReportStartDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endDate">Data Final</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={reportEndDate}
+                  onChange={(e) => setReportEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => setReportOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleGenerateReport}>
+                <FileText className="w-4 h-4 mr-2" />
+                Gerar PDF
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </ManagementLayout>

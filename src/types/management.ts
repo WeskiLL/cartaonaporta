@@ -64,7 +64,7 @@ export interface Quote {
 }
 
 export interface DeliveryAddress {
-  zipCode: string;
+  zip_code: string;
   street: string;
   number: string;
   complement?: string;

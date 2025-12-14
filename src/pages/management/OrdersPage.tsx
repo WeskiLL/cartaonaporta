@@ -127,14 +127,14 @@ export default function OrdersPage() {
         title="Pedidos & Orçamentos"
         description="Gerencie pedidos e orçamentos"
         actions={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => openNewForm('quote')}>
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Orçamento
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={() => openNewForm('quote')}>
+              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              Orçamento
             </Button>
-            <Button onClick={() => openNewForm('order')}>
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Pedido
+            <Button size="sm" className="text-xs sm:text-sm" onClick={() => openNewForm('order')}>
+              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              Pedido
             </Button>
           </div>
         }
@@ -153,13 +153,13 @@ export default function OrdersPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="orders" className="gap-2">
-            <Package className="w-4 h-4" />
+        <TabsList className="mb-4 sm:mb-6 w-full sm:w-auto">
+          <TabsTrigger value="orders" className="gap-1.5 sm:gap-2 flex-1 sm:flex-none text-xs sm:text-sm">
+            <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             Pedidos ({orders.length})
           </TabsTrigger>
-          <TabsTrigger value="quotes" className="gap-2">
-            <FileText className="w-4 h-4" />
+          <TabsTrigger value="quotes" className="gap-1.5 sm:gap-2 flex-1 sm:flex-none text-xs sm:text-sm">
+            <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             Orçamentos ({quotes.length})
           </TabsTrigger>
         </TabsList>
@@ -176,30 +176,32 @@ export default function OrdersPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-3 sm:gap-4">
               {filteredOrders.map(order => (
                 <Card key={order.id}>
-                  <CardContent className="p-4">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex flex-col gap-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="font-semibold text-foreground">{order.number}</span>
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <span className="font-semibold text-foreground text-sm sm:text-base">{order.number}</span>
                           <StatusBadge status={order.status} type="order" />
                         </div>
-                        <p className="text-sm text-muted-foreground">{order.client_name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(order.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                        </p>
-                        <p className="text-sm font-medium text-primary mt-1">
-                          {formatCurrency(order.total)}
-                        </p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">{order.client_name}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-xs sm:text-sm text-muted-foreground">
+                            {format(new Date(order.created_at), "dd/MM/yy", { locale: ptBR })}
+                          </p>
+                          <p className="text-sm sm:text-base font-medium text-primary">
+                            {formatCurrency(order.total)}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <Select
                           value={order.status}
                           onValueChange={(value) => handleOrderStatusChange(order.id, value as OrderStatus)}
                         >
-                          <SelectTrigger className="w-[180px]">
+                          <SelectTrigger className="w-full sm:w-[180px] text-xs sm:text-sm h-9">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -208,15 +210,17 @@ export default function OrdersPage() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <Button variant="outline" size="icon" onClick={() => openPdfPreview(order, 'order')}>
-                          <Download className="w-4 h-4" />
-                        </Button>
-                        <Button variant="outline" size="icon" onClick={() => { setSelectedItem(order); setDetailsOpen(true); }}>
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button variant="outline" size="icon" className="text-destructive" onClick={() => handleDeleteOrder(order.id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center gap-1.5 ml-auto sm:ml-0">
+                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => openPdfPreview(order, 'order')}>
+                            <Download className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { setSelectedItem(order); setDetailsOpen(true); }}>
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button variant="outline" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteOrder(order.id)}>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -238,30 +242,32 @@ export default function OrdersPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-3 sm:gap-4">
               {filteredQuotes.map(quote => (
                 <Card key={quote.id}>
-                  <CardContent className="p-4">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex flex-col gap-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="font-semibold text-foreground">{quote.number}</span>
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <span className="font-semibold text-foreground text-sm sm:text-base">{quote.number}</span>
                           <StatusBadge status={quote.status} type="quote" />
                         </div>
-                        <p className="text-sm text-muted-foreground">{quote.client_name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(quote.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                        </p>
-                        <p className="text-sm font-medium text-primary mt-1">
-                          {formatCurrency(quote.total)}
-                        </p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">{quote.client_name}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-xs sm:text-sm text-muted-foreground">
+                            {format(new Date(quote.created_at), "dd/MM/yy", { locale: ptBR })}
+                          </p>
+                          <p className="text-sm sm:text-base font-medium text-primary">
+                            {formatCurrency(quote.total)}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <Select
                           value={quote.status}
                           onValueChange={(value) => handleQuoteStatusChange(quote.id, value as QuoteStatus)}
                         >
-                          <SelectTrigger className="w-[160px]">
+                          <SelectTrigger className="w-full sm:w-[160px] text-xs sm:text-sm h-9">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -270,21 +276,23 @@ export default function OrdersPage() {
                             ))}
                           </SelectContent>
                         </Select>
-                        {quote.status === 'approved' && (
-                          <Button variant="outline" size="sm" onClick={() => handleConvertQuote(quote.id)}>
-                            <ArrowRightLeft className="w-4 h-4 mr-1" />
-                            Converter
+                        <div className="flex items-center gap-1.5 ml-auto sm:ml-0">
+                          {quote.status === 'approved' && (
+                            <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => handleConvertQuote(quote.id)}>
+                              <ArrowRightLeft className="w-3.5 h-3.5 mr-1" />
+                              Converter
+                            </Button>
+                          )}
+                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => openPdfPreview(quote, 'quote')}>
+                            <Download className="w-3.5 h-3.5" />
                           </Button>
-                        )}
-                        <Button variant="outline" size="icon" onClick={() => openPdfPreview(quote, 'quote')}>
-                          <Download className="w-4 h-4" />
-                        </Button>
-                        <Button variant="outline" size="icon" onClick={() => { setSelectedItem(quote); setDetailsOpen(true); }}>
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button variant="outline" size="icon" className="text-destructive" onClick={() => handleDeleteQuote(quote.id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { setSelectedItem(quote); setDetailsOpen(true); }}>
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button variant="outline" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteQuote(quote.id)}>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </CardContent>

@@ -130,18 +130,18 @@ export default function FinancialPage() {
         title="Financeiro"
         description="Controle de receitas e despesas"
         actions={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setReportOpen(true)}>
-              <FileText className="w-4 h-4 mr-2" />
-              Gerar Relatório
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={() => setReportOpen(true)}>
+              <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Gerar</span> Relatório
             </Button>
-            <Button variant="outline" onClick={() => openNewTransaction('expense')}>
-              <ArrowDownCircle className="w-4 h-4 mr-2" />
-              Nova Despesa
+            <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={() => openNewTransaction('expense')}>
+              <ArrowDownCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              Despesa
             </Button>
-            <Button onClick={() => openNewTransaction('income')}>
-              <ArrowUpCircle className="w-4 h-4 mr-2" />
-              Nova Receita
+            <Button size="sm" className="text-xs sm:text-sm" onClick={() => openNewTransaction('income')}>
+              <ArrowUpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              Receita
             </Button>
           </div>
         }
@@ -192,27 +192,30 @@ export default function FinancialPage() {
             <div className="space-y-2">
               {filteredTransactions.map(transaction => (
                 <Card key={transaction.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className={`p-2 rounded-full ${transaction.type === 'income' ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex items-start sm:items-center justify-between gap-2">
+                      <div className="flex items-start sm:items-center gap-2 sm:gap-4 flex-1 min-w-0">
+                        <div className={`p-1.5 sm:p-2 rounded-full shrink-0 ${transaction.type === 'income' ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
                           {transaction.type === 'income' 
-                            ? <ArrowUpCircle className="w-5 h-5 text-green-500" />
-                            : <ArrowDownCircle className="w-5 h-5 text-red-500" />
+                            ? <ArrowUpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
+                            : <ArrowDownCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />
                           }
                         </div>
-                        <div>
-                          <p className="font-medium text-foreground">{transaction.description}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {transaction.category} • {format(new Date(transaction.date), "dd/MM/yyyy", { locale: ptBR })}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-foreground text-sm sm:text-base truncate">{transaction.description}</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">
+                            {transaction.category} • {format(new Date(transaction.date), "dd/MM/yy", { locale: ptBR })}
                           </p>
+                          <span className={`sm:hidden text-sm font-semibold ${transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}`}>
+                            {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
+                          </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span className={`font-semibold ${transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}`}>
+                      <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                        <span className={`hidden sm:block font-semibold ${transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}`}>
                           {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
                         </span>
-                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(transaction.id)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(transaction.id)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>

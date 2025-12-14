@@ -363,72 +363,77 @@ export default function TrackingPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-3 sm:gap-4">
           {trackings.map(tracking => (
             <Card key={tracking.id}>
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Truck className="w-5 h-5 text-primary" />
-                      <span className="font-mono tracking-wider text-primary font-bold">
-                        {tracking.tracking_code}
-                      </span>
-                      {getStatusBadge(tracking.status)}
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {tracking.client_name}
-                      {tracking.order_number && ` • ${tracking.order_number}`}
-                    </p>
+              <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Truck className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
+                        <span className="font-mono text-xs sm:text-sm tracking-wider text-primary font-bold break-all">
+                          {tracking.tracking_code}
+                        </span>
+                        {getStatusBadge(tracking.status)}
+                      </div>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                        {tracking.client_name}
+                        {tracking.order_number && ` • ${tracking.order_number}`}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <Button
                       variant="outline"
                       size="icon"
+                      className="h-8 w-8"
                       onClick={() => handleRefresh(tracking)}
                       disabled={refreshing === tracking.id}
                     >
-                      <RefreshCw className={`w-4 h-4 ${refreshing === tracking.id ? 'animate-spin' : ''}`} />
+                      <RefreshCw className={`w-3.5 h-3.5 ${refreshing === tracking.id ? 'animate-spin' : ''}`} />
                     </Button>
                     <Button
                       variant="outline"
                       size="icon"
+                      className="h-8 w-8 text-green-600 hover:text-green-700"
                       onClick={() => sendWhatsAppNotification(tracking, tracking.events?.[0])}
                       title="Enviar WhatsApp"
-                      className="text-green-600 hover:text-green-700"
                     >
-                      <MessageCircle className="w-4 h-4" />
+                      <MessageCircle className="w-3.5 h-3.5" />
                     </Button>
                     <Button
                       variant="outline"
                       size="icon"
+                      className="h-8 w-8"
                       onClick={() => copyShareLink(tracking)}
                     >
-                      <Copy className="w-4 h-4" />
+                      <Copy className="w-3.5 h-3.5" />
                     </Button>
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => window.open(`/rastreio/${tracking.id}`, '_blank')}
+                      className="h-8 w-8"
+                      onClick={() => window.open(`/rastreio/${tracking.tracking_code}`, '_blank')}
                     >
-                      <ExternalLink className="w-4 h-4" />
+                      <ExternalLink className="w-3.5 h-3.5" />
                     </Button>
                     <Button
                       variant="outline"
                       size="icon"
-                      className="text-destructive"
+                      className="h-8 w-8 text-destructive"
                       onClick={() => handleDelete(tracking.id)}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
                 {tracking.events && tracking.events.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     {tracking.events.slice(0, 3).map((event, idx) => (
-                      <div key={idx} className="flex gap-3 text-sm">
+                      <div key={idx} className="flex flex-col sm:flex-row gap-1 sm:gap-3 text-xs sm:text-sm">
                         <div className="text-muted-foreground whitespace-nowrap">
                           {event.date} {event.time}
                         </div>
@@ -441,18 +446,18 @@ export default function TrackingPage() {
                       </div>
                     ))}
                     {tracking.events.length > 3 && (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         + {tracking.events.length - 3} eventos anteriores
                       </p>
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Nenhum evento registrado. Clique em atualizar para buscar informações.
                   </p>
                 )}
                 {tracking.last_update && (
-                  <p className="text-xs text-muted-foreground mt-3">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-2 sm:mt-3">
                     Última atualização: {format(new Date(tracking.last_update), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                   </p>
                 )}

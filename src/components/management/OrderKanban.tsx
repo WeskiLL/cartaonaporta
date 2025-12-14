@@ -1,24 +1,15 @@
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Badge } from '@/components/ui/badge';
 import { Order } from '@/types/management';
 import { maskCurrency } from '@/lib/masks';
-import { 
-  Clock, 
-  Palette, 
-  Factory, 
-  Truck, 
-  CheckCircle,
-  Package,
-  GripVertical
-} from 'lucide-react';
-import { format } from 'date-fns';
+import { GripVertical, Eye } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const ORDER_STATUSES = [
-  { id: 'awaiting_payment', label: 'Aguardando Pagamento', icon: Clock, color: 'bg-amber-500', borderColor: 'border-amber-500' },
-  { id: 'creating_art', label: 'Criando Arte', icon: Palette, color: 'bg-blue-500', borderColor: 'border-blue-500' },
-  { id: 'production', label: 'Em Produção', icon: Factory, color: 'bg-purple-500', borderColor: 'border-purple-500' },
-  { id: 'shipping', label: 'Em Transporte', icon: Truck, color: 'bg-orange-500', borderColor: 'border-orange-500' },
-  { id: 'delivered', label: 'Entregue', icon: CheckCircle, color: 'bg-green-500', borderColor: 'border-green-500' },
+  { id: 'awaiting_payment', label: 'Aguardando Pagamento', color: 'bg-amber-500' },
+  { id: 'creating_art', label: 'Criando Arte', color: 'bg-blue-500' },
+  { id: 'production', label: 'Em Produção', color: 'bg-orange-500' },
+  { id: 'shipping', label: 'Em Transporte', color: 'bg-emerald-500' },
+  { id: 'delivered', label: 'Entregue', color: 'bg-green-500' },
 ] as const;
 
 type OrderStatus = typeof ORDER_STATUSES[number]['id'];
@@ -26,9 +17,10 @@ type OrderStatus = typeof ORDER_STATUSES[number]['id'];
 interface OrderKanbanProps {
   orders: Order[];
   onStatusChange: (orderId: string, newStatus: OrderStatus, addRevenue: boolean) => Promise<void>;
+  onViewOrder?: (order: Order) => void;
 }
 
-export function OrderKanban({ orders, onStatusChange }: OrderKanbanProps) {
+export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanbanProps) {
   const getOrdersByStatus = (status: OrderStatus) => 
     orders.filter(order => order.status === status);
 
@@ -49,91 +41,99 @@ export function OrderKanban({ orders, onStatusChange }: OrderKanbanProps) {
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
+      {/* Status tabs header */}
+      <div className="flex items-center gap-6 mb-4 border-b pb-3">
+        {ORDER_STATUSES.map((status) => {
+          const count = getOrdersByStatus(status.id).length;
+          return (
+            <div key={status.id} className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${status.color}`} />
+              <span className="text-sm font-medium text-foreground">{status.label}</span>
+              <span className="text-sm text-muted-foreground">{count}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Kanban columns */}
       <div className="flex gap-4 overflow-x-auto pb-4">
         {ORDER_STATUSES.map((status) => {
-          const StatusIcon = status.icon;
           const statusOrders = getOrdersByStatus(status.id);
           
           return (
-            <div key={status.id} className="flex flex-col min-w-[240px] w-[240px]">
-              {/* Column Header */}
-              <div className={`flex items-center gap-2 p-3 rounded-t-xl ${status.color} text-white shadow-sm`}>
-                <StatusIcon className="h-5 w-5" />
-                <span className="text-sm font-semibold truncate">{status.label}</span>
-                <Badge variant="secondary" className="ml-auto bg-white/20 text-white text-xs px-2">
-                  {statusOrders.length}
-                </Badge>
-              </div>
-              
-              {/* Droppable Area */}
-              <Droppable droppableId={status.id}>
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={`flex-1 min-h-[300px] max-h-[500px] overflow-y-auto p-2 rounded-b-xl border-2 border-t-0 space-y-2 transition-all duration-200 ${
-                      snapshot.isDraggingOver 
-                        ? `${status.borderColor} bg-muted/70 scale-[1.02]` 
-                        : 'border-border bg-muted/30'
-                    }`}
-                  >
-                    {statusOrders.map((order, index) => (
-                      <Draggable key={order.id} draggableId={order.id} index={index}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            className={`group p-3 rounded-lg border bg-card shadow-sm cursor-grab active:cursor-grabbing transition-all duration-200 ${
-                              snapshot.isDragging 
-                                ? 'shadow-xl scale-105 rotate-2 border-primary z-50' 
-                                : 'hover:shadow-md hover:border-primary/50'
-                            }`}
-                          >
-                            <div className="flex items-start gap-2">
-                              <div 
-                                {...provided.dragHandleProps}
-                                className="mt-1 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <GripVertical className="h-4 w-4" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Package className="h-3.5 w-3.5 text-primary" />
-                                  <span className="text-xs font-bold text-primary">{order.number}</span>
+            <Droppable key={status.id} droppableId={status.id}>
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className={`flex-1 min-w-[200px] min-h-[200px] p-2 rounded-lg transition-colors ${
+                    snapshot.isDraggingOver 
+                      ? 'bg-muted/50' 
+                      : 'bg-transparent'
+                  }`}
+                >
+                  {statusOrders.length === 0 ? (
+                    <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+                      Nenhum pedido
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {statusOrders.map((order, index) => (
+                        <Draggable key={order.id} draggableId={order.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className={`bg-card border rounded-lg p-3 cursor-grab active:cursor-grabbing transition-all ${
+                                snapshot.isDragging 
+                                  ? 'shadow-lg scale-105 rotate-1' 
+                                  : 'hover:shadow-md'
+                              }`}
+                            >
+                              <div className="flex items-start gap-2">
+                                <div 
+                                  {...provided.dragHandleProps}
+                                  className="mt-1 text-muted-foreground"
+                                >
+                                  <GripVertical className="h-4 w-4" />
                                 </div>
-                                <p className="text-sm font-medium text-foreground truncate mb-1">
-                                  {order.client_name}
-                                </p>
-                                <div className="flex items-center justify-between">
-                                  <p className="text-sm font-bold text-green-600">
-                                    {maskCurrency(Number(order.total))}
-                                  </p>
-                                  <span className="text-[10px] text-muted-foreground">
-                                    {format(new Date(order.created_at), 'dd/MM')}
-                                  </span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-bold text-sm text-foreground">
+                                    {order.number}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground truncate">
+                                    {order.client_name}
+                                  </div>
+                                  <div className="flex items-center justify-between mt-2">
+                                    <span className="text-sm font-bold text-primary">
+                                      {maskCurrency(Number(order.total))}
+                                    </span>
+                                    {onViewOrder && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 px-2 text-xs text-muted-foreground hover:text-primary"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onViewOrder(order);
+                                        }}
+                                      >
+                                        Ver
+                                      </Button>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                    
-                    {statusOrders.length === 0 && (
-                      <div className={`flex flex-col items-center justify-center h-32 text-center p-4 rounded-lg border-2 border-dashed transition-colors ${
-                        snapshot.isDraggingOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/20'
-                      }`}>
-                        <StatusIcon className={`h-8 w-8 mb-2 ${snapshot.isDraggingOver ? 'text-primary' : 'text-muted-foreground/40'}`} />
-                        <span className={`text-xs ${snapshot.isDraggingOver ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
-                          {snapshot.isDraggingOver ? 'Solte aqui!' : 'Arraste pedidos aqui'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </Droppable>
-            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                    </div>
+                  )}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
           );
         })}
       </div>

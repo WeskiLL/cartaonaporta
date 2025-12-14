@@ -8,7 +8,7 @@ interface PdfPreviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  generatePdf: () => jsPDF;
+  generatePdf: () => jsPDF | Promise<jsPDF>;
 }
 
 export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf }: PdfPreviewDialogProps) {
@@ -19,17 +19,20 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf }: Pdf
   useEffect(() => {
     if (open) {
       setLoading(true);
-      try {
-        const pdfDoc = generatePdf();
-        setDoc(pdfDoc);
-        const blob = pdfDoc.output('blob');
-        const url = URL.createObjectURL(blob);
-        setPdfUrl(url);
-      } catch (error) {
-        console.error('Error generating PDF preview:', error);
-      } finally {
-        setLoading(false);
-      }
+      const generate = async () => {
+        try {
+          const pdfDoc = await generatePdf();
+          setDoc(pdfDoc);
+          const blob = pdfDoc.output('blob');
+          const url = URL.createObjectURL(blob);
+          setPdfUrl(url);
+        } catch (error) {
+          console.error('Error generating PDF preview:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      generate();
     } else {
       if (pdfUrl) {
         URL.revokeObjectURL(pdfUrl);

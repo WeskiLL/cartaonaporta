@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Quote, Order, Transaction, Company, DeliveryAddress } from '@/types/management';
+import { Quote, Order, Transaction, Company, DeliveryAddress, Client } from '@/types/management';
 
 // Brand colors
 const BRAND_ORANGE = [232, 86, 22] as [number, number, number]; // #e85616
@@ -14,58 +14,167 @@ const formatCurrency = (value: number) =>
 const formatDate = (date: string) =>
   format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
 
-// Helper to add company header with brand colors
-const addHeader = (doc: jsPDF, company: Company | null, title: string) => {
+// Helper to add company header with logo and complete data
+const addHeader = async (doc: jsPDF, company: Company | null, title: string): Promise<number> => {
   // Orange header bar
   doc.setFillColor(...BRAND_ORANGE);
   doc.rect(0, 0, 210, 8, 'F');
   
-  doc.setFontSize(18);
+  let startY = 15;
+  
+  // Add company logo if available
+  if (company?.logo_url) {
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => {
+          // Calculate proportional dimensions (max height 25mm)
+          const maxHeight = 25;
+          const maxWidth = 50;
+          let width = img.width;
+          let height = img.height;
+          
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+          
+          doc.addImage(img, 'PNG', 14, startY, width, height);
+          resolve();
+        };
+        img.onerror = () => reject();
+        img.src = company.logo_url!;
+      });
+      
+      startY += 30;
+    } catch {
+      // If logo fails, continue without it
+    }
+  }
+  
+  // Company name
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...BRAND_ORANGE);
-  doc.text(company?.name || 'Empresa', 14, 22);
+  doc.text(company?.name || 'Empresa', 14, startY);
   
-  doc.setFontSize(10);
+  // Company details
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 100, 100);
-  if (company?.cnpj) doc.text(`CNPJ: ${company.cnpj}`, 14, 30);
-  if (company?.phone) doc.text(`Tel: ${company.phone}`, 14, 36);
-  if (company?.email) doc.text(`Email: ${company.email}`, 14, 42);
+  doc.setTextColor(80, 80, 80);
   
+  let detailY = startY + 6;
+  
+  if (company?.cnpj) {
+    doc.text(`CNPJ: ${company.cnpj}`, 14, detailY);
+    detailY += 4;
+  }
+  if (company?.phone) {
+    doc.text(`Tel: ${company.phone}`, 14, detailY);
+    detailY += 4;
+  }
+  if (company?.email) {
+    doc.text(`Email: ${company.email}`, 14, detailY);
+    detailY += 4;
+  }
+  if (company?.address) {
+    const fullAddress = [
+      company.address,
+      company.city,
+      company.state,
+      company.zip_code
+    ].filter(Boolean).join(' - ');
+    doc.text(fullAddress, 14, detailY);
+    detailY += 4;
+  }
+  if (company?.website) {
+    doc.text(company.website, 14, detailY);
+    detailY += 4;
+  }
+  
+  // Document title
+  detailY += 6;
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...BRAND_ORANGE);
-  doc.text(title, 14, 57);
+  doc.text(title, 14, detailY);
   
   doc.setTextColor(0, 0, 0);
-  return 62;
+  return detailY + 8;
 };
 
-export const generateQuotePDF = (quote: Quote, company: Company | null): jsPDF => {
-  const doc = new jsPDF();
-  let y = addHeader(doc, company, `Orçamento ${quote.number}`);
-  
-  // Quote info
+// Helper to add client info section
+const addClientInfo = (doc: jsPDF, client: Client | null, clientName: string, y: number): number => {
   doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...BRAND_ORANGE);
+  doc.text('Dados do Cliente', 14, y);
+  
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(60, 60, 60);
-  doc.text(`Cliente: ${quote.client_name}`, 14, y);
-  doc.text(`Data: ${formatDate(quote.created_at)}`, 14, y + 6);
-  if (quote.valid_until) {
-    doc.text(`Válido até: ${formatDate(quote.valid_until)}`, 14, y + 12);
+  doc.setFontSize(9);
+  
+  y += 6;
+  doc.text(`Nome: ${client?.name || clientName}`, 14, y);
+  
+  if (client?.document) {
+    y += 4;
+    doc.text(`CPF/CNPJ: ${client.document}`, 14, y);
+  }
+  if (client?.phone) {
+    y += 4;
+    doc.text(`Telefone: ${client.phone}`, 14, y);
+  }
+  if (client?.email) {
+    y += 4;
+    doc.text(`Email: ${client.email}`, 14, y);
+  }
+  if (client?.address) {
+    y += 4;
+    const fullAddress = [
+      client.address,
+      client.city,
+      client.state,
+      client.zip_code
+    ].filter(Boolean).join(' - ');
+    doc.text(`Endereço: ${fullAddress}`, 14, y);
   }
   
-  y += 25;
+  return y + 8;
+};
+
+export const generateQuotePDF = async (quote: Quote, company: Company | null, client?: Client | null): Promise<jsPDF> => {
+  const doc = new jsPDF();
+  let y = await addHeader(doc, company, `Orçamento ${quote.number}`);
   
-  // Items table with brand colors
+  // Client info
+  y = addClientInfo(doc, client || null, quote.client_name, y);
+  
+  // Quote dates
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(60, 60, 60);
+  doc.text(`Data: ${formatDate(quote.created_at)}`, 14, y);
+  if (quote.valid_until) {
+    doc.text(`Válido até: ${formatDate(quote.valid_until)}`, 80, y);
+  }
+  
+  y += 10;
+  
+  // Items table - using total price per item (not unit price)
   if (quote.items && quote.items.length > 0) {
     autoTable(doc, {
       startY: y,
-      head: [['Produto', 'Qtd', 'Valor Unit.', 'Total']],
+      head: [['Produto', 'Qtd', 'Valor']],
       body: quote.items.map(item => [
         item.product_name,
         item.quantity.toString(),
-        formatCurrency(item.unit_price),
         formatCurrency(item.total),
       ]),
       theme: 'grid',
@@ -105,58 +214,58 @@ export const generateQuotePDF = (quote: Quote, company: Company | null): jsPDF =
   return doc;
 };
 
-export const exportQuoteToPDF = (quote: Quote, company: Company | null) => {
-  const doc = generateQuotePDF(quote, company);
+export const exportQuoteToPDF = async (quote: Quote, company: Company | null, client?: Client | null) => {
+  const doc = await generateQuotePDF(quote, company, client);
   doc.save(`orcamento-${quote.number}.pdf`);
 };
 
-export const generateOrderPDF = (order: Order, company: Company | null): jsPDF => {
+export const generateOrderPDF = async (order: Order, company: Company | null, client?: Client | null): Promise<jsPDF> => {
   const doc = new jsPDF();
-  let y = addHeader(doc, company, `Pedido ${order.number}`);
+  let y = await addHeader(doc, company, `Pedido ${order.number}`);
+  
+  // Client info
+  y = addClientInfo(doc, client || null, order.client_name, y);
   
   // Order info
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(60, 60, 60);
-  doc.text(`Cliente: ${order.client_name}`, 14, y);
-  doc.text(`Data: ${formatDate(order.created_at)}`, 14, y + 6);
-  doc.text(`Status: ${getOrderStatusLabel(order.status)}`, 14, y + 12);
+  doc.text(`Data: ${formatDate(order.created_at)}`, 14, y);
+  doc.text(`Status: ${getOrderStatusLabel(order.status)}`, 80, y);
   
-  y += 20;
+  y += 8;
   
   // Delivery address if exists
   if (order.delivery_address) {
     const addr = order.delivery_address as unknown as DeliveryAddress;
-    y += 5;
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...BRAND_ORANGE);
     doc.text('Endereço de Entrega:', 14, y);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(60, 60, 60);
-    y += 6;
-    doc.text(`${addr.street || ''}${addr.number ? ', ' + addr.number : ''}`, 14, y);
     y += 5;
+    doc.text(`${addr.street || ''}${addr.number ? ', ' + addr.number : ''}`, 14, y);
+    y += 4;
     if (addr.complement) {
       doc.text(addr.complement, 14, y);
-      y += 5;
+      y += 4;
     }
     doc.text(`${addr.neighborhood || ''} - ${addr.city || ''}/${addr.state || ''}`, 14, y);
-    y += 5;
+    y += 4;
     doc.text(`CEP: ${addr.zip_code || ''}`, 14, y);
-    y += 10;
+    y += 8;
   }
   
-  y += 5;
+  y += 4;
   
-  // Items table
+  // Items table - using total price per item (not unit price)
   if (order.items && order.items.length > 0) {
     autoTable(doc, {
       startY: y,
-      head: [['Produto', 'Qtd', 'Valor Unit.', 'Total']],
+      head: [['Produto', 'Qtd', 'Valor']],
       body: order.items.map(item => [
         item.product_name,
         item.quantity.toString(),
-        formatCurrency(item.unit_price),
         formatCurrency(item.total),
       ]),
       theme: 'grid',
@@ -179,6 +288,16 @@ export const generateOrderPDF = (order: Order, company: Company | null): jsPDF =
   doc.setTextColor(...BRAND_ORANGE);
   doc.text(`Total: ${formatCurrency(order.total)}`, 140, y + 6, { align: 'left' });
   
+  // Notes
+  if (order.notes) {
+    y += 20;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Observações:', 14, y);
+    doc.text(order.notes, 14, y + 5);
+  }
+  
   // Footer bar
   doc.setFillColor(...BRAND_ORANGE_LIGHT);
   doc.rect(0, 285, 210, 12, 'F');
@@ -186,17 +305,17 @@ export const generateOrderPDF = (order: Order, company: Company | null): jsPDF =
   return doc;
 };
 
-export const exportOrderToPDF = (order: Order, company: Company | null) => {
-  const doc = generateOrderPDF(order, company);
+export const exportOrderToPDF = async (order: Order, company: Company | null, client?: Client | null) => {
+  const doc = await generateOrderPDF(order, company, client);
   doc.save(`pedido-${order.number}.pdf`);
 };
 
-export const generateFinancialReportPDF = (
+export const generateFinancialReportPDF = async (
   transactions: Transaction[],
   company: Company | null,
   period: { start: string; end: string },
   reportType: 'all' | 'income' | 'expense' = 'all'
-): jsPDF => {
+): Promise<jsPDF> => {
   const doc = new jsPDF();
   
   const titleMap = {
@@ -205,7 +324,7 @@ export const generateFinancialReportPDF = (
     expense: 'Relatório de Despesas',
   };
   
-  let y = addHeader(doc, company, titleMap[reportType]);
+  let y = await addHeader(doc, company, titleMap[reportType]);
   
   // Period
   doc.setFontSize(10);
@@ -273,13 +392,13 @@ export const generateFinancialReportPDF = (
   return doc;
 };
 
-export const exportFinancialReportToPDF = (
+export const exportFinancialReportToPDF = async (
   transactions: Transaction[],
   company: Company | null,
   period: { start: string; end: string },
   reportType: 'all' | 'income' | 'expense' = 'all'
 ) => {
-  const doc = generateFinancialReportPDF(transactions, company, period, reportType);
+  const doc = await generateFinancialReportPDF(transactions, company, period, reportType);
   doc.save(`relatorio-${reportType === 'all' ? 'financeiro' : reportType === 'income' ? 'receitas' : 'despesas'}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
 };
 

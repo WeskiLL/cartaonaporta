@@ -35,8 +35,8 @@ const QUOTE_STATUS_OPTIONS: { value: QuoteStatus; label: string }[] = [
 
 export default function OrdersPage() {
   const { 
-    orders, quotes, loadingOrders, loadingQuotes, company,
-    fetchOrders, fetchQuotes, updateOrder, updateQuote, 
+    orders, quotes, clients, loadingOrders, loadingQuotes, company,
+    fetchOrders, fetchQuotes, fetchClients, updateOrder, updateQuote, 
     deleteOrder, deleteQuote, convertQuoteToOrder 
   } = useManagement();
   const [search, setSearch] = useState('');
@@ -52,7 +52,13 @@ export default function OrdersPage() {
   useEffect(() => {
     fetchOrders();
     fetchQuotes();
-  }, [fetchOrders, fetchQuotes]);
+    fetchClients();
+  }, [fetchOrders, fetchQuotes, fetchClients]);
+
+  const getClientById = (clientId?: string) => {
+    if (!clientId) return null;
+    return clients.find(c => c.id === clientId) || null;
+  };
 
   const filteredOrders = orders.filter(order => 
     order.number.toLowerCase().includes(search.toLowerCase()) ||
@@ -347,11 +353,15 @@ export default function OrdersPage() {
         open={pdfPreviewOpen}
         onOpenChange={setPdfPreviewOpen}
         title={pdfItem ? (pdfType === 'order' ? `Pedido ${(pdfItem as Order).number}` : `Orçamento ${(pdfItem as Quote).number}`) : ''}
-        generatePdf={() => {
-          if (!pdfItem) return new (require('jspdf').default)();
+        generatePdf={async () => {
+          if (!pdfItem) {
+            const jsPDF = (await import('jspdf')).default;
+            return new jsPDF();
+          }
+          const client = getClientById(pdfItem.client_id);
           return pdfType === 'order' 
-            ? generateOrderPDF(pdfItem as Order, company)
-            : generateQuotePDF(pdfItem as Quote, company);
+            ? generateOrderPDF(pdfItem as Order, company, client)
+            : generateQuotePDF(pdfItem as Quote, company, client);
         }}
       />
     </ManagementLayout>

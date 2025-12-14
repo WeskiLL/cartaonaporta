@@ -53,7 +53,7 @@ const App = () => (
                   <Route path="/admin/gestao/usuarios" element={<UsersPage />} />
                   <Route path="/admin/gestao/empresa" element={<CompanyPage />} />
                   {/* Public Tracking */}
-                  <Route path="/rastreio/:id" element={<TrackingPublic />} />
+                  <Route path="/rastreio/:trackingCode" element={<TrackingPublic />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

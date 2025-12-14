@@ -26,24 +26,25 @@ interface TrackingData {
 }
 
 export default function TrackingPublic() {
-  const { id } = useParams<{ id: string }>();
+  const { trackingCode } = useParams<{ trackingCode: string }>();
   const [tracking, setTracking] = useState<TrackingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     const fetchTracking = async () => {
-      if (!id) {
+      if (!trackingCode) {
         setError(true);
         setLoading(false);
         return;
       }
 
       try {
+        // Search by tracking_code instead of id
         const { data, error: fetchError } = await supabase
           .from('order_trackings' as any)
           .select('id, order_number, client_name, tracking_code, carrier, status, events, last_update')
-          .eq('id', id)
+          .eq('tracking_code', trackingCode.toUpperCase())
           .maybeSingle();
 
         if (fetchError) throw fetchError;
@@ -71,7 +72,7 @@ export default function TrackingPublic() {
     };
 
     fetchTracking();
-  }, [id]);
+  }, [trackingCode]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; color: string }> = {

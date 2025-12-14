@@ -10,11 +10,27 @@ import { useManagement } from '@/contexts/ManagementContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ShoppingCart, DollarSign, Users, FileText, Plus, TrendingUp, TrendingDown, RefreshCw, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ShoppingCart, DollarSign, Users, FileText, Plus, TrendingUp, TrendingDown, RefreshCw, Loader2, Filter, CalendarIcon, X } from 'lucide-react';
 import { maskCurrency } from '@/lib/masks';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 type OrderStatus = 'awaiting_payment' | 'creating_art' | 'production' | 'shipping' | 'delivered';
+
+const STATUS_OPTIONS = [
+  { value: 'all', label: 'Todos os status' },
+  { value: 'awaiting_payment', label: 'Aguardando Pagamento' },
+  { value: 'creating_art', label: 'Criando Arte' },
+  { value: 'production', label: 'Em Produção' },
+  { value: 'shipping', label: 'Em Transporte' },
+  { value: 'delivered', label: 'Entregue' },
+];
 
 export default function ManagementDashboard() {
   const { 
@@ -36,6 +52,11 @@ export default function ManagementDashboard() {
   const [orderFormOpen, setOrderFormOpen] = useState(false);
   const [orderFormMode, setOrderFormMode] = useState<'quote' | 'order'>('order');
   const [convertingQuoteId, setConvertingQuoteId] = useState<string | null>(null);
+
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     fetchOrders();
@@ -115,6 +136,37 @@ export default function ManagementDashboard() {
     }
     setConvertingQuoteId(null);
   };
+
+  const clearFilters = () => {
+    setStatusFilter('all');
+    setStartDate(undefined);
+    setEndDate(undefined);
+  };
+
+  const hasFilters = statusFilter !== 'all' || startDate || endDate;
+
+  // Filtered orders
+  const filteredOrders = useMemo(() => {
+    return orders.filter(order => {
+      // Status filter
+      if (statusFilter !== 'all' && order.status !== statusFilter) {
+        return false;
+      }
+      // Date filter
+      const orderDate = new Date(order.created_at);
+      if (startDate && orderDate < startDate) {
+        return false;
+      }
+      if (endDate) {
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        if (orderDate > endOfDay) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [orders, statusFilter, startDate, endDate]);
 
   const pendingQuotes = quotes.filter(q => q.status === 'pending' || q.status === 'approved');
 
@@ -206,14 +258,87 @@ export default function ManagementDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Filters */}
+              <div className="flex flex-wrap items-end gap-4 mb-6 p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Filtros:</span>
+                </div>
+                
+                <div className="space-y-1">
+                  <Label className="text-xs">Status</Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUS_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs">Data Início</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-[140px] justify-start text-left font-normal">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {startDate ? format(startDate, 'dd/MM/yyyy') : 'Selecionar'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={startDate}
+                        onSelect={setStartDate}
+                        locale={ptBR}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs">Data Fim</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-[140px] justify-start text-left font-normal">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {endDate ? format(endDate, 'dd/MM/yyyy') : 'Selecionar'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={endDate}
+                        onSelect={setEndDate}
+                        locale={ptBR}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {hasFilters && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters}>
+                    <X className="h-4 w-4 mr-1" />
+                    Limpar
+                  </Button>
+                )}
+              </div>
+
               {loadingOrders ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
-              ) : orders.length === 0 ? (
-                <p className="text-center py-8 text-muted-foreground">Nenhum pedido encontrado</p>
+              ) : filteredOrders.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">
+                  {hasFilters ? 'Nenhum pedido encontrado com os filtros selecionados' : 'Nenhum pedido encontrado'}
+                </p>
               ) : (
-                <OrderKanban orders={orders} onStatusChange={handleStatusChange} />
+                <OrderKanban orders={filteredOrders} onStatusChange={handleStatusChange} />
               )}
             </CardContent>
           </Card>

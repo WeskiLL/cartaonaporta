@@ -466,10 +466,28 @@ const AdminDashboard = () => {
                     </h2>
 
                     <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Nome do Produto</Label>
+                          <Input
+                            id="name"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Imagem do Produto</Label>
+                          <ImageUpload
+                            value={formData.image_url}
+                            onChange={(url) => setFormData({ ...formData, image_url: url })}
+                          />
+                        </div>
+                      </div>
                       <div className="space-y-2">
-                        <Label htmlFor="name">Nome do Produto</Label>
+                        <Label htmlFor="size">Tamanho</Label>
                         <Input
-                          id="name"
+                          id="size"
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                           placeholder="Ex: Tag para brincos"
@@ -507,13 +525,6 @@ const AdminDashboard = () => {
                         </Select>
                       </div>
 
-                      <div className="md:col-span-2">
-                        <ImageUpload
-                          value={formData.image_url}
-                          onChange={(url) => setFormData({ ...formData, image_url: url })}
-                          productName={formData.name}
-                        />
-                      </div>
 
                       <div className="space-y-2 md:col-span-2">
                         <Label htmlFor="custom_specs">

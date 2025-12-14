@@ -19,6 +19,7 @@ import ProductsPage from "./pages/management/ProductsPage";
 import MockupsPage from "./pages/management/MockupsPage";
 import CompanyPage from "./pages/management/CompanyPage";
 import ReportsPage from "./pages/management/ReportsPage";
+import UsersPage from "./pages/management/UsersPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
                   <Route path="/admin/gestao/produtos" element={<ProductsPage />} />
                   <Route path="/admin/gestao/relatorios" element={<ReportsPage />} />
                   <Route path="/admin/gestao/mockups" element={<MockupsPage />} />
+                  <Route path="/admin/gestao/usuarios" element={<UsersPage />} />
                   <Route path="/admin/gestao/empresa" element={<CompanyPage />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />

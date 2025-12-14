@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Plus, Trash2, Loader2, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Mockup } from '@/types/management';
+import { ImageUploadField } from '@/components/management/ImageUploadField';
 
 export default function MockupsPage() {
   const { mockups, loadingMockups, fetchMockups, addMockup, deleteMockup } = useManagement();
@@ -122,12 +123,11 @@ export default function MockupsPage() {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome *</Label>
+              <Label htmlFor="name">Nome</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                required
               />
             </div>
             <div className="space-y-2">
@@ -139,25 +139,13 @@ export default function MockupsPage() {
                 placeholder="Ex: Tags, Cartões..."
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="image_url">URL da Imagem *</Label>
-              <Input
-                id="image_url"
-                value={formData.image_url}
-                onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
-                placeholder="https://..."
-                required
-              />
-            </div>
-            {formData.image_url && (
-              <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-                <img
-                  src={formData.image_url}
-                  alt="Preview"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            )}
+            <ImageUploadField
+              label="Imagem"
+              value={formData.image_url}
+              onChange={(url) => setFormData(prev => ({ ...prev, image_url: url }))}
+              bucket="product-images"
+              folder="mockups"
+            />
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>
                 Cancelar

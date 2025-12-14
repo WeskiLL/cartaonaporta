@@ -177,11 +177,6 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
     
     // If creating new client
     if (clientMode === 'new') {
-      if (!newClient.name.trim()) {
-        toast.error('Nome do cliente é obrigatório');
-        return;
-      }
-      
       // Validate document if provided
       if (newClient.document) {
         const cleaned = unmask(newClient.document);
@@ -194,35 +189,34 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
         }
       }
       
-      // Create client
-      const createdClient = await addClient({
-        name: newClient.name,
-        email: newClient.email || '',
-        phone: newClient.phone || '',
-        document: newClient.document || '',
-        address: '',
-        city: '',
-        state: '',
-        zip_code: '',
-      });
-      
-      if (!createdClient) {
-        toast.error('Erro ao criar cliente');
-        return;
+      // Create client if name provided
+      if (newClient.name.trim()) {
+        const createdClient = await addClient({
+          name: newClient.name,
+          email: newClient.email || '',
+          phone: newClient.phone || '',
+          document: newClient.document || '',
+          address: '',
+          city: '',
+          state: '',
+          zip_code: '',
+        });
+        
+        if (!createdClient) {
+          toast.error('Erro ao criar cliente');
+          return;
+        }
+        
+        clientId = createdClient.id;
+        clientName = createdClient.name;
+      } else {
+        clientName = newClient.name || 'Cliente não informado';
       }
-      
-      clientId = createdClient.id;
-      clientName = createdClient.name;
     }
     
+    // Client name can be empty now (not required)
     if (!clientName && !clientId) {
-      toast.error('Selecione ou cadastre um cliente');
-      return;
-    }
-    
-    if (items.length === 0) {
-      toast.error('Adicione pelo menos um item');
-      return;
+      clientName = 'Cliente não informado';
     }
 
     setLoading(true);
@@ -280,7 +274,7 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
           {/* Client Selection/Creation */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Cliente *</Label>
+              <Label>Cliente</Label>
               <Tabs value={clientMode} onValueChange={(v) => setClientMode(v as 'select' | 'new')}>
                 <TabsList className="h-8">
                   <TabsTrigger value="select" className="text-xs px-2 py-1">Selecionar</TabsTrigger>
@@ -338,7 +332,7 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
                 <CardContent className="p-4 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2">
-                      <Label className="text-xs">Nome *</Label>
+                      <Label className="text-xs">Nome</Label>
                       <Input
                         value={newClient.name}
                         onChange={(e) => setNewClient(prev => ({ ...prev, name: e.target.value }))}
@@ -460,7 +454,7 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
           {/* Items */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <Label>Itens *</Label>
+              <Label>Itens</Label>
               <Button type="button" variant="outline" size="sm" onClick={addItem}>
                 <Plus className="w-4 h-4 mr-1" />
                 Adicionar Item
@@ -474,19 +468,36 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
                     <div className="grid grid-cols-12 gap-2 items-end">
                       <div className="col-span-5">
                         <Label className="text-xs">Produto</Label>
-                        <Select
-                          value={item.product_id}
-                          onValueChange={(value) => updateItem(index, 'product_id', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {products.map(p => (
-                              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="space-y-1">
+                          <Select
+                            value={item.product_id || 'manual'}
+                            onValueChange={(value) => {
+                              if (value === 'manual') {
+                                updateItem(index, 'product_id', '');
+                              } else {
+                                updateItem(index, 'product_id', value);
+                              }
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="manual">Digite manualmente</SelectItem>
+                              {products.map(p => (
+                                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {!item.product_id && (
+                            <Input
+                              placeholder="Nome do produto"
+                              value={item.product_name}
+                              onChange={(e) => updateItem(index, 'product_name', e.target.value)}
+                              className="mt-1"
+                            />
+                          )}
+                        </div>
                       </div>
                       <div className="col-span-2">
                         <Label className="text-xs">Qtd</Label>

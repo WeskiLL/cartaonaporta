@@ -8,20 +8,19 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Trash2, Loader2, Shield, UserCheck, DollarSign } from 'lucide-react';
+import { Plus, Trash2, Loader2, Shield, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface User {
   id: string;
-  email: string;
-  role: 'admin' | 'financeiro' | 'vendedor';
+  user_id: string;
+  role: 'admin' | 'user';
   created_at: string;
 }
 
 const ROLE_LABELS: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   admin: { label: 'Administrador', icon: <Shield className="w-4 h-4" />, color: 'text-primary' },
-  financeiro: { label: 'Financeiro', icon: <DollarSign className="w-4 h-4" />, color: 'text-green-600' },
-  vendedor: { label: 'Vendedor', icon: <UserCheck className="w-4 h-4" />, color: 'text-blue-600' },
+  user: { label: 'Usuário', icon: <UserCheck className="w-4 h-4" />, color: 'text-blue-600' },
 };
 
 export default function UsersPage() {
@@ -32,7 +31,7 @@ export default function UsersPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    role: 'vendedor' as 'admin' | 'financeiro' | 'vendedor',
+    role: 'user' as 'admin' | 'user',
   });
 
   useEffect(() => {
@@ -49,11 +48,10 @@ export default function UsersPage() {
 
       if (error) throw error;
 
-      // Get user emails from auth (we'll show role info for now)
-      const usersData = (data || []).map((role: any) => ({
+      const usersData: User[] = (data || []).map((role: any) => ({
         id: role.id,
-        email: role.user_id, // We'll show user_id for now
-        role: role.role as 'admin' | 'financeiro' | 'vendedor',
+        user_id: role.user_id,
+        role: role.role as 'admin' | 'user',
         created_at: role.created_at,
       }));
 
@@ -92,7 +90,7 @@ export default function UsersPage() {
 
         toast.success('Usuário criado com sucesso');
         setDialogOpen(false);
-        setFormData({ email: '', password: '', role: 'vendedor' });
+        setFormData({ email: '', password: '', role: 'user' });
         fetchUsers();
       }
     } catch (error: any) {
@@ -146,7 +144,7 @@ export default function UsersPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {users.map((user) => {
-            const roleInfo = ROLE_LABELS[user.role] || ROLE_LABELS.vendedor;
+            const roleInfo = ROLE_LABELS[user.role] || ROLE_LABELS.user;
             return (
               <Card key={user.id}>
                 <CardContent className="p-4">
@@ -157,7 +155,7 @@ export default function UsersPage() {
                       </div>
                       <div>
                         <p className="font-medium text-sm text-foreground truncate max-w-[180px]">
-                          {user.email.includes('-') ? 'Usuário' : user.email}
+                          {user.user_id.substring(0, 8)}...
                         </p>
                         <p className={`text-xs ${roleInfo.color}`}>{roleInfo.label}</p>
                       </div>
@@ -210,7 +208,7 @@ export default function UsersPage() {
               <Label htmlFor="role">Função</Label>
               <Select
                 value={formData.role}
-                onValueChange={(value: 'admin' | 'financeiro' | 'vendedor') => 
+                onValueChange={(value: 'admin' | 'user') => 
                   setFormData(prev => ({ ...prev, role: value }))
                 }
               >
@@ -219,8 +217,7 @@ export default function UsersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Administrador</SelectItem>
-                  <SelectItem value="financeiro">Financeiro</SelectItem>
-                  <SelectItem value="vendedor">Vendedor</SelectItem>
+                  <SelectItem value="user">Usuário</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Client } from '@/types/management';
-import { maskPhone, maskCPFOrCNPJ, maskCEP, unmask } from '@/lib/masks';
+import { maskPhone, maskCPFOrCNPJ, maskCEP, unmask, validateCPFOrCNPJ } from '@/lib/masks';
 import { fetchAddressByCep } from '@/lib/cep-service';
 import { Loader2 } from 'lucide-react';
 
@@ -19,6 +19,7 @@ interface ClientFormProps {
 export function ClientForm({ open, onOpenChange, client, onSave }: ClientFormProps) {
   const [loading, setLoading] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
+  const [documentError, setDocumentError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     document: '',
@@ -76,6 +77,23 @@ export function ClientForm({ open, onOpenChange, client, onSave }: ClientFormPro
     }
   };
 
+  const handleDocumentChange = (value: string) => {
+    const masked = maskCPFOrCNPJ(value);
+    setFormData(prev => ({ ...prev, document: masked }));
+    
+    const cleaned = unmask(masked);
+    if (cleaned.length === 11 || cleaned.length === 14) {
+      const result = validateCPFOrCNPJ(cleaned);
+      if (!result.valid) {
+        setDocumentError(`${result.type?.toUpperCase() || 'Documento'} inválido`);
+      } else {
+        setDocumentError('');
+      }
+    } else {
+      setDocumentError('');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -93,12 +111,11 @@ export function ClientForm({ open, onOpenChange, client, onSave }: ClientFormPro
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome *</Label>
+              <Label htmlFor="name">Nome</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                required
               />
             </div>
             <div className="space-y-2">
@@ -106,8 +123,12 @@ export function ClientForm({ open, onOpenChange, client, onSave }: ClientFormPro
               <Input
                 id="document"
                 value={formData.document}
-                onChange={(e) => setFormData(prev => ({ ...prev, document: maskCPFOrCNPJ(e.target.value) }))}
+                onChange={(e) => handleDocumentChange(e.target.value)}
+                maxLength={18}
               />
+              {documentError && (
+                <p className="text-xs text-destructive">{documentError}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone</Label>

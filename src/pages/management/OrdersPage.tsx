@@ -2,18 +2,20 @@ import { useEffect, useState } from 'react';
 import { ManagementLayout } from '@/components/management/ManagementLayout';
 import { PageHeader } from '@/components/management/PageHeader';
 import { StatusBadge } from '@/components/management/StatusBadge';
+import { OrderForm } from '@/components/management/OrderForm';
 import { useManagement } from '@/contexts/ManagementContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Package, FileText, Eye, Trash2, Loader2, ArrowRightLeft } from 'lucide-react';
+import { Search, Package, FileText, Eye, Trash2, Loader2, ArrowRightLeft, Plus, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Order, Quote, OrderStatus, QuoteStatus } from '@/types/management';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { exportOrderToPDF, exportQuoteToPDF } from '@/lib/pdf-export';
 
 const ORDER_STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
   { value: 'awaiting_payment', label: 'Aguardando Pagamento' },
@@ -32,7 +34,7 @@ const QUOTE_STATUS_OPTIONS: { value: QuoteStatus; label: string }[] = [
 
 export default function OrdersPage() {
   const { 
-    orders, quotes, loadingOrders, loadingQuotes, 
+    orders, quotes, loadingOrders, loadingQuotes, company,
     fetchOrders, fetchQuotes, updateOrder, updateQuote, 
     deleteOrder, deleteQuote, convertQuoteToOrder 
   } = useManagement();
@@ -40,6 +42,8 @@ export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState('orders');
   const [selectedItem, setSelectedItem] = useState<Order | Quote | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<'quote' | 'order'>('order');
 
   useEffect(() => {
     fetchOrders();
@@ -91,6 +95,11 @@ export default function OrdersPage() {
     }
   };
 
+  const openNewForm = (mode: 'quote' | 'order') => {
+    setFormMode(mode);
+    setFormOpen(true);
+  };
+
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
@@ -101,6 +110,18 @@ export default function OrdersPage() {
       <PageHeader
         title="Pedidos & Orçamentos"
         description="Gerencie pedidos e orçamentos"
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => openNewForm('quote')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Orçamento
+            </Button>
+            <Button onClick={() => openNewForm('order')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Pedido
+            </Button>
+          </div>
+        }
       />
 
       <div className="mb-6">
@@ -157,7 +178,7 @@ export default function OrdersPage() {
                           {formatCurrency(order.total)}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Select
                           value={order.status}
                           onValueChange={(value) => handleOrderStatusChange(order.id, value as OrderStatus)}
@@ -171,6 +192,9 @@ export default function OrdersPage() {
                             ))}
                           </SelectContent>
                         </Select>
+                        <Button variant="outline" size="icon" onClick={() => exportOrderToPDF(order, company)}>
+                          <Download className="w-4 h-4" />
+                        </Button>
                         <Button variant="outline" size="icon" onClick={() => { setSelectedItem(order); setDetailsOpen(true); }}>
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -216,7 +240,7 @@ export default function OrdersPage() {
                           {formatCurrency(quote.total)}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Select
                           value={quote.status}
                           onValueChange={(value) => handleQuoteStatusChange(quote.id, value as QuoteStatus)}
@@ -236,6 +260,9 @@ export default function OrdersPage() {
                             Converter
                           </Button>
                         )}
+                        <Button variant="outline" size="icon" onClick={() => exportQuoteToPDF(quote, company)}>
+                          <Download className="w-4 h-4" />
+                        </Button>
                         <Button variant="outline" size="icon" onClick={() => { setSelectedItem(quote); setDetailsOpen(true); }}>
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -251,6 +278,17 @@ export default function OrdersPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Order Form */}
+      <OrderForm
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        mode={formMode}
+        onSave={() => {
+          fetchOrders();
+          fetchQuotes();
+        }}
+      />
 
       {/* Details Dialog */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>

@@ -14,6 +14,8 @@ import {
   Menu,
   X,
   ArrowLeft,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -36,6 +38,14 @@ interface ManagementSidebarProps {
 export function ManagementSidebar({ isCollapsed, onToggle }: ManagementSidebarProps) {
   const location = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+
+  const toggleTheme = () => {
+    const newIsDark = !isDark;
+    setIsDark(newIsDark);
+    document.documentElement.classList.toggle('dark', newIsDark);
+    localStorage.setItem('theme', newIsDark ? 'dark' : 'light');
+  };
 
   return (
     <>
@@ -115,8 +125,32 @@ export function ManagementSidebar({ isCollapsed, onToggle }: ManagementSidebarPr
             })}
           </nav>
 
-          {/* Back to Admin */}
-          <div className="p-4 border-t border-border">
+          {/* Footer */}
+          <div className="p-4 border-t border-border space-y-2">
+            {/* Theme Toggle */}
+            <Button
+              variant="ghost"
+              size={isCollapsed ? "icon" : "default"}
+              onClick={toggleTheme}
+              className={cn(
+                'w-full justify-start',
+                isCollapsed && 'justify-center'
+              )}
+            >
+              {isDark ? (
+                <>
+                  <Sun className="h-5 w-5 shrink-0" />
+                  {!isCollapsed && <span className="ml-3 text-sm font-medium">Modo Claro</span>}
+                </>
+              ) : (
+                <>
+                  <Moon className="h-5 w-5 shrink-0" />
+                  {!isCollapsed && <span className="ml-3 text-sm font-medium">Modo Escuro</span>}
+                </>
+              )}
+            </Button>
+
+            {/* Back to Admin */}
             <NavLink
               to="/admin/dashboard"
               className={cn(

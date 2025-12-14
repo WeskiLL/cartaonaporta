@@ -16,12 +16,14 @@ import {
   ArrowLeft,
   Sun,
   Moon,
+  Truck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const menuItems = [
   { path: '/admin/gestao', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { path: '/admin/gestao/pedidos', label: 'Pedidos e Orçamentos', icon: FileText },
+  { path: '/admin/gestao/rastreio', label: 'Rastreio de Pedidos', icon: Truck },
   { path: '/admin/gestao/clientes', label: 'Clientes', icon: Users },
   { path: '/admin/gestao/produtos', label: 'Produtos', icon: Package },
   { path: '/admin/gestao/financeiro', label: 'Financeiro', icon: DollarSign },

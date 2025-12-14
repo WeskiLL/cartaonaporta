@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Order } from '@/types/management';
 import { maskCurrency } from '@/lib/masks';
-import { GripVertical, Eye } from 'lucide-react';
+import { GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 const ORDER_STATUSES = [
   { id: 'awaiting_payment', label: 'Aguardando Pagamento', color: 'bg-amber-500' },
@@ -21,8 +23,17 @@ interface OrderKanbanProps {
 }
 
 export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanbanProps) {
+  // Local state for optimistic updates
+  const [localOrders, setLocalOrders] = useState<Order[]>(orders);
+  const [pendingUpdates, setPendingUpdates] = useState<Set<string>>(new Set());
+
+  // Sync with props when orders change from external source
+  if (orders !== localOrders && pendingUpdates.size === 0) {
+    setLocalOrders(orders);
+  }
+
   const getOrdersByStatus = (status: OrderStatus) => 
-    orders.filter(order => order.status === status);
+    localOrders.filter(order => order.status === status);
 
   const handleDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
@@ -33,20 +44,44 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
 
     if (newStatus === oldStatus) return;
 
+    const order = localOrders.find(o => o.id === orderId);
+    if (!order) return;
+
+    // Optimistic update - immediately update local state
+    setLocalOrders(prev => prev.map(o => 
+      o.id === orderId ? { ...o, status: newStatus } : o
+    ));
+    setPendingUpdates(prev => new Set(prev).add(orderId));
+
     // Add revenue when moving to "creating_art"
     const addRevenue = newStatus === 'creating_art' && oldStatus === 'awaiting_payment';
-    
-    await onStatusChange(orderId, newStatus, addRevenue);
+
+    try {
+      await onStatusChange(orderId, newStatus, addRevenue);
+      toast.success(`Pedido ${order.number} atualizado`);
+    } catch (error) {
+      // Rollback on error
+      setLocalOrders(prev => prev.map(o => 
+        o.id === orderId ? { ...o, status: oldStatus } : o
+      ));
+      toast.error('Erro ao atualizar status');
+    } finally {
+      setPendingUpdates(prev => {
+        const next = new Set(prev);
+        next.delete(orderId);
+        return next;
+      });
+    }
   };
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       {/* Status tabs header */}
-      <div className="flex items-center gap-6 mb-4 border-b pb-3">
+      <div className="flex items-center gap-6 mb-4 border-b pb-3 overflow-x-auto">
         {ORDER_STATUSES.map((status) => {
           const count = getOrdersByStatus(status.id).length;
           return (
-            <div key={status.id} className="flex items-center gap-2">
+            <div key={status.id} className="flex items-center gap-2 shrink-0">
               <div className={`w-3 h-3 rounded-full ${status.color}`} />
               <span className="text-sm font-medium text-foreground">{status.label}</span>
               <span className="text-sm text-muted-foreground">{count}</span>
@@ -68,8 +103,8 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
                   {...provided.droppableProps}
                   className={`flex-1 min-w-[200px] min-h-[200px] p-2 rounded-lg transition-colors ${
                     snapshot.isDraggingOver 
-                      ? 'bg-muted/50' 
-                      : 'bg-transparent'
+                      ? 'bg-primary/10 border-2 border-dashed border-primary' 
+                      : 'bg-muted/30'
                   }`}
                 >
                   {statusOrders.length === 0 ? (
@@ -78,56 +113,59 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {statusOrders.map((order, index) => (
-                        <Draggable key={order.id} draggableId={order.id} index={index}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              className={`bg-card border rounded-lg p-3 cursor-grab active:cursor-grabbing transition-all ${
-                                snapshot.isDragging 
-                                  ? 'shadow-lg scale-105 rotate-1' 
-                                  : 'hover:shadow-md'
-                              }`}
-                            >
-                              <div className="flex items-start gap-2">
-                                <div 
-                                  {...provided.dragHandleProps}
-                                  className="mt-1 text-muted-foreground"
-                                >
-                                  <GripVertical className="h-4 w-4" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-bold text-sm text-foreground">
-                                    {order.number}
+                      {statusOrders.map((order, index) => {
+                        const isPending = pendingUpdates.has(order.id);
+                        return (
+                          <Draggable key={order.id} draggableId={order.id} index={index}>
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className={`bg-card border rounded-lg p-3 cursor-grab active:cursor-grabbing transition-all ${
+                                  snapshot.isDragging 
+                                    ? 'shadow-lg scale-105 rotate-1 ring-2 ring-primary' 
+                                    : 'hover:shadow-md'
+                                } ${isPending ? 'opacity-70' : ''}`}
+                              >
+                                <div className="flex items-start gap-2">
+                                  <div 
+                                    {...provided.dragHandleProps}
+                                    className="mt-1 text-muted-foreground hover:text-foreground transition-colors"
+                                  >
+                                    <GripVertical className="h-4 w-4" />
                                   </div>
-                                  <div className="text-sm text-muted-foreground truncate">
-                                    {order.client_name}
-                                  </div>
-                                  <div className="flex items-center justify-between mt-2">
-                                    <span className="text-sm font-bold text-primary">
-                                      {maskCurrency(Number(order.total))}
-                                    </span>
-                                    {onViewOrder && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 px-2 text-xs text-muted-foreground hover:text-primary"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          onViewOrder(order);
-                                        }}
-                                      >
-                                        Ver
-                                      </Button>
-                                    )}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-bold text-sm text-foreground">
+                                      {order.number}
+                                    </div>
+                                    <div className="text-sm text-muted-foreground truncate">
+                                      {order.client_name}
+                                    </div>
+                                    <div className="flex items-center justify-between mt-2">
+                                      <span className="text-sm font-bold text-primary">
+                                        {maskCurrency(Number(order.total))}
+                                      </span>
+                                      {onViewOrder && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 px-2 text-xs text-muted-foreground hover:text-primary"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onViewOrder(order);
+                                          }}
+                                        >
+                                          Ver
+                                        </Button>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
+                            )}
+                          </Draggable>
+                        );
+                      })}
                     </div>
                   )}
                   {provided.placeholder}

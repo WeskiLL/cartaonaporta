@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
 import { ManagementLayout } from '@/components/management/ManagementLayout';
 import { PageHeader } from '@/components/management/PageHeader';
+import { ClientForm } from '@/components/management/ClientForm';
 import { useManagement } from '@/contexts/ManagementContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,12 +9,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Plus, Search, Edit, Trash2, Phone, Mail, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Client } from '@/types/management';
 
 export default function ClientsPage() {
-  const { clients, fetchClients, deleteClient, loadingClients } = useManagement();
+  const { clients, fetchClients, addClient, updateClient, deleteClient, loadingClients } = useManagement();
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
 
   useEffect(() => {
     fetchClients();
@@ -31,12 +34,30 @@ export default function ClientsPage() {
   const handleDelete = async () => {
     if (selectedId) {
       const success = await deleteClient(selectedId);
-      if (success) {
-        toast.success('Cliente excluído com sucesso');
-      }
+      if (success) toast.success('Cliente excluído!');
       setDeleteDialogOpen(false);
       setSelectedId(null);
     }
+  };
+
+  const handleSave = async (data: Omit<Client, 'id' | 'created_at' | 'updated_at'>) => {
+    if (editingClient) {
+      const success = await updateClient(editingClient.id, data);
+      if (success) toast.success('Cliente atualizado!');
+    } else {
+      const result = await addClient(data);
+      if (result) toast.success('Cliente adicionado!');
+    }
+  };
+
+  const openNew = () => {
+    setEditingClient(null);
+    setFormOpen(true);
+  };
+
+  const openEdit = (client: Client) => {
+    setEditingClient(client);
+    setFormOpen(true);
   };
 
   return (
@@ -45,11 +66,9 @@ export default function ClientsPage() {
         title="Clientes"
         description="Gerencie seus clientes"
         actions={
-          <Button asChild>
-            <Link to="/admin/gestao/clientes/novo">
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Cliente
-            </Link>
+          <Button onClick={openNew}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Cliente
           </Button>
         }
       />
@@ -110,10 +129,8 @@ export default function ClientsPage() {
                   <TableCell>{client.city ? `${client.city}/${client.state}` : '-'}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" asChild>
-                        <Link to={`/admin/gestao/clientes/${client.id}`}>
-                          <Edit className="h-4 w-4" />
-                        </Link>
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(client)}>
+                        <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -135,12 +152,19 @@ export default function ClientsPage() {
         )}
       </div>
 
+      <ClientForm
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        client={editingClient}
+        onSave={handleSave}
+      />
+
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir cliente?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O cliente será permanentemente removido.
+              Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
-import { LogOut, Plus, Save, Trash2, Package, Loader2, Video, GripVertical, Filter } from "lucide-react";
+import { LogOut, Plus, Save, Trash2, Package, Loader2, Video, GripVertical, Filter, Settings } from "lucide-react";
 import { toast } from "sonner";
 import ImageUpload from "@/components/admin/ImageUpload";
 import VideoTestimonialsManager from "@/components/admin/VideoTestimonialsManager";
@@ -308,6 +308,10 @@ const AdminDashboard = () => {
             </h1>
           </div>
           <div className="flex items-center gap-4">
+            <Button variant="outline" size="sm" onClick={() => navigate('/admin/gestao')}>
+              <Settings className="w-4 h-4 mr-2" />
+              Sistema de Gestão
+            </Button>
             <span className="text-sm text-muted-foreground hidden sm:inline">
               Olá, <strong>{user?.email?.split("@")[0]}</strong>
             </span>

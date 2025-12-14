@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
-import { maskPhone, maskCNPJ, maskCEP, unmask } from '@/lib/masks';
+import { maskPhone, maskCPFOrCNPJ, maskCEP, unmask } from '@/lib/masks';
 import { fetchAddressByCep } from '@/lib/cep-service';
 
 export default function CompanyPage() {
@@ -115,11 +115,13 @@ export default function CompanyPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cnpj">CNPJ</Label>
+                <Label htmlFor="cnpj">CPF / CNPJ</Label>
                 <Input
                   id="cnpj"
                   value={formData.cnpj}
-                  onChange={(e) => setFormData(prev => ({ ...prev, cnpj: maskCNPJ(e.target.value) }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cnpj: maskCPFOrCNPJ(e.target.value) }))}
+                  placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                  maxLength={18}
                 />
               </div>
               <div className="space-y-2">

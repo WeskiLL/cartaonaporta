@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
-import { LogOut, Plus, Save, Trash2, Package, Loader2, Video, ChevronUp, ChevronDown } from "lucide-react";
+import { LogOut, Plus, Save, Trash2, Package, Loader2, Video, GripVertical, Filter } from "lucide-react";
 import { toast } from "sonner";
 import ImageUpload from "@/components/admin/ImageUpload";
 import VideoTestimonialsManager from "@/components/admin/VideoTestimonialsManager";
@@ -55,6 +56,7 @@ const AdminDashboard = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("produtos");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   // Form state
   const [formData, setFormData] = useState({
@@ -229,17 +231,31 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleMoveProduct = async (index: number, direction: "up" | "down") => {
-    const newIndex = direction === "up" ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= products.length) return;
+  // Filtered products based on category
+  const filteredProducts = useMemo(() => {
+    if (categoryFilter === "all") return products;
+    return products.filter(p => p.category === categoryFilter);
+  }, [products, categoryFilter]);
+
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination || categoryFilter !== "all") {
+      if (categoryFilter !== "all") {
+        toast.error("Desative o filtro para reordenar produtos");
+      }
+      return;
+    }
+
+    const sourceIndex = result.source.index;
+    const destIndex = result.destination.index;
+    
+    if (sourceIndex === destIndex) return;
 
     const newProducts = [...products];
-    [newProducts[index], newProducts[newIndex]] = [newProducts[newIndex], newProducts[index]];
+    const [removed] = newProducts.splice(sourceIndex, 1);
+    newProducts.splice(destIndex, 0, removed);
     
-    // Update local state immediately for better UX
     setProducts(newProducts);
 
-    // Update display_order for affected products
     const orders = newProducts.map((p, i) => ({
       id: p.id,
       display_order: i,
@@ -263,7 +279,6 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error("Error updating order:", error);
       toast.error("Erro ao atualizar ordem");
-      // Revert on error
       fetchProducts();
     }
   };
@@ -330,69 +345,100 @@ const AdminDashboard = () => {
                     </Button>
                   </div>
 
-                  <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                    {products.map((product, index) => (
-                      <div
-                        key={product.id}
-                        onClick={() => handleSelectProduct(product)}
-                        className={`p-3 rounded-lg cursor-pointer transition-all ${
-                          selectedProduct?.id === product.id
-                            ? "bg-primary/10 border-primary"
-                            : "bg-muted/50 hover:bg-muted"
-                        } border`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <div className="flex flex-col gap-0.5">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-5 w-5 text-muted-foreground hover:text-foreground"
-                                disabled={index === 0}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleMoveProduct(index, "up");
-                                }}
-                              >
-                                <ChevronUp className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-5 w-5 text-muted-foreground hover:text-foreground"
-                                disabled={index === products.length - 1}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleMoveProduct(index, "down");
-                                }}
-                              >
-                                <ChevronDown className="w-3 h-3" />
-                              </Button>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm text-foreground truncate">
-                                {product.name}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {product.category} • {product.size}
-                              </p>
-                            </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-destructive hover:text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(product.id);
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                  {/* Category Filter */}
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Filter className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Filtrar por categoria</span>
+                    </div>
+                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Todas as categorias" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as categorias</SelectItem>
+                        {CATEGORIES.map((cat) => (
+                          <SelectItem key={cat.value} value={cat.value}>
+                            {cat.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {categoryFilter !== "all" && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        ⚠️ Desative o filtro para reordenar
+                      </p>
+                    )}
                   </div>
+
+                  <DragDropContext onDragEnd={handleDragEnd}>
+                    <Droppable droppableId="products" isDropDisabled={categoryFilter !== "all"}>
+                      {(provided) => (
+                        <div
+                          {...provided.droppableProps}
+                          ref={provided.innerRef}
+                          className="space-y-2 max-h-[500px] overflow-y-auto"
+                        >
+                          {filteredProducts.map((product, index) => (
+                            <Draggable 
+                              key={product.id} 
+                              draggableId={product.id} 
+                              index={categoryFilter === "all" ? products.findIndex(p => p.id === product.id) : index}
+                              isDragDisabled={categoryFilter !== "all"}
+                            >
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  onClick={() => handleSelectProduct(product)}
+                                  className={`p-3 rounded-lg cursor-pointer transition-all ${
+                                    selectedProduct?.id === product.id
+                                      ? "bg-primary/10 border-primary"
+                                      : snapshot.isDragging
+                                      ? "bg-primary/5 border-primary/50"
+                                      : "bg-muted/50 hover:bg-muted"
+                                  } border`}
+                                >
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                      {categoryFilter === "all" && (
+                                        <div
+                                          {...provided.dragHandleProps}
+                                          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
+                                        >
+                                          <GripVertical className="w-4 h-4" />
+                                        </div>
+                                      )}
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-sm text-foreground truncate">
+                                          {product.name}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {CATEGORIES.find(c => c.value === product.category)?.label || product.category} • {product.size}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-destructive hover:text-destructive"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete(product.id);
+                                      }}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
                 </div>
               </div>
 

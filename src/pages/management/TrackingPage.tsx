@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Truck, Copy, ExternalLink, Trash2, Loader2, RefreshCw, Package } from 'lucide-react';
+import { Plus, Truck, Copy, ExternalLink, Trash2, Loader2, RefreshCw, Package, MessageCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useManagement } from '@/contexts/ManagementContext';
 import { toast } from 'sonner';
@@ -27,7 +27,7 @@ interface TrackingItem {
   order_id?: string;
   order_number?: string;
   client_name: string;
-  client_email?: string;
+  client_phone?: string;
   tracking_code: string;
   carrier: string;
   status: string;
@@ -185,7 +185,7 @@ export default function TrackingPage() {
         ));
 
         // Send WhatsApp notification if there are new events
-        if ((tracking as any).client_phone && data.events.length > (tracking.events?.length || 0)) {
+        if (tracking.client_phone && data.events.length > (tracking.events?.length || 0)) {
           sendWhatsAppNotification(tracking, data.events[0]);
           toast.success('Rastreio atualizado! Clique para enviar notificação via WhatsApp.');
         } else {
@@ -208,7 +208,7 @@ export default function TrackingPage() {
   };
 
   const sendWhatsAppNotification = (tracking: TrackingItem, latestEvent?: TrackingEvent) => {
-    const phone = (tracking as any).client_phone?.replace(/\D/g, '');
+    const phone = tracking.client_phone?.replace(/\D/g, '');
     if (!phone) {
       toast.error('Cliente não tem WhatsApp cadastrado');
       return;
@@ -376,6 +376,15 @@ export default function TrackingPage() {
                       disabled={refreshing === tracking.id}
                     >
                       <RefreshCw className={`w-4 h-4 ${refreshing === tracking.id ? 'animate-spin' : ''}`} />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => sendWhatsAppNotification(tracking, tracking.events?.[0])}
+                      title="Enviar WhatsApp"
+                      className="text-green-600 hover:text-green-700"
+                    >
+                      <MessageCircle className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="outline"

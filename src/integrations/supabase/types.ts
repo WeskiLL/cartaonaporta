@@ -173,8 +173,8 @@ export type Database = {
       order_trackings: {
         Row: {
           carrier: string
-          client_email: string | null
           client_name: string
+          client_phone: string | null
           created_at: string
           events: Json | null
           id: string
@@ -187,8 +187,8 @@ export type Database = {
         }
         Insert: {
           carrier?: string
-          client_email?: string | null
           client_name: string
+          client_phone?: string | null
           created_at?: string
           events?: Json | null
           id?: string
@@ -201,8 +201,8 @@ export type Database = {
         }
         Update: {
           carrier?: string
-          client_email?: string | null
           client_name?: string
+          client_phone?: string | null
           created_at?: string
           events?: Json | null
           id?: string

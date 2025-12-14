@@ -213,8 +213,7 @@ export default function TrackingPage() {
   };
 
   const copyShareLink = (tracking: TrackingItem) => {
-    const baseUrl = window.location.origin;
-    const shareLink = `${baseUrl}/rastreio/${tracking.tracking_code}`;
+    const shareLink = `https://cartaonaporta.com.br/rastreio/${tracking.tracking_code}`;
     navigator.clipboard.writeText(shareLink);
     toast.success('Link copiado!');
   };
@@ -226,8 +225,7 @@ export default function TrackingPage() {
       return;
     }
     
-    const baseUrl = window.location.origin;
-    const shareLink = `${baseUrl}/rastreio/${tracking.tracking_code}`;
+    const shareLink = `https://cartaonaporta.com.br/rastreio/${tracking.tracking_code}`;
     
     let message = `Olá ${tracking.client_name}! 📦\n\n`;
     message += `Atualização do seu pedido${tracking.order_number ? ` ${tracking.order_number}` : ''}:\n\n`;

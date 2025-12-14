@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.check-tracking]
 verify_jwt = false
+
+[functions.check-all-trackings]
+verify_jwt = false

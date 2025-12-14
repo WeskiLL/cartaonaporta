@@ -126,65 +126,65 @@ export default function ManagementDashboard() {
         title="Dashboard"
         description="Visão geral do seu negócio"
         actions={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => { setOrderFormMode('quote'); setOrderFormOpen(true); }}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Orçamento
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={() => { setOrderFormMode('quote'); setOrderFormOpen(true); }}>
+              <Plus className="mr-1 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              Orçamento
             </Button>
-            <Button onClick={() => { setOrderFormMode('order'); setOrderFormOpen(true); }}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Pedido
+            <Button size="sm" className="text-xs sm:text-sm" onClick={() => { setOrderFormMode('order'); setOrderFormOpen(true); }}>
+              <Plus className="mr-1 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              Pedido
             </Button>
           </div>
         }
       />
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 mb-6 sm:mb-8">
         <StatCard
-          title="Pedidos do Mês"
+          title="Pedidos"
           value={stats.ordersCount}
-          icon={<ShoppingCart className="h-5 w-5" />}
+          icon={<ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />}
         />
         <StatCard
-          title="Orçamentos Pendentes"
+          title="Orçamentos"
           value={stats.quotesCount}
-          icon={<FileText className="h-5 w-5" />}
+          icon={<FileText className="h-4 w-4 sm:h-5 sm:w-5" />}
         />
         <StatCard
-          title="Total de Clientes"
+          title="Clientes"
           value={stats.clientsCount}
-          icon={<Users className="h-5 w-5" />}
+          icon={<Users className="h-4 w-4 sm:h-5 sm:w-5" />}
         />
         <StatCard
-          title="Receita do Mês"
+          title="Receita"
           value={maskCurrency(stats.revenue)}
-          icon={<DollarSign className="h-5 w-5" />}
+          icon={<DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />}
         />
       </div>
 
       {/* Financial Summary */}
-      <div className="grid gap-4 md:grid-cols-3 mb-8">
-        <div className="bg-card rounded-xl border border-border p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <TrendingUp className="h-5 w-5 text-green-600" />
-            <span className="text-sm text-muted-foreground">Receitas</span>
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8">
+        <div className="bg-card rounded-xl border border-border p-3 sm:p-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+            <span className="text-xs sm:text-sm text-muted-foreground">Receitas</span>
           </div>
-          <p className="text-2xl font-display font-bold text-green-600">{maskCurrency(stats.revenue)}</p>
+          <p className="text-sm sm:text-2xl font-display font-bold text-green-600">{maskCurrency(stats.revenue)}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <TrendingDown className="h-5 w-5 text-red-600" />
-            <span className="text-sm text-muted-foreground">Despesas</span>
+        <div className="bg-card rounded-xl border border-border p-3 sm:p-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+            <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+            <span className="text-xs sm:text-sm text-muted-foreground">Despesas</span>
           </div>
-          <p className="text-2xl font-display font-bold text-red-600">{maskCurrency(stats.expenses)}</p>
+          <p className="text-sm sm:text-2xl font-display font-bold text-red-600">{maskCurrency(stats.expenses)}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <DollarSign className="h-5 w-5 text-primary" />
-            <span className="text-sm text-muted-foreground">Lucro</span>
+        <div className="bg-card rounded-xl border border-border p-3 sm:p-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+            <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            <span className="text-xs sm:text-sm text-muted-foreground">Lucro</span>
           </div>
-          <p className={`text-2xl font-display font-bold ${stats.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <p className={`text-sm sm:text-2xl font-display font-bold ${stats.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {maskCurrency(stats.profit)}
           </p>
         </div>

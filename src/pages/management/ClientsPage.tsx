@@ -73,11 +73,11 @@ export default function ClientsPage() {
         }
       />
 
-      <div className="mb-6">
-        <div className="relative max-w-sm">
+      <div className="mb-4 lg:mb-6">
+        <div className="relative w-full sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome, documento ou e-mail..."
+            placeholder="Buscar..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -85,7 +85,67 @@ export default function ClientsPage() {
         </div>
       </div>
 
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
+      {/* Mobile Cards View */}
+      <div className="block lg:hidden space-y-3">
+        {loadingClients ? (
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : filteredClients.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground bg-card rounded-xl border border-border">
+            {searchTerm ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
+          </div>
+        ) : (
+          filteredClients.map((client) => (
+            <div key={client.id} className="bg-card rounded-xl border border-border p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground truncate">{client.name}</p>
+                  {client.document && (
+                    <p className="text-xs text-muted-foreground mt-1">{client.document}</p>
+                  )}
+                  <div className="flex flex-col gap-1 mt-2">
+                    {client.phone && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Phone className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{client.phone}</span>
+                      </div>
+                    )}
+                    {client.email && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Mail className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{client.email}</span>
+                      </div>
+                    )}
+                    {client.city && (
+                      <p className="text-xs text-muted-foreground">{client.city}/{client.state}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="icon" onClick={() => openEdit(client)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive"
+                    onClick={() => {
+                      setSelectedId(client.id);
+                      setDeleteDialogOpen(true);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden lg:block bg-card rounded-xl border border-border overflow-hidden">
         {loadingClients ? (
           <div className="flex items-center justify-center p-8">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />

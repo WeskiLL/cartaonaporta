@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Truck, Package, MapPin, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -42,16 +41,26 @@ export default function TrackingPublic() {
 
       try {
         const { data, error: fetchError } = await supabase
-          .from('order_trackings')
+          .from('order_trackings' as any)
           .select('id, order_number, client_name, tracking_code, carrier, status, events, last_update')
           .eq('id', id)
-          .single();
+          .maybeSingle();
 
         if (fetchError) throw fetchError;
+        if (!data) {
+          setError(true);
+          return;
+        }
         
         setTracking({
-          ...data,
-          events: (data.events as TrackingEvent[]) || [],
+          id: (data as any).id,
+          order_number: (data as any).order_number,
+          client_name: (data as any).client_name,
+          tracking_code: (data as any).tracking_code,
+          carrier: (data as any).carrier,
+          status: (data as any).status,
+          events: ((data as any).events as TrackingEvent[]) || [],
+          last_update: (data as any).last_update,
         });
       } catch (err) {
         console.error('Error fetching tracking:', err);

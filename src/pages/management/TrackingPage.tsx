@@ -8,12 +8,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Truck, Copy, ExternalLink, Trash2, Mail, Loader2, RefreshCw, Package } from 'lucide-react';
+import { Plus, Truck, Copy, ExternalLink, Trash2, Loader2, RefreshCw, Package } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useManagement } from '@/contexts/ManagementContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+interface TrackingEvent {
+  date: string;
+  time: string;
+  location: string;
+  description: string;
+}
 
 interface TrackingItem {
   id: string;
@@ -30,15 +37,8 @@ interface TrackingItem {
   updated_at: string;
 }
 
-interface TrackingEvent {
-  date: string;
-  time: string;
-  location: string;
-  description: string;
-}
-
 export default function TrackingPage() {
-  const { orders } = useManagement();
+  const { orders, fetchOrders } = useManagement();
   const [trackings, setTrackings] = useState<TrackingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -55,18 +55,19 @@ export default function TrackingPage() {
 
   useEffect(() => {
     fetchTrackings();
+    fetchOrders();
   }, []);
 
   const fetchTrackings = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('order_trackings')
+        .from('order_trackings' as any)
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTrackings((data || []).map(t => ({
+      setTrackings((data || []).map((t: any) => ({
         ...t,
         events: (t.events as TrackingEvent[]) || [],
       })));
@@ -78,6 +79,10 @@ export default function TrackingPage() {
   };
 
   const handleOrderSelect = (orderId: string) => {
+    if (orderId === 'none') {
+      setFormData(prev => ({ ...prev, order_id: '' }));
+      return;
+    }
     const order = orders.find(o => o.id === orderId);
     if (order) {
       setFormData(prev => ({
@@ -98,7 +103,7 @@ export default function TrackingPage() {
     try {
       const order = orders.find(o => o.id === formData.order_id);
       const { data, error } = await supabase
-        .from('order_trackings')
+        .from('order_trackings' as any)
         .insert([{
           order_id: formData.order_id || null,
           order_number: order?.number || null,
@@ -115,7 +120,7 @@ export default function TrackingPage() {
       if (error) throw error;
 
       setTrackings(prev => [{
-        ...data,
+        ...(data as any),
         events: [],
       }, ...prev]);
       setDialogOpen(false);
@@ -138,7 +143,7 @@ export default function TrackingPage() {
 
     try {
       const { error } = await supabase
-        .from('order_trackings')
+        .from('order_trackings' as any)
         .delete()
         .eq('id', id);
 
@@ -163,7 +168,7 @@ export default function TrackingPage() {
       if (data?.events) {
         // Update tracking with new events
         const { error: updateError } = await supabase
-          .from('order_trackings')
+          .from('order_trackings' as any)
           .update({
             events: data.events,
             status: data.status || tracking.status,
@@ -242,12 +247,12 @@ export default function TrackingPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label>Pedido (opcional)</Label>
-                  <Select value={formData.order_id} onValueChange={handleOrderSelect}>
+                  <Select value={formData.order_id || 'none'} onValueChange={handleOrderSelect}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecionar pedido" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhum</SelectItem>
+                      <SelectItem value="none">Nenhum</SelectItem>
                       {orders.map(order => (
                         <SelectItem key={order.id} value={order.id}>
                           {order.number} - {order.client_name}

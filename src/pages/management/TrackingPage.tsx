@@ -167,12 +167,17 @@ export default function TrackingPage() {
       if (error) throw error;
 
       if (data?.events) {
+        const previousStatus = tracking.status;
+        const newStatus = data.status || tracking.status;
+        const hasNewEvents = data.events.length > (tracking.events?.length || 0);
+        const statusChanged = previousStatus !== newStatus;
+
         // Update tracking with new events
         const { error: updateError } = await supabase
           .from('order_trackings' as any)
           .update({
             events: data.events,
-            status: data.status || tracking.status,
+            status: newStatus,
             last_update: new Date().toISOString(),
           })
           .eq('id', tracking.id);
@@ -181,14 +186,20 @@ export default function TrackingPage() {
 
         setTrackings(prev => prev.map(t => 
           t.id === tracking.id 
-            ? { ...t, events: data.events, status: data.status || t.status, last_update: new Date().toISOString() }
+            ? { ...t, events: data.events, status: newStatus, last_update: new Date().toISOString() }
             : t
         ));
 
-        // Send WhatsApp notification if there are new events
-        if (tracking.client_phone && data.events.length > (tracking.events?.length || 0)) {
-          sendWhatsAppNotification(tracking, data.events[0]);
-          toast.success('Rastreio atualizado! Clique para enviar notificação via WhatsApp.');
+        // Auto send WhatsApp notification if status changed or there are new events
+        if (tracking.client_phone && (statusChanged || hasNewEvents)) {
+          // Automatically open WhatsApp notification
+          sendWhatsAppNotification(
+            { ...tracking, status: newStatus }, 
+            data.events[0]
+          );
+          toast.success('Rastreio atualizado! Notificação WhatsApp aberta.');
+        } else if (hasNewEvents || statusChanged) {
+          toast.success('Rastreio atualizado com novas informações!');
         } else {
           toast.success('Rastreio atualizado!');
         }
@@ -362,7 +373,9 @@ export default function TrackingPage() {
                   <div>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Truck className="w-5 h-5 text-primary" />
-                      {tracking.tracking_code}
+                      <span className="font-mono tracking-wider text-primary font-bold">
+                        {tracking.tracking_code}
+                      </span>
                       {getStatusBadge(tracking.status)}
                     </CardTitle>
                     <p className="text-sm text-muted-foreground mt-1">

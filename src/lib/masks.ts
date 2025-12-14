@@ -154,9 +154,21 @@ export const validateCPFOrCNPJ = (value: string): { valid: boolean; type: 'cpf' 
   return { valid: false, type: null };
 };
 
-export const maskCurrency = (value: number): string => {
+export const maskCurrency = (value: string | number): string => {
+  if (typeof value === 'number') {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  }
+  
+  const cleaned = value.replace(/\D/g, '');
+  const numValue = parseFloat(cleaned) / 100;
+  
+  if (isNaN(numValue)) return 'R$ 0,00';
+  
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-  }).format(value);
+  }).format(numValue);
 };

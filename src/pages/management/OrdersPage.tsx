@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Package, FileText, Eye, Trash2, Loader2, ArrowRightLeft, Plus, Download } from 'lucide-react';
+import { Search, Package, FileText, Eye, Trash2, Loader2, ArrowRightLeft, Plus, Download, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -45,6 +45,7 @@ export default function OrdersPage() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'quote' | 'order'>('order');
+  const [editingItem, setEditingItem] = useState<Order | Quote | null>(null);
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [pdfItem, setPdfItem] = useState<Order | Quote | null>(null);
   const [pdfType, setPdfType] = useState<'order' | 'quote'>('order');
@@ -107,6 +108,13 @@ export default function OrdersPage() {
 
   const openNewForm = (mode: 'quote' | 'order') => {
     setFormMode(mode);
+    setEditingItem(null);
+    setFormOpen(true);
+  };
+
+  const openEditForm = (item: Order | Quote, mode: 'quote' | 'order') => {
+    setFormMode(mode);
+    setEditingItem(item);
     setFormOpen(true);
   };
 
@@ -183,7 +191,7 @@ export default function OrdersPage() {
                     <div className="flex flex-col gap-3">
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <span className="font-semibold text-foreground text-sm sm:text-base">{order.number}</span>
+                          <span className="font-semibold text-foreground text-sm sm:text-base">Pedido_{order.number.replace('PED', '')}</span>
                           <StatusBadge status={order.status} type="order" />
                         </div>
                         <p className="text-xs sm:text-sm text-muted-foreground">{order.client_name}</p>
@@ -213,6 +221,9 @@ export default function OrdersPage() {
                         <div className="flex items-center gap-1.5 ml-auto sm:ml-0">
                           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => openPdfPreview(order, 'order')}>
                             <Download className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => openEditForm(order, 'order')}>
+                            <Pencil className="w-3.5 h-3.5" />
                           </Button>
                           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { setSelectedItem(order); setDetailsOpen(true); }}>
                             <Eye className="w-3.5 h-3.5" />
@@ -249,7 +260,7 @@ export default function OrdersPage() {
                     <div className="flex flex-col gap-3">
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <span className="font-semibold text-foreground text-sm sm:text-base">{quote.number}</span>
+                          <span className="font-semibold text-foreground text-sm sm:text-base">Orçamento_{quote.number.replace('ORC', '')}</span>
                           <StatusBadge status={quote.status} type="quote" />
                         </div>
                         <p className="text-xs sm:text-sm text-muted-foreground">{quote.client_name}</p>
@@ -286,6 +297,9 @@ export default function OrdersPage() {
                           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => openPdfPreview(quote, 'quote')}>
                             <Download className="w-3.5 h-3.5" />
                           </Button>
+                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => openEditForm(quote, 'quote')}>
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
                           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { setSelectedItem(quote); setDetailsOpen(true); }}>
                             <Eye className="w-3.5 h-3.5" />
                           </Button>
@@ -306,8 +320,12 @@ export default function OrdersPage() {
       {/* Order Form */}
       <OrderForm
         open={formOpen}
-        onOpenChange={setFormOpen}
+        onOpenChange={(open) => {
+          setFormOpen(open);
+          if (!open) setEditingItem(null);
+        }}
         mode={formMode}
+        editingItem={editingItem}
         onSave={() => {
           fetchOrders();
           fetchQuotes();
@@ -318,7 +336,7 @@ export default function OrdersPage() {
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Detalhes - {selectedItem && ('number' in selectedItem ? selectedItem.number : '')}</DialogTitle>
+            <DialogTitle>Detalhes - {selectedItem && ('number' in selectedItem ? (pdfType === 'order' ? `Pedido_${selectedItem.number.replace('PED', '')}` : `Orçamento_${selectedItem.number.replace('ORC', '')}`) : '')}</DialogTitle>
           </DialogHeader>
           {selectedItem && (
             <div className="space-y-4">
@@ -360,7 +378,7 @@ export default function OrdersPage() {
       <PdfPreviewDialog
         open={pdfPreviewOpen}
         onOpenChange={setPdfPreviewOpen}
-        title={pdfItem ? (pdfType === 'order' ? `Pedido ${(pdfItem as Order).number}` : `Orçamento ${(pdfItem as Quote).number}`) : ''}
+        title={pdfItem ? (pdfType === 'order' ? `Pedido_${(pdfItem as Order).number.replace('PED', '')}` : `Orçamento_${(pdfItem as Quote).number.replace('ORC', '')}`) : ''}
         generatePdf={async () => {
           if (!pdfItem) {
             const jsPDF = (await import('jspdf')).default;

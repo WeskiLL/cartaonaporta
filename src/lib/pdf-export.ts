@@ -151,7 +151,8 @@ const addClientInfo = (doc: jsPDF, client: Client | null, clientName: string, y:
 
 export const generateQuotePDF = async (quote: Quote, company: Company | null, client?: Client | null): Promise<jsPDF> => {
   const doc = new jsPDF();
-  let y = await addHeader(doc, company, `Orçamento ${quote.number}`);
+  const quoteNumber = quote.number.replace('ORC', '');
+  let y = await addHeader(doc, company, `Orçamento_${quoteNumber}`);
   
   // Client info
   y = addClientInfo(doc, client || null, quote.client_name, y);
@@ -216,12 +217,14 @@ export const generateQuotePDF = async (quote: Quote, company: Company | null, cl
 
 export const exportQuoteToPDF = async (quote: Quote, company: Company | null, client?: Client | null) => {
   const doc = await generateQuotePDF(quote, company, client);
-  doc.save(`orcamento-${quote.number}.pdf`);
+  const quoteNumber = quote.number.replace('ORC', '');
+  doc.save(`Orçamento_${quoteNumber}.pdf`);
 };
 
 export const generateOrderPDF = async (order: Order, company: Company | null, client?: Client | null): Promise<jsPDF> => {
   const doc = new jsPDF();
-  let y = await addHeader(doc, company, `Pedido ${order.number}`);
+  const orderNumber = order.number.replace('PED', '');
+  let y = await addHeader(doc, company, `Pedido_${orderNumber}`);
   
   // Client info
   y = addClientInfo(doc, client || null, order.client_name, y);
@@ -307,7 +310,8 @@ export const generateOrderPDF = async (order: Order, company: Company | null, cl
 
 export const exportOrderToPDF = async (order: Order, company: Company | null, client?: Client | null) => {
   const doc = await generateOrderPDF(order, company, client);
-  doc.save(`pedido-${order.number}.pdf`);
+  const orderNumber = order.number.replace('PED', '');
+  doc.save(`Pedido_${orderNumber}.pdf`);
 };
 
 export const generateFinancialReportPDF = async (

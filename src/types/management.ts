@@ -27,11 +27,24 @@ export interface Client {
 export interface ManagementProduct {
   id: string;
   name: string;
-  description: string;
-  base_price: number;
+  size: string;
+  description?: string;
+  base_price?: number;
   cost?: number;
   category: string;
   image_url?: string;
+  is_kit?: boolean;
+  kit_description?: string;
+  is_active?: boolean;
+  display_order?: number;
+  available_quantities?: number[];
+  custom_specs?: string[];
+  price_qty100?: number;
+  price_qty200?: number;
+  price_qty250?: number;
+  price_qty500?: number;
+  price_qty1000?: number;
+  price_qty2000?: number;
   created_at: string;
   updated_at: string;
 }

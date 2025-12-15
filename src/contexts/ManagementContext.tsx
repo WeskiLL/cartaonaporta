@@ -157,14 +157,14 @@ export function ManagementProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Products
+  // Products - Using catalog products table
   const fetchProducts = useCallback(async () => {
     setLoadingProducts(true);
     try {
       const { data, error } = await supabase
-        .from('management_products')
+        .from('products')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('display_order', { ascending: true });
       
       if (error) throw error;
       setProducts((data as ManagementProduct[]) || []);
@@ -177,14 +177,18 @@ export function ManagementProvider({ children }: { children: ReactNode }) {
 
   const addProduct = async (product: Omit<ManagementProduct, 'id' | 'created_at' | 'updated_at'>): Promise<ManagementProduct | null> => {
     try {
-      const { data, error } = await supabase
-        .from('management_products')
-        .insert([product])
-        .select()
-        .single();
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/admin-products`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+        body: JSON.stringify(product),
+      });
       
-      if (error) throw error;
-      const newProduct = data as ManagementProduct;
+      if (!response.ok) throw new Error('Failed to add product');
+      const newProduct = await response.json() as ManagementProduct;
       setProducts(prev => [newProduct, ...prev]);
       return newProduct;
     } catch (error) {
@@ -196,12 +200,17 @@ export function ManagementProvider({ children }: { children: ReactNode }) {
 
   const updateProduct = async (id: string, product: Partial<ManagementProduct>): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from('management_products')
-        .update(product)
-        .eq('id', id);
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/admin-products`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+        body: JSON.stringify({ id, ...product }),
+      });
       
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to update product');
       setProducts(prev => prev.map(p => p.id === id ? { ...p, ...product } : p));
       return true;
     } catch (error) {
@@ -213,12 +222,15 @@ export function ManagementProvider({ children }: { children: ReactNode }) {
 
   const deleteProduct = async (id: string): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from('management_products')
-        .delete()
-        .eq('id', id);
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/admin-products?id=${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+      });
       
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to delete product');
       setProducts(prev => prev.filter(p => p.id !== id));
       return true;
     } catch (error) {

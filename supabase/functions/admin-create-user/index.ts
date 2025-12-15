@@ -82,10 +82,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Add role to user_roles table
+    // Add role to user_roles table (default to vendedor if not specified)
+    const validRoles = ['admin', 'vendedor', 'financeiro'];
+    const userRole = validRoles.includes(role) ? role : 'vendedor';
+    
     const { error: insertRoleError } = await adminClient
       .from('user_roles')
-      .insert({ user_id: newUser.user.id, role: role || 'user' });
+      .insert({ user_id: newUser.user.id, role: userRole });
 
     if (insertRoleError) {
       console.error('Error inserting role:', insertRoleError);

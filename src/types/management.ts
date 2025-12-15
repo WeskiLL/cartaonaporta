@@ -3,10 +3,10 @@ import { Json } from '@/integrations/supabase/types';
 
 export interface ManagementUser {
   id: string;
-  username: string;
-  email: string;
+  user_id: string;
+  email?: string;
   role: 'admin' | 'financeiro' | 'vendedor';
-  createdAt: Date;
+  created_at: string;
 }
 
 export interface Client {

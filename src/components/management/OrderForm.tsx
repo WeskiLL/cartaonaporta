@@ -8,8 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useManagement } from '@/contexts/ManagementContext';
-import { Quote, Order, QuoteItem, Client, DeliveryAddress } from '@/types/management';
-import { Plus, Trash2, Loader2, Search, UserPlus } from 'lucide-react';
+import { Quote, Order, QuoteItem, Client, DeliveryAddress, ManagementProduct } from '@/types/management';
+import { Plus, Trash2, Loader2, Search, UserPlus, Package } from 'lucide-react';
 import { maskCurrency, unmask, maskCPFOrCNPJ, maskCEP, maskPhone, validateCPFOrCNPJ } from '@/lib/masks';
 import { fetchAddressByCep } from '@/lib/cep-service';
 import { toast } from 'sonner';
@@ -38,12 +38,19 @@ interface DeliveryAddressData {
   state: string;
 }
 
+// Available quantities that products can have prices for
+const QUANTITY_OPTIONS = [100, 200, 250, 500, 1000, 2000];
+
 export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) {
   const { clients, products, fetchClients, fetchProducts, addQuote, addOrder, addClient } = useManagement();
   const [loading, setLoading] = useState(false);
   const [clientSearch, setClientSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [items, setItems] = useState<Omit<QuoteItem, 'id' | 'quote_id' | 'order_id'>[]>([]);
+  const [items, setItems] = useState<(Omit<QuoteItem, 'id' | 'quote_id' | 'order_id'> & { 
+    selectedQuantity?: number;
+    isManual?: boolean;
+    productImage?: string;
+  })[]>([]);
   const [discount, setDiscount] = useState('');
   const [notes, setNotes] = useState('');
   
@@ -88,13 +95,37 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
     c.name.toLowerCase().includes(clientSearch.toLowerCase())
   );
 
+  // Get price for a product at a specific quantity
+  const getProductPriceForQuantity = (product: ManagementProduct, quantity: number): number => {
+    const priceMap: Record<number, number | undefined> = {
+      100: product.price_qty100,
+      200: product.price_qty200,
+      250: product.price_qty250,
+      500: product.price_qty500,
+      1000: product.price_qty1000,
+      2000: product.price_qty2000,
+    };
+    return priceMap[quantity] || 0;
+  };
+
+  // Get available quantities for a product (quantities that have prices > 0)
+  const getAvailableQuantities = (product: ManagementProduct): number[] => {
+    if (product.available_quantities && product.available_quantities.length > 0) {
+      return product.available_quantities;
+    }
+    return QUANTITY_OPTIONS.filter(qty => getProductPriceForQuantity(product, qty) > 0);
+  };
+
   const addItem = () => {
     setItems(prev => [...prev, {
       product_id: '',
       product_name: '',
       quantity: 1,
+      selectedQuantity: undefined,
       unit_price: 0,
       total: 0,
+      isManual: false,
+      productImage: undefined,
     }]);
   };
 
@@ -104,16 +135,51 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
       const item = { ...newItems[index], [field]: value };
       
       if (field === 'product_id') {
-        const product = products.find(p => p.id === value);
-        if (product) {
-          item.product_name = product.name;
-          item.unit_price = product.base_price || 0;
-          item.total = item.quantity * item.unit_price;
+        if (value === '' || value === 'manual') {
+          // Manual mode
+          item.product_id = '';
+          item.product_name = '';
+          item.isManual = true;
+          item.selectedQuantity = undefined;
+          item.unit_price = 0;
+          item.total = 0;
+          item.productImage = undefined;
+        } else {
+          const product = products.find(p => p.id === value);
+          if (product) {
+            item.product_name = product.name;
+            item.isManual = false;
+            item.productImage = product.image_url;
+            
+            // Get available quantities
+            const availableQtys = getAvailableQuantities(product);
+            // Default to first available quantity
+            const defaultQty = availableQtys.includes(250) ? 250 : (availableQtys[0] || 100);
+            item.selectedQuantity = defaultQty;
+            item.quantity = 1; // 1 "unit" at this quantity
+            item.unit_price = getProductPriceForQuantity(product, defaultQty);
+            item.total = item.unit_price; // total = price for that quantity
+          }
         }
       }
       
-      if (field === 'quantity' || field === 'unit_price') {
-        item.total = item.quantity * item.unit_price;
+      if (field === 'selectedQuantity' && item.product_id) {
+        const product = products.find(p => p.id === item.product_id);
+        if (product) {
+          const qty = value as number;
+          item.unit_price = getProductPriceForQuantity(product, qty);
+          item.total = item.unit_price;
+        }
+      }
+      
+      // For manual items, calculate total from quantity * unit_price
+      if (item.isManual && (field === 'quantity' || field === 'unit_price' || field === 'total')) {
+        if (field === 'total') {
+          // If total is set directly, keep it
+          item.total = value;
+        } else {
+          // For manual: no quantity calculation needed, just use total directly
+        }
       }
       
       newItems[index] = item;
@@ -238,9 +304,11 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
 
     const itemsData = items.map(item => ({
       product_id: item.product_id || undefined,
-      product_name: item.product_name,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
+      product_name: item.isManual 
+        ? item.product_name 
+        : `${item.product_name} (${item.selectedQuantity} un)`,
+      quantity: item.isManual ? item.quantity : 1,
+      unit_price: item.total, // Use total as unit price for display
       total: item.total,
     }));
 
@@ -462,72 +530,118 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
             </div>
             
             <div className="space-y-3">
-              {items.map((item, index) => (
-                <Card key={index}>
-                  <CardContent className="p-3">
-                    <div className="grid grid-cols-12 gap-2 items-end">
-                      <div className="col-span-5">
-                        <Label className="text-xs">Produto</Label>
-                        <div className="space-y-1">
-                          <Select
-                            value={item.product_id || 'manual'}
-                            onValueChange={(value) => {
-                              if (value === 'manual') {
-                                updateItem(index, 'product_id', '');
-                              } else {
-                                updateItem(index, 'product_id', value);
-                              }
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="manual">Digite manualmente</SelectItem>
-                              {products.map(p => (
-                                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {!item.product_id && (
-                            <Input
-                              placeholder="Nome do produto"
-                              value={item.product_name}
-                              onChange={(e) => updateItem(index, 'product_name', e.target.value)}
-                              className="mt-1"
+              {items.map((item, index) => {
+                const selectedProduct = item.product_id ? products.find(p => p.id === item.product_id) : null;
+                const availableQuantities = selectedProduct ? getAvailableQuantities(selectedProduct) : [];
+                
+                return (
+                  <Card key={index}>
+                    <CardContent className="p-3">
+                      <div className="flex gap-3">
+                        {/* Product Image Thumbnail */}
+                        <div className="flex-shrink-0">
+                          {item.productImage ? (
+                            <img 
+                              src={item.productImage} 
+                              alt={item.product_name}
+                              className="w-12 h-12 object-cover rounded-lg border border-border"
                             />
+                          ) : (
+                            <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
+                              <Package className="w-5 h-5 text-muted-foreground" />
+                            </div>
                           )}
                         </div>
+                        
+                        <div className="flex-1 grid grid-cols-12 gap-2 items-end">
+                          <div className="col-span-4">
+                            <Label className="text-xs">Produto</Label>
+                            <Select
+                              value={item.product_id || 'manual'}
+                              onValueChange={(value) => updateItem(index, 'product_id', value === 'manual' ? '' : value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="manual">Digite manualmente</SelectItem>
+                                {products.map(p => (
+                                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {item.isManual && (
+                              <Input
+                                placeholder="Nome do produto"
+                                value={item.product_name}
+                                onChange={(e) => updateItem(index, 'product_name', e.target.value)}
+                                className="mt-1"
+                              />
+                            )}
+                          </div>
+                          
+                          {item.product_id && !item.isManual ? (
+                            <>
+                              <div className="col-span-3">
+                                <Label className="text-xs">Quantidade</Label>
+                                <Select
+                                  value={String(item.selectedQuantity || '')}
+                                  onValueChange={(value) => updateItem(index, 'selectedQuantity', parseInt(value))}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Qtd" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {availableQuantities.map(qty => (
+                                      <SelectItem key={qty} value={String(qty)}>
+                                        {qty} unidades
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="col-span-4">
+                                <Label className="text-xs">Preço</Label>
+                                <Input 
+                                  value={formatCurrency(item.total)} 
+                                  disabled 
+                                  className="bg-muted"
+                                />
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="col-span-3">
+                                <Label className="text-xs">Qtd</Label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={item.quantity}
+                                  onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                                />
+                              </div>
+                              <div className="col-span-4">
+                                <Label className="text-xs">Valor Total</Label>
+                                <Input
+                                  value={maskCurrency(item.total * 100)}
+                                  onChange={(e) => updateItem(index, 'total', parseFloat(unmask(e.target.value)) / 100 || 0)}
+                                  placeholder="R$ 0,00"
+                                />
+                              </div>
+                            </>
+                          )}
+                          
+                          <div className="col-span-1">
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(index)}>
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                      <div className="col-span-2">
-                        <Label className="text-xs">Qtd</Label>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <Label className="text-xs">Valor Unit.</Label>
-                        <Input
-                          value={maskCurrency(item.unit_price * 100)}
-                          onChange={(e) => updateItem(index, 'unit_price', parseFloat(unmask(e.target.value)) / 100 || 0)}
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <Label className="text-xs">Total</Label>
-                        <Input value={formatCurrency(item.total)} disabled />
-                      </div>
-                      <div className="col-span-1">
-                        <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(index)}>
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
               
               {items.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">

@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { ManagementProduct } from '@/types/management';
 import { maskCurrency, parseCurrencyToNumber } from '@/lib/masks';
 import { Link } from 'react-router-dom';
+import { ImageUploadField } from '@/components/management/ImageUploadField';
 
 const categories = [
   { id: 'tags', label: 'Tags' },
@@ -40,6 +41,7 @@ export default function ProductsPage() {
     price_qty1000: '',
     kit_description: '',
     is_kit: false,
+    image_url: '',
   });
 
   useEffect(() => {
@@ -71,6 +73,7 @@ export default function ProductsPage() {
       price_qty1000: '',
       kit_description: '',
       is_kit: false,
+      image_url: '',
     });
     setFormOpen(true);
   };
@@ -88,6 +91,7 @@ export default function ProductsPage() {
       price_qty1000: product.price_qty1000 ? maskCurrency(product.price_qty1000) : '',
       kit_description: product.kit_description || '',
       is_kit: product.is_kit ?? false,
+      image_url: product.image_url || '',
     });
     setFormOpen(true);
   };
@@ -102,6 +106,7 @@ export default function ProductsPage() {
       is_active: formData.is_active,
       is_kit: formData.is_kit,
       kit_description: formData.kit_description || null,
+      image_url: formData.image_url || null,
       price_qty100: parseCurrencyToNumber(formData.price_qty100) || 0,
       price_qty250: parseCurrencyToNumber(formData.price_qty250) || 0,
       price_qty500: parseCurrencyToNumber(formData.price_qty500) || 0,
@@ -305,6 +310,14 @@ export default function ProductsPage() {
                 />
               </div>
             )}
+
+            <ImageUploadField
+              value={formData.image_url}
+              onChange={(url) => setFormData(prev => ({ ...prev, image_url: url }))}
+              label="Imagem do Produto"
+              bucket="product-images"
+              folder="products"
+            />
 
             <div className="space-y-3">
               <Label>Preços por Quantidade</Label>

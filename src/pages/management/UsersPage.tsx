@@ -11,16 +11,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { Plus, Trash2, Loader2, Shield, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { Wallet, ShoppingBag } from 'lucide-react';
+
 interface User {
   id: string;
   user_id: string;
-  role: 'admin' | 'user';
+  email?: string;
+  role: 'admin' | 'vendedor' | 'financeiro';
   created_at: string;
 }
 
 const ROLE_LABELS: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   admin: { label: 'Administrador', icon: <Shield className="w-4 h-4" />, color: 'text-primary' },
-  user: { label: 'Usuário', icon: <UserCheck className="w-4 h-4" />, color: 'text-blue-600' },
+  vendedor: { label: 'Vendedor', icon: <ShoppingBag className="w-4 h-4" />, color: 'text-blue-600' },
+  financeiro: { label: 'Financeiro', icon: <Wallet className="w-4 h-4" />, color: 'text-green-600' },
 };
 
 export default function UsersPage() {
@@ -31,7 +35,7 @@ export default function UsersPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    role: 'user' as 'admin' | 'user',
+    role: 'vendedor' as 'admin' | 'vendedor' | 'financeiro',
   });
 
   useEffect(() => {
@@ -51,7 +55,7 @@ export default function UsersPage() {
       const usersData: User[] = (data || []).map((role: any) => ({
         id: role.id,
         user_id: role.user_id,
-        role: role.role as 'admin' | 'user',
+        role: role.role as 'admin' | 'vendedor' | 'financeiro',
         created_at: role.created_at,
       }));
 
@@ -105,7 +109,7 @@ export default function UsersPage() {
 
       toast.success('Usuário criado com sucesso');
       setDialogOpen(false);
-      setFormData({ email: '', password: '', role: 'user' });
+      setFormData({ email: '', password: '', role: 'vendedor' });
       fetchUsers();
     } catch (error: any) {
       console.error('Error creating user:', error);
@@ -222,7 +226,7 @@ export default function UsersPage() {
               <Label htmlFor="role">Função</Label>
               <Select
                 value={formData.role}
-                onValueChange={(value: 'admin' | 'user') => 
+                onValueChange={(value: 'admin' | 'vendedor' | 'financeiro') => 
                   setFormData(prev => ({ ...prev, role: value }))
                 }
               >
@@ -231,7 +235,8 @@ export default function UsersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Administrador</SelectItem>
-                  <SelectItem value="user">Usuário</SelectItem>
+                  <SelectItem value="vendedor">Vendedor</SelectItem>
+                  <SelectItem value="financeiro">Financeiro</SelectItem>
                 </SelectContent>
               </Select>
             </div>

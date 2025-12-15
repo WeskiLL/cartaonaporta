@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
-import { Instagram, Tag, CreditCard, Sticker, MoreHorizontal, Package, Moon, Sun, ShoppingCart, X } from "lucide-react";
+import { Instagram, Tag, CreditCard, Sticker, MoreHorizontal, Package, Moon, Sun, ShoppingCart, X, Search } from "lucide-react";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
 import CartPanel from "@/components/catalog/CartPanel";
@@ -245,13 +245,20 @@ const Catalogo = () => {
             return <div key={product.id} className={`rounded-2xl shadow-sm border p-4 sm:p-5 hover:shadow-md transition-all ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white"}`}>
                     {/* Header: Image + Name + Buttons */}
                     <div className="flex items-center gap-3 mb-3">
-                      {/* Product Image - Small */}
-                      <img 
-                        src={product.image || "/placeholder.svg"} 
-                        alt={product.name} 
-                        className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-lg bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0" 
-                        onClick={() => setSelectedImage(product.image || "/placeholder.svg")} 
-                      />
+                      {/* Product Image - Small with magnifying glass */}
+                      <div 
+                        className="relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 cursor-pointer group"
+                        onClick={() => setSelectedImage(product.image || "/placeholder.svg")}
+                      >
+                        <img 
+                          src={product.image || "/placeholder.svg"} 
+                          alt={product.name} 
+                          className="w-full h-full object-cover rounded-lg bg-gray-100 group-hover:opacity-80 transition-opacity" 
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Search className="w-4 h-4 text-white" />
+                        </div>
+                      </div>
                       
                       {/* Name + Buttons */}
                       <div className="flex items-center flex-wrap gap-2">

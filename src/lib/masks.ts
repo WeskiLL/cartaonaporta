@@ -162,13 +162,24 @@ export const maskCurrency = (value: string | number): string => {
     }).format(value);
   }
   
+  // Remove tudo que não é número
   const cleaned = value.replace(/\D/g, '');
-  const numValue = parseFloat(cleaned) / 100;
   
-  if (isNaN(numValue)) return 'R$ 0,00';
+  if (!cleaned) return '';
+  
+  // Converte para centavos (divide por 100)
+  const numValue = parseInt(cleaned, 10) / 100;
+  
+  if (isNaN(numValue)) return '';
   
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
   }).format(numValue);
+};
+
+export const parseCurrencyToNumber = (value: string): number => {
+  if (!value) return 0;
+  const cleaned = value.replace(/\D/g, '');
+  return parseInt(cleaned, 10) / 100 || 0;
 };

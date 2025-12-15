@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, Search, Edit, Trash2, Loader2, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { ManagementProduct } from '@/types/management';
-import { maskCurrency, unmask } from '@/lib/masks';
+import { maskCurrency, parseCurrencyToNumber } from '@/lib/masks';
 
 export default function ProductsPage() {
   const { products, loadingProducts, fetchProducts, addProduct, updateProduct, deleteProduct } = useManagement();
@@ -50,16 +50,16 @@ export default function ProductsPage() {
       name: product.name,
       description: product.description || '',
       category: product.category || '',
-      base_price: product.base_price ? maskCurrency(String(product.base_price * 100)) : '',
-      cost: product.cost ? maskCurrency(String(product.cost * 100)) : '',
+      base_price: product.base_price ? maskCurrency(product.base_price) : '',
+      cost: product.cost ? maskCurrency(product.cost) : '',
     });
     setFormOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const basePrice = parseFloat(unmask(formData.base_price).replace(',', '.')) / 100;
-    const cost = formData.cost ? parseFloat(unmask(formData.cost).replace(',', '.')) / 100 : undefined;
+    const basePrice = parseCurrencyToNumber(formData.base_price);
+    const cost = formData.cost ? parseCurrencyToNumber(formData.cost) : undefined;
 
     const data = {
       name: formData.name,

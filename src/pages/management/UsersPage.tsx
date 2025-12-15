@@ -66,33 +66,47 @@ export default function UsersPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.email || !formData.password) {
+      toast.error('Preencha e-mail e senha');
+      return;
+    }
+    
+    if (formData.password.length < 6) {
+      toast.error('A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+    
     setFormLoading(true);
 
     try {
-      // Create user via Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
+      // Get current session to restore after creating user
+      const { data: currentSession } = await supabase.auth.getSession();
+      
+      // Create user via Supabase Auth Admin API through edge function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-create-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentSession.session?.access_token}`,
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          role: formData.role,
+        }),
       });
 
-      if (authError) throw authError;
+      const result = await response.json();
 
-      if (authData.user) {
-        // Add role
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert([{
-            user_id: authData.user.id,
-            role: formData.role,
-          }]);
-
-        if (roleError) throw roleError;
-
-        toast.success('Usuário criado com sucesso');
-        setDialogOpen(false);
-        setFormData({ email: '', password: '', role: 'user' });
-        fetchUsers();
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao criar usuário');
       }
+
+      toast.success('Usuário criado com sucesso');
+      setDialogOpen(false);
+      setFormData({ email: '', password: '', role: 'user' });
+      fetchUsers();
     } catch (error: any) {
       console.error('Error creating user:', error);
       toast.error(error.message || 'Erro ao criar usuário');

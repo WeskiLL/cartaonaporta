@@ -8,10 +8,21 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Search, Edit, Trash2, Loader2, Package } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Plus, Search, Edit, Trash2, Loader2, Package, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { ManagementProduct } from '@/types/management';
 import { maskCurrency, parseCurrencyToNumber } from '@/lib/masks';
+import { Link } from 'react-router-dom';
+
+const categories = [
+  { id: 'tags', label: 'Tags' },
+  { id: 'kits', label: 'Kits' },
+  { id: 'cartoes', label: 'Cartões' },
+  { id: 'adesivos', label: 'Adesivos' },
+  { id: 'outros', label: 'Outros' },
+];
 
 export default function ProductsPage() {
   const { products, loadingProducts, fetchProducts, addProduct, updateProduct, deleteProduct } = useManagement();
@@ -20,10 +31,15 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<ManagementProduct | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
-    category: '',
-    base_price: '',
-    cost: '',
+    size: '',
+    category: 'tags',
+    is_active: true,
+    price_qty100: '',
+    price_qty250: '',
+    price_qty500: '',
+    price_qty1000: '',
+    kit_description: '',
+    is_kit: false,
   });
 
   useEffect(() => {
@@ -35,12 +51,27 @@ export default function ProductsPage() {
     p.category?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const formatCurrency = (value: number | undefined) => 
+  const formatCurrency = (value: number | undefined | null) => 
     value ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value) : '-';
+
+  const getMainPrice = (product: ManagementProduct) => {
+    return product.price_qty250 || product.price_qty100 || product.price_qty500 || product.price_qty1000 || 0;
+  };
 
   const openNew = () => {
     setEditingProduct(null);
-    setFormData({ name: '', description: '', category: '', base_price: '', cost: '' });
+    setFormData({ 
+      name: '', 
+      size: '', 
+      category: 'tags', 
+      is_active: true,
+      price_qty100: '',
+      price_qty250: '',
+      price_qty500: '',
+      price_qty1000: '',
+      kit_description: '',
+      is_kit: false,
+    });
     setFormOpen(true);
   };
 
@@ -48,25 +79,33 @@ export default function ProductsPage() {
     setEditingProduct(product);
     setFormData({
       name: product.name,
-      description: product.description || '',
-      category: product.category || '',
-      base_price: product.base_price ? maskCurrency(product.base_price) : '',
-      cost: product.cost ? maskCurrency(product.cost) : '',
+      size: product.size || '',
+      category: product.category || 'tags',
+      is_active: product.is_active ?? true,
+      price_qty100: product.price_qty100 ? maskCurrency(product.price_qty100) : '',
+      price_qty250: product.price_qty250 ? maskCurrency(product.price_qty250) : '',
+      price_qty500: product.price_qty500 ? maskCurrency(product.price_qty500) : '',
+      price_qty1000: product.price_qty1000 ? maskCurrency(product.price_qty1000) : '',
+      kit_description: product.kit_description || '',
+      is_kit: product.is_kit ?? false,
     });
     setFormOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const basePrice = parseCurrencyToNumber(formData.base_price);
-    const cost = formData.cost ? parseCurrencyToNumber(formData.cost) : undefined;
-
-    const data = {
+    
+    const data: any = {
       name: formData.name,
-      description: formData.description || undefined,
-      category: formData.category || undefined,
-      base_price: isNaN(basePrice) ? 0 : basePrice,
-      cost: cost && !isNaN(cost) ? cost : undefined,
+      size: formData.size || '0x0',
+      category: formData.category,
+      is_active: formData.is_active,
+      is_kit: formData.is_kit,
+      kit_description: formData.kit_description || null,
+      price_qty100: parseCurrencyToNumber(formData.price_qty100) || 0,
+      price_qty250: parseCurrencyToNumber(formData.price_qty250) || 0,
+      price_qty500: parseCurrencyToNumber(formData.price_qty500) || 0,
+      price_qty1000: parseCurrencyToNumber(formData.price_qty1000) || 0,
     };
 
     if (editingProduct) {
@@ -74,20 +113,25 @@ export default function ProductsPage() {
       if (success) {
         toast.success('Produto atualizado!');
         setFormOpen(false);
+        fetchProducts();
       }
     } else {
-      const result = await addProduct(data as Omit<ManagementProduct, 'id' | 'created_at' | 'updated_at'>);
+      const result = await addProduct(data);
       if (result) {
         toast.success('Produto adicionado!');
         setFormOpen(false);
+        fetchProducts();
       }
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Excluir este produto?')) {
+    if (confirm('Excluir este produto? Ele também será removido do catálogo.')) {
       const success = await deleteProduct(id);
-      if (success) toast.success('Produto excluído!');
+      if (success) {
+        toast.success('Produto excluído!');
+        fetchProducts();
+      }
     }
   };
 
@@ -95,12 +139,20 @@ export default function ProductsPage() {
     <ManagementLayout>
       <PageHeader
         title="Produtos"
-        description="Produtos para orçamentos e pedidos"
+        description="Produtos sincronizados com o catálogo do site"
         actions={
-          <Button onClick={openNew}>
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Produto
-          </Button>
+          <div className="flex gap-2">
+            <Link to="/admin">
+              <Button variant="outline" size="sm">
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Ir para Catálogo
+              </Button>
+            </Link>
+            <Button onClick={openNew}>
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Produto
+            </Button>
+          </div>
         }
       />
 
@@ -130,14 +182,29 @@ export default function ProductsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredProducts.map(product => (
-            <Card key={product.id}>
+            <Card key={product.id} className={!product.is_active ? 'opacity-60' : ''}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h3 className="font-semibold text-foreground">{product.name}</h3>
-                    {product.category && (
-                      <span className="text-xs text-muted-foreground">{product.category}</span>
+                  <div className="flex items-start gap-3">
+                    {product.image_url && (
+                      <img 
+                        src={product.image_url} 
+                        alt={product.name}
+                        className="w-12 h-12 object-cover rounded"
+                      />
                     )}
+                    <div>
+                      <h3 className="font-semibold text-foreground">{product.name}</h3>
+                      <div className="flex gap-2 items-center">
+                        <span className="text-xs text-muted-foreground capitalize">{product.category}</span>
+                        {product.size && (
+                          <span className="text-xs text-muted-foreground">• {product.size}cm</span>
+                        )}
+                        {!product.is_active && (
+                          <span className="text-xs bg-destructive/20 text-destructive px-1.5 py-0.5 rounded">Inativo</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(product)}>
@@ -148,19 +215,10 @@ export default function ProductsPage() {
                     </Button>
                   </div>
                 </div>
-                {product.description && (
-                  <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{product.description}</p>
-                )}
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Preço:</span>
-                  <span className="font-medium text-primary">{formatCurrency(product.base_price)}</span>
+                <div className="flex justify-between text-sm mt-3">
+                  <span className="text-muted-foreground">Preço (250un):</span>
+                  <span className="font-medium text-primary">{formatCurrency(getMainPrice(product))}</span>
                 </div>
-                {product.cost && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Custo:</span>
-                    <span>{formatCurrency(product.cost)}</span>
-                  </div>
-                )}
               </CardContent>
             </Card>
           ))}
@@ -169,7 +227,7 @@ export default function ProductsPage() {
 
       {/* Product Form Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingProduct ? 'Editar Produto' : 'Novo Produto'}</DialogTitle>
           </DialogHeader>
@@ -182,44 +240,110 @@ export default function ProductsPage() {
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="category">Categoria</Label>
-              <Input
-                id="category"
-                value={formData.category}
-                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                placeholder="Ex: Tags, Cartões..."
-              />
-            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="base_price">Preço Base</Label>
+                <Label htmlFor="size">Tamanho (cm)</Label>
                 <Input
-                  id="base_price"
-                  value={formData.base_price}
-                  onChange={(e) => setFormData(prev => ({ ...prev, base_price: maskCurrency(e.target.value) }))}
-                  placeholder="R$ 0,00"
+                  id="size"
+                  value={formData.size}
+                  onChange={(e) => setFormData(prev => ({ ...prev, size: e.target.value }))}
+                  placeholder="Ex: 5x9"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cost">Custo</Label>
-                <Input
-                  id="cost"
-                  value={formData.cost}
-                  onChange={(e) => setFormData(prev => ({ ...prev, cost: maskCurrency(e.target.value) }))}
-                  placeholder="R$ 0,00"
-                />
+                <Label htmlFor="category">Categoria</Label>
+                <Select 
+                  value={formData.category} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(cat => (
+                      <SelectItem key={cat.id} value={cat.id}>{cat.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                rows={3}
+
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <div>
+                <Label htmlFor="is_active">Ativo no catálogo</Label>
+                <p className="text-xs text-muted-foreground">Visível para clientes</p>
+              </div>
+              <Switch
+                id="is_active"
+                checked={formData.is_active}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
               />
             </div>
+
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <div>
+                <Label htmlFor="is_kit">É um Kit</Label>
+                <p className="text-xs text-muted-foreground">Produto do tipo kit</p>
+              </div>
+              <Switch
+                id="is_kit"
+                checked={formData.is_kit}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_kit: checked }))}
+              />
+            </div>
+
+            {formData.is_kit && (
+              <div className="space-y-2">
+                <Label htmlFor="kit_description">Descrição do Kit</Label>
+                <Textarea
+                  id="kit_description"
+                  value={formData.kit_description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, kit_description: e.target.value }))}
+                  placeholder="Ex: 100 tags brinco + 100 tags anel..."
+                  rows={2}
+                />
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <Label>Preços por Quantidade</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">100 unidades</Label>
+                  <Input
+                    value={formData.price_qty100}
+                    onChange={(e) => setFormData(prev => ({ ...prev, price_qty100: maskCurrency(e.target.value) }))}
+                    placeholder="R$ 0,00"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">250 unidades</Label>
+                  <Input
+                    value={formData.price_qty250}
+                    onChange={(e) => setFormData(prev => ({ ...prev, price_qty250: maskCurrency(e.target.value) }))}
+                    placeholder="R$ 0,00"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">500 unidades</Label>
+                  <Input
+                    value={formData.price_qty500}
+                    onChange={(e) => setFormData(prev => ({ ...prev, price_qty500: maskCurrency(e.target.value) }))}
+                    placeholder="R$ 0,00"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">1.000 unidades</Label>
+                  <Input
+                    value={formData.price_qty1000}
+                    onChange={(e) => setFormData(prev => ({ ...prev, price_qty1000: maskCurrency(e.target.value) }))}
+                    placeholder="R$ 0,00"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>
                 Cancelar

@@ -19,6 +19,7 @@ interface OrderFormProps {
   onOpenChange: (open: boolean) => void;
   mode: 'quote' | 'order';
   onSave: () => void;
+  editingItem?: Order | Quote | null;
 }
 
 interface NewClientData {
@@ -41,8 +42,8 @@ interface DeliveryAddressData {
 // Available quantities that products can have prices for
 const QUANTITY_OPTIONS = [100, 200, 250, 500, 1000, 2000];
 
-export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) {
-  const { clients, products, fetchClients, fetchProducts, addQuote, addOrder, addClient } = useManagement();
+export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: OrderFormProps) {
+  const { clients, products, fetchClients, fetchProducts, addQuote, addOrder, addClient, updateQuote, updateOrder } = useManagement();
   const [loading, setLoading] = useState(false);
   const [clientSearch, setClientSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -53,6 +54,7 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
   })[]>([]);
   const [discount, setDiscount] = useState('');
   const [notes, setNotes] = useState('');
+  const [productSearch, setProductSearch] = useState('');
   
   // New client inline creation
   const [clientMode, setClientMode] = useState<'select' | 'new'>('select');
@@ -80,16 +82,68 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
     if (open) {
       fetchClients();
       fetchProducts();
-      setSelectedClient(null);
-      setItems([]);
-      setDiscount('');
-      setNotes('');
-      setClientMode('select');
-      setNewClient({ name: '', email: '', phone: '', document: '' });
-      setDeliveryAddress({ zip_code: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '' });
-      setDocumentError('');
+      
+      if (editingItem) {
+        // Populate form with existing data
+        const client = clients.find(c => c.id === editingItem.client_id);
+        setSelectedClient(client || null);
+        setClientMode('select');
+        setDiscount(editingItem.discount ? maskCurrency(editingItem.discount * 100) : '');
+        setNotes(editingItem.notes || '');
+        
+        // Populate items
+        if (editingItem.items && editingItem.items.length > 0) {
+          const mappedItems = editingItem.items.map(item => {
+            const product = products.find(p => p.id === item.product_id);
+            return {
+              product_id: item.product_id || '',
+              product_name: item.product_name,
+              quantity: item.quantity,
+              selectedQuantity: item.quantity,
+              unit_price: item.unit_price,
+              total: item.total,
+              isManual: !item.product_id,
+              productImage: product?.image_url,
+            };
+          });
+          setItems(mappedItems);
+        } else {
+          setItems([]);
+        }
+        
+        // Populate delivery address for orders
+        if (mode === 'order' && 'delivery_address' in editingItem && editingItem.delivery_address) {
+          const addr = editingItem.delivery_address as unknown as DeliveryAddressData;
+          setDeliveryAddress({
+            zip_code: addr.zip_code || '',
+            street: addr.street || '',
+            number: addr.number || '',
+            complement: addr.complement || '',
+            neighborhood: addr.neighborhood || '',
+            city: addr.city || '',
+            state: addr.state || '',
+          });
+        } else {
+          setDeliveryAddress({ zip_code: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '' });
+        }
+      } else {
+        // Reset form for new item
+        setSelectedClient(null);
+        setItems([]);
+        setDiscount('');
+        setNotes('');
+        setClientMode('select');
+        setNewClient({ name: '', email: '', phone: '', document: '' });
+        setDeliveryAddress({ zip_code: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '' });
+        setDocumentError('');
+      }
     }
-  }, [open, fetchClients, fetchProducts]);
+  }, [open, fetchClients, fetchProducts, editingItem, clients, products, mode]);
+
+  // Filter products by search
+  const filteredProducts = products.filter(p =>
+    p.name.toLowerCase().includes(productSearch.toLowerCase())
+  );
 
   const filteredClients = clients.filter(c =>
     c.name.toLowerCase().includes(clientSearch.toLowerCase())
@@ -313,10 +367,35 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
     }));
 
     let result;
-    if (mode === 'quote') {
-      result = await addQuote(data, itemsData);
+    if (editingItem) {
+      // Update existing
+      const success = mode === 'quote' 
+        ? await updateQuote(editingItem.id, { ...data, items: undefined })
+        : await updateOrder(editingItem.id, { ...data, items: undefined });
+      
+      if (success) {
+        // Delete old items and insert new ones
+        const { supabase } = await import('@/integrations/supabase/client');
+        if (mode === 'quote') {
+          await supabase.from('quote_items').delete().eq('quote_id', editingItem.id);
+          if (itemsData.length > 0) {
+            await supabase.from('quote_items').insert(itemsData.map(item => ({ ...item, quote_id: editingItem.id })));
+          }
+        } else {
+          await supabase.from('quote_items').delete().eq('order_id', editingItem.id);
+          if (itemsData.length > 0) {
+            await supabase.from('quote_items').insert(itemsData.map(item => ({ ...item, order_id: editingItem.id })));
+          }
+        }
+      }
+      result = success;
     } else {
-      result = await addOrder(data, itemsData);
+      // Create new
+      if (mode === 'quote') {
+        result = await addQuote(data, itemsData);
+      } else {
+        result = await addOrder(data, itemsData);
+      }
     }
 
     setLoading(false);
@@ -334,7 +413,10 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {mode === 'quote' ? 'Novo Orçamento' : 'Novo Pedido'}
+            {editingItem 
+              ? (mode === 'quote' ? `Editar Orçamento_${editingItem.number.replace('ORC', '')}` : `Editar Pedido_${editingItem.number.replace('PED', '')}`)
+              : (mode === 'quote' ? 'Novo Orçamento' : 'Novo Pedido')
+            }
           </DialogTitle>
         </DialogHeader>
 
@@ -558,14 +640,29 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
                             <Label className="text-xs">Produto</Label>
                             <Select
                               value={item.product_id || 'manual'}
-                              onValueChange={(value) => updateItem(index, 'product_id', value === 'manual' ? '' : value)}
+                              onValueChange={(value) => {
+                                updateItem(index, 'product_id', value === 'manual' ? '' : value);
+                                setProductSearch('');
+                              }}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Selecione..." />
                               </SelectTrigger>
                               <SelectContent>
+                                <div className="p-2">
+                                  <div className="relative">
+                                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                                    <Input
+                                      placeholder="Buscar produto..."
+                                      value={productSearch}
+                                      onChange={(e) => setProductSearch(e.target.value)}
+                                      className="h-8 pl-7 text-xs"
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  </div>
+                                </div>
                                 <SelectItem value="manual">Digite manualmente</SelectItem>
-                                {products.map(p => (
+                                {filteredProducts.map(p => (
                                   <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                                 ))}
                               </SelectContent>
@@ -700,7 +797,7 @@ export function OrderForm({ open, onOpenChange, mode, onSave }: OrderFormProps) 
             </Button>
             <Button type="submit" disabled={loading || items.length === 0}>
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Criar {mode === 'quote' ? 'Orçamento' : 'Pedido'}
+              {editingItem ? 'Salvar Alterações' : `Criar ${mode === 'quote' ? 'Orçamento' : 'Pedido'}`}
             </Button>
           </div>
         </form>

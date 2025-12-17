@@ -100,15 +100,37 @@ const AdminDashboard = () => {
 
   const fetchProducts = async () => {
     try {
+      // Get current session for auth token
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-products`,
-        { method: "GET" }
+        { 
+          method: "GET",
+          headers: {
+            'Authorization': `Bearer ${session?.access_token || ''}`,
+            'Content-Type': 'application/json',
+          }
+        }
       );
+      
       const data = await response.json();
-      setProducts(data);
+      
+      // Ensure data is an array
+      if (Array.isArray(data)) {
+        setProducts(data);
+      } else {
+        console.error('Invalid response from admin-products:', data);
+        setProducts([]);
+        if (data.error) {
+          toast.error(`Erro: ${data.error}`);
+        }
+      }
     } catch (error) {
       console.error("Error fetching products:", error);
       toast.error("Erro ao carregar produtos");
+      setProducts([]);
     } finally {
       setIsLoading(false);
     }
@@ -161,6 +183,9 @@ const AdminDashboard = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const productData = {
         name: formData.name,
         size: formData.size,
@@ -192,7 +217,10 @@ const AdminDashboard = () => {
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-products`,
         {
           method,
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session?.access_token || ''}`
+          },
           body: JSON.stringify(body),
         }
       );
@@ -217,9 +245,17 @@ const AdminDashboard = () => {
     if (!confirm("Tem certeza que deseja excluir este produto?")) return;
 
     try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-products?id=${id}`,
-        { method: "DELETE" }
+        { 
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${session?.access_token || ''}`
+          }
+        }
       );
 
       if (!response.ok) {
@@ -238,10 +274,11 @@ const AdminDashboard = () => {
     }
   };
 
-  // Filtered products based on category
+  // Filtered products based on category - ensure products is always an array
   const filteredProducts = useMemo(() => {
-    if (categoryFilter === "all") return products;
-    return products.filter(p => p.category === categoryFilter);
+    const productsArray = Array.isArray(products) ? products : [];
+    if (categoryFilter === "all") return productsArray;
+    return productsArray.filter(p => p.category === categoryFilter);
   }, [products, categoryFilter]);
 
   const handleDragEnd = async (result: DropResult) => {
@@ -269,11 +306,17 @@ const AdminDashboard = () => {
     }));
 
     try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-products`,
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session?.access_token || ''}`
+          },
           body: JSON.stringify({ orders }),
         }
       );

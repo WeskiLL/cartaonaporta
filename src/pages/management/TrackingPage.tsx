@@ -158,16 +158,16 @@ export default function TrackingPage() {
   };
 
   const handleRefresh = (tracking: TrackingItem) => {
-    // Abre o site oficial de rastreamento dos Correios em uma nova aba
-    window.open(`https://rastreamento.correios.com.br/app/index.php`, '_blank');
+    // Abre o site oficial de rastreamento dos Correios com o código preenchido
+    window.open(`https://rastreamento.correios.com.br/app/index.php?objetos=${tracking.tracking_code}`, '_blank');
     toast.info('Site dos Correios aberto em nova aba');
   };
 
   const copyShareLink = (tracking: TrackingItem) => {
-    // Link oficial de rastreamento dos Correios
-    const shareLink = `https://rastreamento.correios.com.br/app/index.php`;
-    navigator.clipboard.writeText(`Rastreie seu pedido: ${shareLink}\nCódigo: ${tracking.tracking_code}`);
-    toast.success('Link e código copiados!');
+    // Link personalizado do site que redireciona para Correios
+    const shareLink = `https://cartaonaporta.com.br/rastreio/${tracking.tracking_code}`;
+    navigator.clipboard.writeText(shareLink);
+    toast.success('Link copiado!');
   };
 
   const sendWhatsAppNotification = (tracking: TrackingItem) => {
@@ -177,13 +177,13 @@ export default function TrackingPage() {
       return;
     }
     
-    // Link oficial de rastreamento dos Correios
-    const shareLink = `https://rastreamento.correios.com.br/app/index.php`;
+    // Link personalizado do site
+    const shareLink = `https://cartaonaporta.com.br/rastreio/${tracking.tracking_code}`;
     
     let message = `Olá ${tracking.client_name}! 📦\n\n`;
     message += `Seu pedido${tracking.order_number ? ` ${tracking.order_number}` : ''} foi enviado!\n\n`;
     message += `📦 Código de rastreio: *${tracking.tracking_code}*\n\n`;
-    message += `Acompanhe seu pedido no site dos Correios:\n${shareLink}\n\n`;
+    message += `Acompanhe seu pedido:\n${shareLink}\n\n`;
     message += `Prime Print - Sua marca, nossa impressão! ✨`;
     
     const whatsappUrl = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;

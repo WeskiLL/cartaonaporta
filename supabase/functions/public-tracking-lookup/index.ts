@@ -45,11 +45,13 @@ Deno.serve(async (req) => {
 
     console.log("Looking up tracking code:", sanitizedCode);
 
-    const { data, error } = await supabase
+    // Use limit(1) instead of maybeSingle() to handle potential duplicates gracefully
+    const { data: results, error } = await supabase
       .from("order_trackings")
       .select("id, order_number, client_name, tracking_code, carrier, status, events, last_update")
       .eq("tracking_code", sanitizedCode)
-      .maybeSingle();
+      .order("created_at", { ascending: false })
+      .limit(1);
 
     if (error) {
       console.error("Database error:", error);
@@ -58,6 +60,8 @@ Deno.serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const data = results && results.length > 0 ? results[0] : null;
 
     if (!data) {
       return new Response(

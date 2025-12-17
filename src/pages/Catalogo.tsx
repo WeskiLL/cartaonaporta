@@ -9,7 +9,6 @@ import logoCartaoNaPortaWhite from "@/assets/logo-cartao-na-porta-white.png";
 import logoPrimePrint from "@/assets/logo-prime-print.png";
 import logoCartaoNaPorta from "@/assets/logo-cartao-na-porta.png";
 import whatsappIcon from "@/assets/whatsapp-icon.png";
-import stationeryPattern from "@/assets/stationery-pattern.png";
 import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 const categories = [{
   id: "tags",
@@ -151,30 +150,17 @@ const Catalogo = () => {
       </button>
 
       <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "bg-gray-900" : "bg-gray-50"}`}>
-        {/* Hero Header with Pattern */}
-        <div className="relative py-8 sm:py-12 px-4 overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80">
-          {/* Pattern Overlay */}
-          <div className="absolute inset-0 opacity-30" style={{
-          backgroundImage: `url(${stationeryPattern})`,
-          backgroundSize: '80px 80px',
-          backgroundRepeat: 'repeat'
-        }} />
-
+        {/* Hero Header - Simple Orange */}
+        <div className="relative py-4 px-4 bg-primary">
           {/* Dark Mode Toggle */}
-          <button onClick={() => setIsDarkMode(!isDarkMode)} className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors text-white" aria-label="Toggle dark mode">
-            {isDarkMode ? <Sun className="h-4 w-4 sm:h-5 sm:w-5" /> : <Moon className="h-4 w-4 sm:h-5 sm:w-5" />}
+          <button onClick={() => setIsDarkMode(!isDarkMode)} className="absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 sm:p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors text-white" aria-label="Toggle dark mode">
+            {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
 
-          <div className="relative max-w-4xl mx-auto text-center">
+          <div className="max-w-4xl mx-auto flex items-center justify-center gap-3 sm:gap-4">
             {/* Dual Logos - White versions */}
-            <div className="flex items-center justify-center gap-3 sm:gap-6 mb-3 sm:mb-4">
-              <img src={logoPrimePrintWhite} alt="Prime Print" className="h-12 sm:h-16 md:h-24 drop-shadow-lg" />
-              <img src={logoCartaoNaPortaWhite} alt="Cartão na Porta" className="h-12 sm:h-16 md:h-24 drop-shadow-lg" />
-            </div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 sm:mb-2">
-              Prime Print
-            </h1>
-            <p className="text-white/90 text-sm sm:text-lg px-2">Papelaria personalizada | Tags, Cartelas e Cartões para biju, joias e semijoias. Acabamento de alto padrão ao alcance de todos.</p>
+            <img src={logoPrimePrintWhite} alt="Prime Print" className="h-8 sm:h-10 md:h-12 drop-shadow-lg" />
+            <img src={logoCartaoNaPortaWhite} alt="Cartão na Porta" className="h-8 sm:h-10 md:h-12 drop-shadow-lg" />
           </div>
         </div>
 

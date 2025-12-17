@@ -8,12 +8,12 @@ import logoPrimePrint from '@/assets/logo-prime-print.png';
 export default function TrackingPublic() {
   const { trackingCode } = useParams<{ trackingCode: string }>();
 
-  // Redirecionar automaticamente para o site de rastreamento
+  // Redirecionar automaticamente para o site oficial dos Correios
   useEffect(() => {
     if (trackingCode) {
       // Aguarda um momento para mostrar a página e depois redireciona
       const timer = setTimeout(() => {
-        window.location.href = `https://www.linkcorreios.com.br/${trackingCode}`;
+        window.location.href = `https://rastreamento.correios.com.br/app/index.php`;
       }, 2000);
       
       return () => clearTimeout(timer);
@@ -21,9 +21,7 @@ export default function TrackingPublic() {
   }, [trackingCode]);
 
   const handleRedirect = () => {
-    if (trackingCode) {
-      window.location.href = `https://www.linkcorreios.com.br/${trackingCode}`;
-    }
+    window.location.href = `https://rastreamento.correios.com.br/app/index.php`;
   };
 
   if (!trackingCode) {

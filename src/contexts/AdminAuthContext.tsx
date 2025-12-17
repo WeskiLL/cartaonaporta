@@ -22,7 +22,6 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
   // Check if user has admin role
   const checkAdminRole = async (userId: string): Promise<{ isAdmin: boolean; error?: string }> => {
     try {
-      console.log("Checking admin role for user:", userId);
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
@@ -31,14 +30,13 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
         .maybeSingle();
 
       if (error) {
-        console.error("Error checking admin role:", error);
+        console.error("Error checking admin role");
         return { isAdmin: false, error: error.message };
       }
 
-      console.log("Admin role check result:", data);
       return { isAdmin: !!data };
     } catch (error) {
-      console.error("Error checking admin role:", error);
+      console.error("Error checking admin role");
       return { isAdmin: false, error: "Erro ao verificar permissões" };
     }
   };
@@ -81,14 +79,13 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      console.log("Attempting login for:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        console.error("Auth error:", error);
+        console.error("Auth error");
         return { success: false, error: error.message };
       }
 
@@ -96,13 +93,11 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
         return { success: false, error: "Erro ao fazer login" };
       }
 
-      console.log("User authenticated, checking admin role...");
-      
       // Check if user is admin
       const adminCheck = await checkAdminRole(data.user.id);
       
       if (adminCheck.error) {
-        console.error("Admin check error:", adminCheck.error);
+        console.error("Admin check error");
         await supabase.auth.signOut();
         return { success: false, error: adminCheck.error };
       }
@@ -116,7 +111,7 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
       setIsAdmin(true);
       return { success: true };
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Login error");
       return { success: false, error: "Erro de conexão" };
     }
   };

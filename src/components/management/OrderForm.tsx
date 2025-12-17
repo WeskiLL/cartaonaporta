@@ -78,67 +78,95 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
   });
   const [loadingCep, setLoadingCep] = useState(false);
 
+  // Track if we've initialized the form for the current open state
+  const [initialized, setInitialized] = useState(false);
+
+  // Fetch data when dialog opens
   useEffect(() => {
     if (open) {
       fetchClients();
       fetchProducts();
-      
-      if (editingItem) {
-        // Populate form with existing data
-        const client = clients.find(c => c.id === editingItem.client_id);
-        setSelectedClient(client || null);
-        setClientMode('select');
-        setDiscount(editingItem.discount ? maskCurrency(editingItem.discount * 100) : '');
-        setNotes(editingItem.notes || '');
-        
-        // Populate items
-        if (editingItem.items && editingItem.items.length > 0) {
-          const mappedItems = editingItem.items.map(item => {
-            const product = products.find(p => p.id === item.product_id);
-            return {
-              product_id: item.product_id || '',
-              product_name: item.product_name,
-              quantity: item.quantity,
-              selectedQuantity: item.quantity,
-              unit_price: item.unit_price,
-              total: item.total,
-              isManual: !item.product_id,
-              productImage: product?.image_url,
-            };
-          });
-          setItems(mappedItems);
-        } else {
-          setItems([]);
-        }
-        
-        // Populate delivery address for orders
-        if (mode === 'order' && 'delivery_address' in editingItem && editingItem.delivery_address) {
-          const addr = editingItem.delivery_address as unknown as DeliveryAddressData;
-          setDeliveryAddress({
-            zip_code: addr.zip_code || '',
-            street: addr.street || '',
-            number: addr.number || '',
-            complement: addr.complement || '',
-            neighborhood: addr.neighborhood || '',
-            city: addr.city || '',
-            state: addr.state || '',
-          });
-        } else {
-          setDeliveryAddress({ zip_code: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '' });
-        }
-      } else {
-        // Reset form for new item
-        setSelectedClient(null);
-        setItems([]);
-        setDiscount('');
-        setNotes('');
-        setClientMode('select');
-        setNewClient({ name: '', email: '', phone: '', document: '' });
-        setDeliveryAddress({ zip_code: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '' });
-        setDocumentError('');
-      }
+    } else {
+      setInitialized(false);
     }
-  }, [open, fetchClients, fetchProducts, editingItem, clients, products, mode]);
+  }, [open, fetchClients, fetchProducts]);
+
+  // Initialize form data only once when dialog opens and data is available
+  useEffect(() => {
+    if (!open || initialized) return;
+    
+    // Wait for clients to be loaded before initializing
+    if (clients.length === 0 && !editingItem) {
+      // For new items, we can initialize without waiting
+      setSelectedClient(null);
+      setItems([]);
+      setDiscount('');
+      setNotes('');
+      setClientMode('select');
+      setNewClient({ name: '', email: '', phone: '', document: '' });
+      setDeliveryAddress({ zip_code: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '' });
+      setDocumentError('');
+      setInitialized(true);
+      return;
+    }
+
+    if (editingItem) {
+      // Populate form with existing data
+      const client = clients.find(c => c.id === editingItem.client_id);
+      setSelectedClient(client || null);
+      setClientMode('select');
+      setDiscount(editingItem.discount ? maskCurrency(editingItem.discount * 100) : '');
+      setNotes(editingItem.notes || '');
+      
+      // Populate items
+      if (editingItem.items && editingItem.items.length > 0) {
+        const mappedItems = editingItem.items.map(item => {
+          const product = products.find(p => p.id === item.product_id);
+          return {
+            product_id: item.product_id || '',
+            product_name: item.product_name,
+            quantity: item.quantity,
+            selectedQuantity: item.quantity,
+            unit_price: item.unit_price,
+            total: item.total,
+            isManual: !item.product_id,
+            productImage: product?.image_url,
+          };
+        });
+        setItems(mappedItems);
+      } else {
+        setItems([]);
+      }
+      
+      // Populate delivery address for orders
+      if (mode === 'order' && 'delivery_address' in editingItem && editingItem.delivery_address) {
+        const addr = editingItem.delivery_address as unknown as DeliveryAddressData;
+        setDeliveryAddress({
+          zip_code: addr.zip_code || '',
+          street: addr.street || '',
+          number: addr.number || '',
+          complement: addr.complement || '',
+          neighborhood: addr.neighborhood || '',
+          city: addr.city || '',
+          state: addr.state || '',
+        });
+      } else {
+        setDeliveryAddress({ zip_code: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '' });
+      }
+    } else {
+      // Reset form for new item
+      setSelectedClient(null);
+      setItems([]);
+      setDiscount('');
+      setNotes('');
+      setClientMode('select');
+      setNewClient({ name: '', email: '', phone: '', document: '' });
+      setDeliveryAddress({ zip_code: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '' });
+      setDocumentError('');
+    }
+    
+    setInitialized(true);
+  }, [open, initialized, editingItem, clients, products, mode]);
 
   // Filter products by search
   const filteredProducts = products.filter(p =>

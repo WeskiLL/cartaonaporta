@@ -43,6 +43,7 @@ interface DeliveryAddressData {
 const QUANTITY_OPTIONS = [100, 200, 250, 500, 1000, 2000];
 
 export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: OrderFormProps) {
+  console.log('OrderForm rendered:', { open, mode, editingItem: !!editingItem });
   const { clients, products, fetchClients, fetchProducts, addQuote, addOrder, addClient, updateQuote, updateOrder } = useManagement();
   const [loading, setLoading] = useState(false);
   const [clientSearch, setClientSearch] = useState('');
@@ -58,6 +59,7 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
   
   // New client inline creation
   const [clientMode, setClientMode] = useState<'select' | 'new'>('select');
+  console.log('OrderForm clientMode:', clientMode);
   const [newClient, setNewClient] = useState<NewClientData>({
     name: '',
     email: '',
@@ -171,6 +173,7 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
   };
 
   const addItem = () => {
+    console.log('addItem clicked');
     setItems(prev => [...prev, {
       product_id: '',
       product_name: '',
@@ -410,7 +413,16 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-w-3xl max-h-[90vh] overflow-y-auto"
+        onPointerDownOutside={(e) => {
+          // Prevent dialog from closing when clicking on Select dropdowns
+          const target = e.target as HTMLElement;
+          if (target?.closest('[data-radix-select-viewport]') || target?.closest('[data-radix-popper-content-wrapper]')) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>
             {editingItem 

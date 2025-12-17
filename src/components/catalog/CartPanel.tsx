@@ -97,7 +97,7 @@ const CartPanel = () => {
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border bg-card">
           {items.length > 0 && (
             <>
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center mb-2">
                 <span className="text-muted-foreground">Total estimado:</span>
                 <span className="text-xl font-bold text-primary">
                   {getTotal() > 0
@@ -105,6 +105,7 @@ const CartPanel = () => {
                     : "A consultar"}
                 </span>
               </div>
+              <p className="text-xs text-muted-foreground text-center mb-4">Frete a consultar</p>
               <Button
                 onClick={handleBuyKit}
                 variant="hero"

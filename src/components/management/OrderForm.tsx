@@ -462,19 +462,17 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
                   </div>
                   <div className="max-h-40 overflow-y-auto border rounded-lg">
                     {filteredClients.map(client => (
-                      <button
+                      <div
                         key={client.id}
-                        type="button"
+                        role="button"
+                        tabIndex={0}
                         className="w-full text-left p-2 hover:bg-muted cursor-pointer"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setSelectedClient(client);
-                        }}
+                        onClick={() => setSelectedClient(client)}
+                        onKeyDown={(e) => e.key === 'Enter' && setSelectedClient(client)}
                       >
                         <p className="font-medium text-sm">{client.name}</p>
                         <p className="text-xs text-muted-foreground">{client.email}</p>
-                      </button>
+                      </div>
                     ))}
                     {filteredClients.length === 0 && (
                       <p className="p-2 text-sm text-muted-foreground">Nenhum cliente encontrado</p>
@@ -610,16 +608,7 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <Label>Itens</Label>
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  addItem();
-                }}
-              >
+              <Button type="button" variant="outline" size="sm" onClick={() => addItem()}>
                 <Plus className="w-4 h-4 mr-1" />
                 Adicionar Item
               </Button>

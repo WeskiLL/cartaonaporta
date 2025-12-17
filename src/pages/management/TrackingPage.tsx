@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Truck, Copy, ExternalLink, Trash2, Loader2, RefreshCw, Package, MessageCircle } from 'lucide-react';
+import { Plus, Truck, Copy, ExternalLink, Trash2, Loader2, Package, MessageCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useManagement } from '@/contexts/ManagementContext';
 import { toast } from 'sonner';
@@ -43,7 +43,7 @@ export default function TrackingPage() {
   const [trackings, setTrackings] = useState<TrackingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [refreshing, setRefreshing] = useState<string | null>(null);
+  // Removido: refreshing state não é mais necessário
 
   // Form state
   const [formData, setFormData] = useState({
@@ -157,63 +157,15 @@ export default function TrackingPage() {
     }
   };
 
-  const handleRefresh = async (tracking: TrackingItem) => {
-    setRefreshing(tracking.id);
-    try {
-      const { data, error } = await supabase.functions.invoke('check-tracking', {
-        body: { tracking_code: tracking.tracking_code, tracking_id: tracking.id },
-      });
-
-      if (error) throw error;
-
-      if (data?.events) {
-        const previousStatus = tracking.status;
-        const newStatus = data.status || tracking.status;
-        const hasNewEvents = data.events.length > (tracking.events?.length || 0);
-        const statusChanged = previousStatus !== newStatus;
-
-        // Update tracking with new events
-        const { error: updateError } = await supabase
-          .from('order_trackings' as any)
-          .update({
-            events: data.events,
-            status: newStatus,
-            last_update: new Date().toISOString(),
-          })
-          .eq('id', tracking.id);
-
-        if (updateError) throw updateError;
-
-        setTrackings(prev => prev.map(t => 
-          t.id === tracking.id 
-            ? { ...t, events: data.events, status: newStatus, last_update: new Date().toISOString() }
-            : t
-        ));
-
-        // Auto send WhatsApp notification if status changed or there are new events
-        if (tracking.client_phone && (statusChanged || hasNewEvents)) {
-          // Automatically open WhatsApp notification
-          sendWhatsAppNotification(
-            { ...tracking, status: newStatus }, 
-            data.events[0]
-          );
-          toast.success('Rastreio atualizado! Notificação WhatsApp aberta.');
-        } else if (hasNewEvents || statusChanged) {
-          toast.success('Rastreio atualizado com novas informações!');
-        } else {
-          toast.success('Rastreio atualizado!');
-        }
-      }
-    } catch (error) {
-      console.error('Error refreshing tracking:', error);
-      toast.error('Erro ao atualizar rastreio');
-    } finally {
-      setRefreshing(null);
-    }
+  const handleRefresh = (tracking: TrackingItem) => {
+    // Abre o site de rastreamento dos Correios em uma nova aba
+    window.open(`https://www.linkcorreios.com.br/${tracking.tracking_code}`, '_blank');
+    toast.info('Site dos Correios aberto em nova aba');
   };
 
   const copyShareLink = (tracking: TrackingItem) => {
-    const shareLink = `https://cartaonaporta.com.br/rastreio/${tracking.tracking_code}`;
+    // Link direto para o site de rastreamento dos Correios
+    const shareLink = `https://www.linkcorreios.com.br/${tracking.tracking_code}`;
     navigator.clipboard.writeText(shareLink);
     toast.success('Link copiado!');
   };
@@ -225,18 +177,13 @@ export default function TrackingPage() {
       return;
     }
     
-    const shareLink = `https://cartaonaporta.com.br/rastreio/${tracking.tracking_code}`;
+    // Link direto para o site de rastreamento dos Correios
+    const shareLink = `https://www.linkcorreios.com.br/${tracking.tracking_code}`;
     
     let message = `Olá ${tracking.client_name}! 📦\n\n`;
-    message += `Atualização do seu pedido${tracking.order_number ? ` ${tracking.order_number}` : ''}:\n\n`;
-    
-    if (latestEvent) {
-      message += `📍 ${latestEvent.description}\n`;
-      if (latestEvent.location) message += `📌 ${latestEvent.location}\n`;
-      message += `🕐 ${latestEvent.date} às ${latestEvent.time}\n\n`;
-    }
-    
-    message += `Acompanhe seu pedido: ${shareLink}\n\n`;
+    message += `Seu pedido${tracking.order_number ? ` ${tracking.order_number}` : ''} foi enviado!\n\n`;
+    message += `📦 Código de rastreio: *${tracking.tracking_code}*\n\n`;
+    message += `Acompanhe seu pedido clicando no link:\n${shareLink}\n\n`;
     message += `Prime Print - Sua marca, nossa impressão! ✨`;
     
     const whatsappUrl = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
@@ -389,15 +336,15 @@ export default function TrackingPage() {
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => handleRefresh(tracking)}
-                      disabled={refreshing === tracking.id}
+                      title="Ver rastreio no site dos Correios"
                     >
-                      <RefreshCw className={`w-3.5 h-3.5 ${refreshing === tracking.id ? 'animate-spin' : ''}`} />
+                      <ExternalLink className="w-3.5 h-3.5" />
                     </Button>
                     <Button
                       variant="outline"
                       size="icon"
                       className="h-8 w-8 text-green-600 hover:text-green-700"
-                      onClick={() => sendWhatsAppNotification(tracking, tracking.events?.[0])}
+                      onClick={() => sendWhatsAppNotification(tracking)}
                       title="Enviar WhatsApp"
                     >
                       <MessageCircle className="w-3.5 h-3.5" />
@@ -407,16 +354,9 @@ export default function TrackingPage() {
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => copyShareLink(tracking)}
+                      title="Copiar link"
                     >
                       <Copy className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => window.open(`/rastreio/${tracking.tracking_code}`, '_blank')}
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
                     </Button>
                     <Button
                       variant="outline"

@@ -158,32 +158,32 @@ export default function TrackingPage() {
   };
 
   const handleRefresh = (tracking: TrackingItem) => {
-    // Abre o site de rastreamento dos Correios em uma nova aba
-    window.open(`https://www.linkcorreios.com.br/${tracking.tracking_code}`, '_blank');
+    // Abre o site oficial de rastreamento dos Correios em uma nova aba
+    window.open(`https://rastreamento.correios.com.br/app/index.php`, '_blank');
     toast.info('Site dos Correios aberto em nova aba');
   };
 
   const copyShareLink = (tracking: TrackingItem) => {
-    // Link direto para o site de rastreamento dos Correios
-    const shareLink = `https://www.linkcorreios.com.br/${tracking.tracking_code}`;
-    navigator.clipboard.writeText(shareLink);
-    toast.success('Link copiado!');
+    // Link oficial de rastreamento dos Correios
+    const shareLink = `https://rastreamento.correios.com.br/app/index.php`;
+    navigator.clipboard.writeText(`Rastreie seu pedido: ${shareLink}\nCódigo: ${tracking.tracking_code}`);
+    toast.success('Link e código copiados!');
   };
 
-  const sendWhatsAppNotification = (tracking: TrackingItem, latestEvent?: TrackingEvent) => {
+  const sendWhatsAppNotification = (tracking: TrackingItem) => {
     const phone = tracking.client_phone?.replace(/\D/g, '');
     if (!phone) {
       toast.error('Cliente não tem WhatsApp cadastrado');
       return;
     }
     
-    // Link direto para o site de rastreamento dos Correios
-    const shareLink = `https://www.linkcorreios.com.br/${tracking.tracking_code}`;
+    // Link oficial de rastreamento dos Correios
+    const shareLink = `https://rastreamento.correios.com.br/app/index.php`;
     
     let message = `Olá ${tracking.client_name}! 📦\n\n`;
     message += `Seu pedido${tracking.order_number ? ` ${tracking.order_number}` : ''} foi enviado!\n\n`;
     message += `📦 Código de rastreio: *${tracking.tracking_code}*\n\n`;
-    message += `Acompanhe seu pedido clicando no link:\n${shareLink}\n\n`;
+    message += `Acompanhe seu pedido no site dos Correios:\n${shareLink}\n\n`;
     message += `Prime Print - Sua marca, nossa impressão! ✨`;
     
     const whatsappUrl = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;

@@ -43,11 +43,13 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let isMounted = true;
+    console.log('AdminAuthContext: Initializing...');
     
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!isMounted) return;
+        console.log('AdminAuthContext: Auth state changed', { event, hasSession: !!session });
         
         setSession(session);
         setUser(session?.user ?? null);
@@ -56,8 +58,10 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
         if (session?.user) {
           setTimeout(() => {
             if (isMounted) {
+              console.log('AdminAuthContext: Checking admin role for', session.user.email);
               checkAdminRole(session.user.id).then((result) => {
                 if (isMounted) {
+                  console.log('AdminAuthContext: Admin check result', result);
                   setIsAdmin(result.isAdmin);
                   setIsLoading(false);
                 }
@@ -74,18 +78,22 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!isMounted) return;
+      console.log('AdminAuthContext: Got existing session', { hasSession: !!session, email: session?.user?.email });
       
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
+        console.log('AdminAuthContext: Checking admin role for existing session');
         checkAdminRole(session.user.id).then((result) => {
           if (isMounted) {
+            console.log('AdminAuthContext: Admin check result for existing session', result);
             setIsAdmin(result.isAdmin);
             setIsLoading(false);
           }
         });
       } else {
+        console.log('AdminAuthContext: No existing session');
         setIsLoading(false);
       }
     });

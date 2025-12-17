@@ -77,21 +77,24 @@ const AdminDashboard = () => {
     is_active: true,
   });
 
-  // Redirect if not authenticated
+  // Debug logging
+  useEffect(() => {
+    console.log('AdminDashboard state:', { authLoading, isAuthenticated, isLoading, user: user?.email });
+  }, [authLoading, isAuthenticated, isLoading, user]);
+
+  // Redirect if not authenticated (only after auth check is complete)
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      navigate("/admin");
+      console.log('Redirecting to /admin - not authenticated');
+      navigate("/admin", { replace: true });
     }
   }, [isAuthenticated, authLoading, navigate]);
 
   // Fetch products when authenticated
   useEffect(() => {
-    if (!authLoading) {
-      if (isAuthenticated) {
-        fetchProducts();
-      } else {
-        setIsLoading(false);
-      }
+    if (!authLoading && isAuthenticated) {
+      console.log('Fetching products...');
+      fetchProducts();
     }
   }, [isAuthenticated, authLoading]);
 
@@ -292,18 +295,34 @@ const AdminDashboard = () => {
     navigate("/admin");
   };
 
-  // Show loading only when auth is loading or fetching products while authenticated
-  if (authLoading || (isAuthenticated && isLoading)) {
+  // Show loading while checking authentication
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Verificando autenticação...</span>
       </div>
     );
   }
 
-  // Don't render if not authenticated (redirect will happen)
+  // Redirect will happen via useEffect, show nothing while redirecting
   if (!isAuthenticated) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Redirecionando...</span>
+      </div>
+    );
+  }
+
+  // Show loading while fetching products
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Carregando produtos...</span>
+      </div>
+    );
   }
 
   return (

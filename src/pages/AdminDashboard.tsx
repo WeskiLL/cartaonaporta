@@ -84,12 +84,16 @@ const AdminDashboard = () => {
     }
   }, [isAuthenticated, authLoading, navigate]);
 
-  // Fetch products
+  // Fetch products when authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchProducts();
+    if (!authLoading) {
+      if (isAuthenticated) {
+        fetchProducts();
+      } else {
+        setIsLoading(false);
+      }
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, authLoading]);
 
   const fetchProducts = async () => {
     try {
@@ -288,12 +292,18 @@ const AdminDashboard = () => {
     navigate("/admin");
   };
 
-  if (authLoading || isLoading) {
+  // Show loading only when auth is loading or fetching products while authenticated
+  if (authLoading || (isAuthenticated && isLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
+  }
+
+  // Don't render if not authenticated (redirect will happen)
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (

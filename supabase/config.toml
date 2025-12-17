@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.check-all-trackings]
 verify_jwt = false
+
+[functions.public-tracking-lookup]
+verify_jwt = false

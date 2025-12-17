@@ -40,31 +40,48 @@ export default function TrackingPublic() {
       }
 
       try {
-        // Search by tracking_code instead of id
-        const { data, error: fetchError } = await supabase
-          .from('order_trackings' as any)
-          .select('id, order_number, client_name, tracking_code, carrier, status, events, last_update')
-          .eq('tracking_code', trackingCode.toUpperCase())
-          .maybeSingle();
+        // Use secure edge function instead of direct table access
+        const { data, error: fetchError } = await supabase.functions.invoke('public-tracking-lookup', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: null,
+        });
 
-        if (fetchError) throw fetchError;
-        if (!data) {
-          setError(true);
-          return;
+        // The edge function doesn't support body for GET, so we need to use fetch directly
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-tracking-lookup?code=${encodeURIComponent(trackingCode)}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError(true);
+            return;
+          }
+          throw new Error('Failed to fetch tracking');
         }
+
+        const trackingData = await response.json();
         
         setTracking({
-          id: (data as any).id,
-          order_number: (data as any).order_number,
-          client_name: (data as any).client_name,
-          tracking_code: (data as any).tracking_code,
-          carrier: (data as any).carrier,
-          status: (data as any).status,
-          events: ((data as any).events as TrackingEvent[]) || [],
-          last_update: (data as any).last_update,
+          id: trackingData.id,
+          order_number: trackingData.order_number,
+          client_name: trackingData.client_name,
+          tracking_code: trackingData.tracking_code,
+          carrier: trackingData.carrier,
+          status: trackingData.status,
+          events: trackingData.events || [],
+          last_update: trackingData.last_update,
         });
       } catch (err) {
-        console.error('Error fetching tracking:', err);
+        console.error('Error fetching tracking');
         setError(true);
       } finally {
         setLoading(false);

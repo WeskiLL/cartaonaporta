@@ -53,6 +53,7 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
     productImage?: string;
   })[]>([]);
   const [discount, setDiscount] = useState('');
+  const [shipping, setShipping] = useState('');
   const [notes, setNotes] = useState('');
   const [productSearch, setProductSearch] = useState('');
   
@@ -101,6 +102,7 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
       setSelectedClient(null);
       setItems([]);
       setDiscount('');
+      setShipping('');
       setNotes('');
       setClientMode('select');
       setNewClient({ name: '', email: '', phone: '', document: '' });
@@ -116,6 +118,7 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
       setSelectedClient(client || null);
       setClientMode('select');
       setDiscount(editingItem.discount ? maskCurrency(editingItem.discount * 100) : '');
+      setShipping(editingItem.shipping ? maskCurrency(editingItem.shipping * 100) : '');
       setNotes(editingItem.notes || '');
       
       // Populate items
@@ -158,6 +161,7 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
       setSelectedClient(null);
       setItems([]);
       setDiscount('');
+      setShipping('');
       setNotes('');
       setClientMode('select');
       setNewClient({ name: '', email: '', phone: '', document: '' });
@@ -275,7 +279,8 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
 
   const subtotal = items.reduce((sum, item) => sum + item.total, 0);
   const discountValue = parseFloat(unmask(discount)) / 100 || 0;
-  const total = subtotal - discountValue;
+  const shippingValue = parseFloat(unmask(shipping)) / 100 || 0;
+  const total = subtotal - discountValue + shippingValue;
 
   // Handle CEP lookup
   const handleCepChange = async (value: string) => {
@@ -374,6 +379,7 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
       client_name: clientName,
       subtotal,
       discount: discountValue,
+      shipping: shippingValue,
       total,
       notes: notes || undefined,
       status: mode === 'quote' ? 'pending' as const : 'awaiting_payment' as const,
@@ -780,13 +786,22 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
           </div>
 
           {/* Totals */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="discount">Desconto</Label>
               <Input
                 id="discount"
                 value={discount}
                 onChange={(e) => setDiscount(maskCurrency(e.target.value))}
+                placeholder="R$ 0,00"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="shipping">Frete</Label>
+              <Input
+                id="shipping"
+                value={shipping}
+                onChange={(e) => setShipping(maskCurrency(e.target.value))}
                 placeholder="R$ 0,00"
               />
             </div>
@@ -812,6 +827,12 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Desconto</span>
                   <span>-{formatCurrency(discountValue)}</span>
+                </div>
+              )}
+              {shippingValue > 0 && (
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Frete</span>
+                  <span>+{formatCurrency(shippingValue)}</span>
                 </div>
               )}
               <div className="flex justify-between font-semibold text-lg mt-2 pt-2 border-t">

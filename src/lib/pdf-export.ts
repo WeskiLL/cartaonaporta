@@ -14,7 +14,28 @@ const formatCurrency = (value: number) =>
 const formatDate = (date: string) =>
   format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
 
-// Helper to add company header with logo and complete data
+const formatDateTime = (date: string) =>
+  format(new Date(date), "dd/MM/yyyy HH:mm:ss", { locale: ptBR });
+
+// Helper to load image as base64
+const loadImageAsBase64 = (url: string): Promise<string | null> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+};
+
+// Helper to add company header with logo and complete data (OLD VERSION for quotes/financial)
 const addHeader = async (doc: jsPDF, company: Company | null, title: string): Promise<number> => {
   // Orange header bar
   doc.setFillColor(...BRAND_ORANGE);
@@ -109,7 +130,7 @@ const addHeader = async (doc: jsPDF, company: Company | null, title: string): Pr
   return detailY + 8;
 };
 
-// Helper to add client info section
+// Helper to add client info section (OLD VERSION for quotes)
 const addClientInfo = (doc: jsPDF, client: Client | null, clientName: string, y: number): number => {
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
@@ -221,89 +242,280 @@ export const exportQuoteToPDF = async (quote: Quote, company: Company | null, cl
   doc.save(`Orçamento_${quoteNumber}.pdf`);
 };
 
+// ============= NEW ORDER PDF LAYOUT =============
 export const generateOrderPDF = async (order: Order, company: Company | null, client?: Client | null): Promise<jsPDF> => {
-  const doc = new jsPDF();
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+  
+  const margin = 20;
+  const pageWidth = 210;
+  const contentWidth = pageWidth - (margin * 2);
+  let y = margin;
+  
+  // ==================== HEADER ====================
+  // Line 1: Date/Time on left, Order number on right
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0);
+  
+  // Created date on left
+  doc.text(`CRIANDO EM: ${formatDateTime(order.created_at)}`, margin, y);
+  
+  // Order number on right
   const orderNumber = order.number.replace('PED', '');
-  let y = await addHeader(doc, company, `Pedido_${orderNumber}`);
-  
-  // Client info
-  y = addClientInfo(doc, client || null, order.client_name, y);
-  
-  // Order info
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(60, 60, 60);
-  doc.text(`Data: ${formatDate(order.created_at)}`, 14, y);
-  doc.text(`Status: ${getOrderStatusLabel(order.status)}`, 80, y);
+  doc.text(`PEDIDO: ${orderNumber}`, pageWidth - margin, y, { align: 'right' });
   
   y += 8;
   
-  // Delivery address if exists
-  if (order.delivery_address) {
-    const addr = order.delivery_address as unknown as DeliveryAddress;
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...BRAND_ORANGE);
-    doc.text('Endereço de Entrega:', 14, y);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(60, 60, 60);
-    y += 5;
-    doc.text(`${addr.street || ''}${addr.number ? ', ' + addr.number : ''}`, 14, y);
-    y += 4;
-    if (addr.complement) {
-      doc.text(addr.complement, 14, y);
-      y += 4;
+  // ==================== LOGO AND COMPANY INFO ====================
+  const logoHeight = 25;
+  const logoWidth = 35;
+  const companyInfoX = margin + logoWidth + 10;
+  
+  // Add logo if available
+  if (company?.logo_url) {
+    try {
+      const imgData = await loadImageAsBase64(company.logo_url);
+      if (imgData) {
+        doc.addImage(imgData, 'PNG', margin, y, logoWidth, logoHeight);
+      }
+    } catch {
+      // Logo failed, continue without it
     }
-    doc.text(`${addr.neighborhood || ''} - ${addr.city || ''}/${addr.state || ''}`, 14, y);
-    y += 4;
-    doc.text(`CEP: ${addr.zip_code || ''}`, 14, y);
-    y += 8;
   }
   
-  y += 4;
+  // Company info aligned to right of logo
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0);
+  doc.text(company?.name || '', pageWidth - margin, y + 4, { align: 'right' });
   
-  // Items table - using total price per item (not unit price)
+  doc.setFont('helvetica', 'normal');
+  let companyY = y + 9;
+  
+  if (company?.cnpj) {
+    doc.text(`CNPJ: `, pageWidth - margin - 50, companyY);
+    doc.setTextColor(...BRAND_ORANGE);
+    doc.text(company.cnpj, pageWidth - margin, companyY, { align: 'right' });
+    doc.setTextColor(0, 0, 0);
+    companyY += 5;
+  }
+  
+  if (company?.phone) {
+    doc.text(`WhatsApp: `, pageWidth - margin - 50, companyY);
+    doc.setTextColor(...BRAND_ORANGE);
+    doc.text(company.phone, pageWidth - margin, companyY, { align: 'right' });
+    doc.setTextColor(0, 0, 0);
+    companyY += 5;
+  }
+  
+  if (company?.email) {
+    doc.text(`E-mail: `, pageWidth - margin - 50, companyY);
+    doc.setTextColor(...BRAND_ORANGE);
+    doc.text(company.email, pageWidth - margin, companyY, { align: 'right' });
+    doc.setTextColor(0, 0, 0);
+    companyY += 5;
+  }
+  
+  if (company?.address) {
+    doc.text(`Endereço: `, pageWidth - margin - 50, companyY);
+    doc.setTextColor(...BRAND_ORANGE);
+    doc.text(company.address, pageWidth - margin, companyY, { align: 'right' });
+    doc.setTextColor(0, 0, 0);
+    companyY += 5;
+  }
+  
+  if (company?.city) {
+    doc.text(`Cidade: `, pageWidth - margin - 50, companyY);
+    doc.setTextColor(...BRAND_ORANGE);
+    doc.text(`${company.city}${company.state ? '-' + company.state : ''}`, pageWidth - margin, companyY, { align: 'right' });
+    doc.setTextColor(0, 0, 0);
+    companyY += 5;
+  }
+  
+  y += logoHeight + 10;
+  
+  // ==================== DADOS DO CLIENTE (Section Title) ====================
+  // Horizontal line
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.5);
+  doc.line(margin, y, pageWidth - margin, y);
+  
+  y += 8;
+  
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0);
+  doc.text('DADOS DO CLIENTE', margin, y);
+  
+  // Horizontal line below title
+  y += 3;
+  doc.line(margin, y, pageWidth - margin, y);
+  
+  y += 8;
+  
+  // ==================== CLIENT INFO AND DELIVERY ADDRESS (side by side) ====================
+  const halfWidth = contentWidth / 2;
+  const deliveryAddrX = margin + halfWidth + 5;
+  
+  // Client info (left side)
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(0, 0, 0);
+  
+  doc.text(`Cliente: `, margin, y);
+  doc.setTextColor(...BRAND_ORANGE);
+  doc.text(client?.name || order.client_name, margin + 18, y);
+  doc.setTextColor(0, 0, 0);
+  
+  let clientY = y + 5;
+  
+  if (client?.document) {
+    doc.text(`CPF/CNPJ: `, margin, clientY);
+    doc.setTextColor(...BRAND_ORANGE);
+    doc.text(client.document, margin + 22, clientY);
+    doc.setTextColor(0, 0, 0);
+    clientY += 5;
+  }
+  
+  if (client?.phone) {
+    doc.text(`WhatsApp: `, margin, clientY);
+    doc.setTextColor(...BRAND_ORANGE);
+    doc.text(client.phone, margin + 22, clientY);
+    doc.setTextColor(0, 0, 0);
+    clientY += 5;
+  }
+  
+  // Delivery address (right side)
+  const addr = order.delivery_address as unknown as DeliveryAddress | null;
+  
+  doc.setFont('helvetica', 'bold');
+  doc.text('ENDEREÇO DE ENTREGA', deliveryAddrX, y);
+  doc.setFont('helvetica', 'normal');
+  
+  let addrY = y + 5;
+  
+  if (addr) {
+    doc.text(`Endereço: `, deliveryAddrX, addrY);
+    doc.setTextColor(...BRAND_ORANGE);
+    doc.text(`${addr.street || ''}${addr.number ? ', ' + addr.number : ''}`, deliveryAddrX + 22, addrY);
+    doc.setTextColor(0, 0, 0);
+    addrY += 5;
+    
+    if (addr.neighborhood) {
+      doc.text(`Bairro: `, deliveryAddrX, addrY);
+      doc.setTextColor(...BRAND_ORANGE);
+      doc.text(addr.neighborhood, deliveryAddrX + 16, addrY);
+      doc.setTextColor(0, 0, 0);
+      addrY += 5;
+    }
+    
+    doc.text(`Cidade: `, deliveryAddrX, addrY);
+    doc.setTextColor(...BRAND_ORANGE);
+    doc.text(`${addr.city || ''}/${addr.state || ''}`, deliveryAddrX + 16, addrY);
+    doc.setTextColor(0, 0, 0);
+    addrY += 5;
+    
+    if (addr.zip_code) {
+      doc.text(`CEP: `, deliveryAddrX, addrY);
+      doc.setTextColor(...BRAND_ORANGE);
+      doc.text(addr.zip_code, deliveryAddrX + 12, addrY);
+      doc.setTextColor(0, 0, 0);
+      addrY += 5;
+    }
+  }
+  
+  y = Math.max(clientY, addrY) + 8;
+  
+  // ==================== STATUS AND PAYMENT METHOD ====================
+  // Horizontal line
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 6;
+  
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`STATUS: ${getOrderStatusLabel(order.status).toUpperCase()}`, margin, y);
+  
+  // Payment method - placeholder (can be extended later)
+  doc.text(`MÉTODO DE PAG: PIX`, pageWidth - margin, y, { align: 'right' });
+  
+  y += 4;
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 8;
+  
+  // ==================== PRODUCTS TABLE ====================
   if (order.items && order.items.length > 0) {
     autoTable(doc, {
       startY: y,
-      head: [['Produto', 'Qtd', 'Valor']],
+      head: [['Produto/Serviço', 'Quanti', 'Valor Uni.', 'Sub-Total']],
       body: order.items.map(item => [
         item.product_name,
         item.quantity.toString(),
+        formatCurrency(item.unit_price),
         formatCurrency(item.total),
       ]),
-      theme: 'grid',
-      headStyles: { fillColor: BRAND_ORANGE, textColor: [255, 255, 255] },
-      alternateRowStyles: { fillColor: [255, 245, 240] },
+      theme: 'plain',
+      styles: {
+        fontSize: 11,
+        cellPadding: 3,
+        lineColor: [200, 200, 200],
+        lineWidth: 0,
+      },
+      headStyles: {
+        fillColor: [255, 255, 255],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold',
+        lineWidth: { bottom: 0.5 },
+        lineColor: [200, 200, 200],
+      },
+      columnStyles: {
+        0: { halign: 'left', cellWidth: 90 },
+        1: { halign: 'center', cellWidth: 20 },
+        2: { halign: 'right', cellWidth: 30 },
+        3: { halign: 'right', cellWidth: 30 },
+      },
+      margin: { left: margin, right: margin },
     });
     
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 5;
   }
   
-  // Totals
+  // ==================== TOTALS (right aligned) ====================
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(60, 60, 60);
-  doc.text(`Subtotal: ${formatCurrency(order.subtotal)}`, 140, y, { align: 'left' });
+  doc.setTextColor(0, 0, 0);
+  
+  const totalsX = pageWidth - margin - 50;
+  const valuesX = pageWidth - margin;
+  
+  // Sub-total
+  doc.text('Sub-total:', totalsX, y, { align: 'right' });
+  doc.text(formatCurrency(order.subtotal), valuesX, y, { align: 'right' });
+  y += 6;
+  
+  // Discount (if any)
   if (order.discount > 0) {
-    doc.text(`Desconto: ${formatCurrency(order.discount)}`, 140, y + 6, { align: 'left' });
+    doc.text('Desconto:', totalsX, y, { align: 'right' });
+    doc.text(formatCurrency(order.discount), valuesX, y, { align: 'right' });
     y += 6;
   }
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...BRAND_ORANGE);
-  doc.text(`Total: ${formatCurrency(order.total)}`, 140, y + 6, { align: 'left' });
   
-  // Notes
-  if (order.notes) {
-    y += 20;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text('Observações:', 14, y);
-    doc.text(order.notes, 14, y + 5);
+  // Shipping (if any)
+  if (order.shipping && order.shipping > 0) {
+    doc.text('Frete:', totalsX, y, { align: 'right' });
+    doc.text(formatCurrency(order.shipping), valuesX, y, { align: 'right' });
+    y += 6;
   }
   
-  // Footer bar
-  doc.setFillColor(...BRAND_ORANGE_LIGHT);
-  doc.rect(0, 285, 210, 12, 'F');
+  // Total
+  y += 4;
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Valor pago:', totalsX, y, { align: 'right' });
+  doc.text(formatCurrency(order.total), valuesX, y, { align: 'right' });
   
   return doc;
 };

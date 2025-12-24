@@ -242,7 +242,7 @@ export const exportQuoteToPDF = async (quote: Quote, company: Company | null, cl
   doc.save(`Orçamento_${quoteNumber}.pdf`);
 };
 
-// ============= NEW ORDER PDF LAYOUT =============
+// ============= NEW ORDER PDF LAYOUT - CLEAN & PROFESSIONAL =============
 export const generateOrderPDF = async (order: Order, company: Company | null, client?: Client | null): Promise<jsPDF> => {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -250,272 +250,327 @@ export const generateOrderPDF = async (order: Order, company: Company | null, cl
     format: 'a4',
   });
   
-  const margin = 20;
+  const margin = 15;
   const pageWidth = 210;
   const contentWidth = pageWidth - (margin * 2);
   let y = margin;
   
-  // ==================== HEADER ====================
-  // Line 1: Date/Time on left, Order number on right
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 0, 0);
+  // ==================== HEADER BAR ====================
+  doc.setFillColor(...BRAND_ORANGE);
+  doc.rect(0, 0, pageWidth, 6, 'F');
   
-  // Created date on left
-  doc.text(`CRIANDO EM: ${formatDateTime(order.created_at)}`, margin, y);
+  y = 14;
   
-  // Order number on right
-  const orderNumber = order.number.replace('PED', '');
-  doc.text(`PEDIDO: ${orderNumber}`, pageWidth - margin, y, { align: 'right' });
-  
-  y += 8;
-  
-  // ==================== LOGO AND COMPANY INFO ====================
-  const logoHeight = 25;
-  const logoWidth = 35;
-  const companyInfoX = margin + logoWidth + 10;
+  // ==================== LOGO AND ORDER INFO HEADER ====================
+  const logoMaxWidth = 40;
+  const logoMaxHeight = 20;
+  let logoEndX = margin;
   
   // Add logo if available
   if (company?.logo_url) {
     try {
       const imgData = await loadImageAsBase64(company.logo_url);
       if (imgData) {
-        doc.addImage(imgData, 'PNG', margin, y, logoWidth, logoHeight);
+        doc.addImage(imgData, 'PNG', margin, y, logoMaxWidth, logoMaxHeight);
+        logoEndX = margin + logoMaxWidth + 8;
       }
     } catch {
       // Logo failed, continue without it
     }
   }
   
-  // Company info aligned to right of logo
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 0, 0);
-  doc.text(company?.name || '', pageWidth - margin, y + 4, { align: 'right' });
+  // Order info box on right side
+  const orderBoxWidth = 60;
+  const orderBoxX = pageWidth - margin - orderBoxWidth;
   
+  // Order number and date
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...BRAND_ORANGE);
+  doc.text('PEDIDO', orderBoxX, y + 4);
+  
+  doc.setFontSize(16);
+  doc.setTextColor(0, 0, 0);
+  const orderNumber = order.number.replace('PED', '#');
+  doc.text(orderNumber, orderBoxX, y + 12);
+  
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  let companyY = y + 9;
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Emitido em: ${formatDateTime(order.created_at)}`, orderBoxX, y + 18);
+  
+  y = y + logoMaxHeight + 8;
+  
+  // ==================== COMPANY INFO SECTION ====================
+  doc.setFillColor(248, 248, 248);
+  doc.roundedRect(margin, y, contentWidth, 28, 2, 2, 'F');
+  
+  const companyPadding = 4;
+  let companyY = y + companyPadding + 4;
+  
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...BRAND_ORANGE);
+  doc.text(company?.name || 'Empresa', margin + companyPadding, companyY);
+  
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(60, 60, 60);
+  
+  const col1X = margin + companyPadding;
+  const col2X = margin + contentWidth / 2;
+  companyY += 6;
   
   if (company?.cnpj) {
-    doc.text(`CNPJ: `, pageWidth - margin - 50, companyY);
-    doc.setTextColor(...BRAND_ORANGE);
-    doc.text(company.cnpj, pageWidth - margin, companyY, { align: 'right' });
-    doc.setTextColor(0, 0, 0);
-    companyY += 5;
+    doc.text(`CNPJ: ${company.cnpj}`, col1X, companyY);
   }
-  
   if (company?.phone) {
-    doc.text(`WhatsApp: `, pageWidth - margin - 50, companyY);
-    doc.setTextColor(...BRAND_ORANGE);
-    doc.text(company.phone, pageWidth - margin, companyY, { align: 'right' });
-    doc.setTextColor(0, 0, 0);
-    companyY += 5;
+    doc.text(`WhatsApp: ${company.phone}`, col2X, companyY);
   }
+  companyY += 5;
   
   if (company?.email) {
-    doc.text(`E-mail: `, pageWidth - margin - 50, companyY);
-    doc.setTextColor(...BRAND_ORANGE);
-    doc.text(company.email, pageWidth - margin, companyY, { align: 'right' });
-    doc.setTextColor(0, 0, 0);
-    companyY += 5;
+    doc.text(`E-mail: ${company.email}`, col1X, companyY);
   }
+  if (company?.website) {
+    doc.text(`Site: ${company.website}`, col2X, companyY);
+  }
+  companyY += 5;
   
   if (company?.address) {
-    doc.text(`Endereço: `, pageWidth - margin - 50, companyY);
-    doc.setTextColor(...BRAND_ORANGE);
-    doc.text(company.address, pageWidth - margin, companyY, { align: 'right' });
-    doc.setTextColor(0, 0, 0);
-    companyY += 5;
+    const fullAddr = [company.address, company.city, company.state, company.zip_code].filter(Boolean).join(' - ');
+    doc.text(`Endereço: ${fullAddr}`, col1X, companyY);
   }
   
-  if (company?.city) {
-    doc.text(`Cidade: `, pageWidth - margin - 50, companyY);
-    doc.setTextColor(...BRAND_ORANGE);
-    doc.text(`${company.city}${company.state ? '-' + company.state : ''}`, pageWidth - margin, companyY, { align: 'right' });
-    doc.setTextColor(0, 0, 0);
-    companyY += 5;
-  }
+  y += 32;
   
-  y += logoHeight + 10;
+  // ==================== CLIENT AND DELIVERY - SIDE BY SIDE ====================
+  const boxHeight = 38;
+  const boxWidth = (contentWidth - 4) / 2;
   
-  // ==================== DADOS DO CLIENTE (Section Title) ====================
-  // Horizontal line
-  doc.setDrawColor(200, 200, 200);
-  doc.setLineWidth(0.5);
-  doc.line(margin, y, pageWidth - margin, y);
+  // Client box
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(margin, y, boxWidth, boxHeight, 2, 2, 'S');
   
-  y += 8;
+  // Delivery box
+  doc.roundedRect(margin + boxWidth + 4, y, boxWidth, boxHeight, 2, 2, 'S');
   
-  doc.setFontSize(13);
+  // Client section header
+  doc.setFillColor(...BRAND_ORANGE);
+  doc.roundedRect(margin, y, boxWidth, 7, 2, 2, 'F');
+  doc.rect(margin, y + 3, boxWidth, 4, 'F'); // Square off bottom corners
+  
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 0, 0);
-  doc.text('DADOS DO CLIENTE', margin, y);
+  doc.setTextColor(255, 255, 255);
+  doc.text('DADOS DO CLIENTE', margin + 4, y + 5);
   
-  // Horizontal line below title
-  y += 3;
-  doc.line(margin, y, pageWidth - margin, y);
+  // Delivery section header
+  doc.setFillColor(...BRAND_ORANGE);
+  doc.roundedRect(margin + boxWidth + 4, y, boxWidth, 7, 2, 2, 'F');
+  doc.rect(margin + boxWidth + 4, y + 3, boxWidth, 4, 'F');
   
-  y += 8;
+  doc.text('ENDEREÇO DE ENTREGA', margin + boxWidth + 8, y + 5);
   
-  // ==================== CLIENT INFO AND DELIVERY ADDRESS (side by side) ====================
-  const halfWidth = contentWidth / 2;
-  const deliveryAddrX = margin + halfWidth + 5;
+  // Client content
+  let clientY = y + 13;
+  const clientX = margin + 4;
   
-  // Client info (left side)
-  doc.setFontSize(11);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 0, 0);
+  doc.setTextColor(40, 40, 40);
   
-  doc.text(`Cliente: `, margin, y);
-  doc.setTextColor(...BRAND_ORANGE);
-  doc.text(client?.name || order.client_name, margin + 18, y);
-  doc.setTextColor(0, 0, 0);
-  
-  let clientY = y + 5;
+  doc.setFont('helvetica', 'bold');
+  doc.text(client?.name || order.client_name, clientX, clientY);
+  doc.setFont('helvetica', 'normal');
   
   if (client?.document) {
-    doc.text(`CPF/CNPJ: `, margin, clientY);
-    doc.setTextColor(...BRAND_ORANGE);
-    doc.text(client.document, margin + 22, clientY);
-    doc.setTextColor(0, 0, 0);
     clientY += 5;
+    doc.text(`CPF/CNPJ: ${client.document}`, clientX, clientY);
   }
-  
   if (client?.phone) {
-    doc.text(`WhatsApp: `, margin, clientY);
-    doc.setTextColor(...BRAND_ORANGE);
-    doc.text(client.phone, margin + 22, clientY);
-    doc.setTextColor(0, 0, 0);
     clientY += 5;
+    doc.text(`WhatsApp: ${client.phone}`, clientX, clientY);
+  }
+  if (client?.email) {
+    clientY += 5;
+    doc.text(`E-mail: ${client.email}`, clientX, clientY);
   }
   
-  // Delivery address (right side)
+  // Delivery content
+  let addrY = y + 13;
+  const addrX = margin + boxWidth + 8;
   const addr = order.delivery_address as unknown as DeliveryAddress | null;
   
-  doc.setFont('helvetica', 'bold');
-  doc.text('ENDEREÇO DE ENTREGA', deliveryAddrX, y);
-  doc.setFont('helvetica', 'normal');
-  
-  let addrY = y + 5;
-  
   if (addr) {
-    doc.text(`Endereço: `, deliveryAddrX, addrY);
-    doc.setTextColor(...BRAND_ORANGE);
-    doc.text(`${addr.street || ''}${addr.number ? ', ' + addr.number : ''}`, deliveryAddrX + 22, addrY);
-    doc.setTextColor(0, 0, 0);
-    addrY += 5;
+    const streetLine = `${addr.street || ''}${addr.number ? ', ' + addr.number : ''}${addr.complement ? ' - ' + addr.complement : ''}`;
+    doc.text(streetLine.substring(0, 50), addrX, addrY);
     
     if (addr.neighborhood) {
-      doc.text(`Bairro: `, deliveryAddrX, addrY);
-      doc.setTextColor(...BRAND_ORANGE);
-      doc.text(addr.neighborhood, deliveryAddrX + 16, addrY);
-      doc.setTextColor(0, 0, 0);
       addrY += 5;
+      doc.text(`Bairro: ${addr.neighborhood}`, addrX, addrY);
     }
     
-    doc.text(`Cidade: `, deliveryAddrX, addrY);
-    doc.setTextColor(...BRAND_ORANGE);
-    doc.text(`${addr.city || ''}/${addr.state || ''}`, deliveryAddrX + 16, addrY);
-    doc.setTextColor(0, 0, 0);
     addrY += 5;
+    doc.text(`${addr.city || ''} - ${addr.state || ''}`, addrX, addrY);
     
     if (addr.zip_code) {
-      doc.text(`CEP: `, deliveryAddrX, addrY);
-      doc.setTextColor(...BRAND_ORANGE);
-      doc.text(addr.zip_code, deliveryAddrX + 12, addrY);
-      doc.setTextColor(0, 0, 0);
       addrY += 5;
+      doc.text(`CEP: ${addr.zip_code}`, addrX, addrY);
     }
+  } else {
+    doc.setTextColor(150, 150, 150);
+    doc.text('Não informado', addrX, addrY);
   }
   
-  y = Math.max(clientY, addrY) + 8;
+  y += boxHeight + 6;
   
-  // ==================== STATUS AND PAYMENT METHOD ====================
-  // Horizontal line
-  doc.line(margin, y, pageWidth - margin, y);
-  y += 6;
+  // ==================== STATUS BAR ====================
+  doc.setFillColor(245, 245, 245);
+  doc.roundedRect(margin, y, contentWidth, 10, 2, 2, 'F');
   
-  doc.setFontSize(11);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text(`STATUS: ${getOrderStatusLabel(order.status).toUpperCase()}`, margin, y);
+  doc.setTextColor(60, 60, 60);
   
-  // Payment method - placeholder (can be extended later)
-  doc.text(`MÉTODO DE PAG: PIX`, pageWidth - margin, y, { align: 'right' });
+  // Status
+  doc.text('STATUS:', margin + 4, y + 6.5);
+  doc.setTextColor(...BRAND_ORANGE);
+  doc.text(getOrderStatusLabel(order.status).toUpperCase(), margin + 22, y + 6.5);
   
-  y += 4;
-  doc.line(margin, y, pageWidth - margin, y);
-  y += 8;
+  // Notes indicator if present
+  if (order.notes) {
+    doc.setTextColor(100, 100, 100);
+    doc.setFont('helvetica', 'normal');
+    doc.text('(com observações)', margin + 75, y + 6.5);
+  }
+  
+  y += 14;
   
   // ==================== PRODUCTS TABLE ====================
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...BRAND_ORANGE);
+  doc.text('ITENS DO PEDIDO', margin, y);
+  y += 4;
+  
   if (order.items && order.items.length > 0) {
     autoTable(doc, {
       startY: y,
-      head: [['Produto/Serviço', 'Quanti', 'Valor Uni.', 'Sub-Total']],
+      head: [['Produto/Serviço', 'Qtd', 'Valor Unit.', 'Subtotal']],
       body: order.items.map(item => [
         item.product_name,
         item.quantity.toString(),
         formatCurrency(item.unit_price),
         formatCurrency(item.total),
       ]),
-      theme: 'plain',
+      theme: 'striped',
       styles: {
-        fontSize: 11,
+        fontSize: 9,
         cellPadding: 3,
-        lineColor: [200, 200, 200],
-        lineWidth: 0,
       },
       headStyles: {
-        fillColor: [255, 255, 255],
-        textColor: [0, 0, 0],
+        fillColor: BRAND_ORANGE,
+        textColor: [255, 255, 255],
         fontStyle: 'bold',
-        lineWidth: { bottom: 0.5 },
-        lineColor: [200, 200, 200],
+        fontSize: 9,
+      },
+      alternateRowStyles: {
+        fillColor: [255, 248, 245],
       },
       columnStyles: {
-        0: { halign: 'left', cellWidth: 90 },
-        1: { halign: 'center', cellWidth: 20 },
-        2: { halign: 'right', cellWidth: 30 },
-        3: { halign: 'right', cellWidth: 30 },
+        0: { halign: 'left', cellWidth: 'auto' },
+        1: { halign: 'center', cellWidth: 18 },
+        2: { halign: 'right', cellWidth: 28 },
+        3: { halign: 'right', cellWidth: 28 },
       },
       margin: { left: margin, right: margin },
     });
     
-    y = (doc as any).lastAutoTable.finalY + 5;
+    y = (doc as any).lastAutoTable.finalY + 6;
   }
   
-  // ==================== TOTALS (right aligned) ====================
-  doc.setFontSize(11);
+  // ==================== TOTALS SECTION ====================
+  const totalsBoxWidth = 70;
+  const totalsBoxX = pageWidth - margin - totalsBoxWidth;
+  
+  doc.setFillColor(248, 248, 248);
+  doc.roundedRect(totalsBoxX, y, totalsBoxWidth, 34, 2, 2, 'F');
+  
+  const labelX = totalsBoxX + 4;
+  const valueX = totalsBoxX + totalsBoxWidth - 4;
+  let totalsY = y + 7;
+  
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 0, 0);
+  doc.setTextColor(80, 80, 80);
   
-  const totalsX = pageWidth - margin - 50;
-  const valuesX = pageWidth - margin;
+  // Subtotal
+  doc.text('Subtotal:', labelX, totalsY);
+  doc.text(formatCurrency(order.subtotal), valueX, totalsY, { align: 'right' });
+  totalsY += 6;
   
-  // Sub-total
-  doc.text('Sub-total:', totalsX, y, { align: 'right' });
-  doc.text(formatCurrency(order.subtotal), valuesX, y, { align: 'right' });
-  y += 6;
-  
-  // Discount (if any)
+  // Discount
   if (order.discount > 0) {
-    doc.text('Desconto:', totalsX, y, { align: 'right' });
-    doc.text(formatCurrency(order.discount), valuesX, y, { align: 'right' });
-    y += 6;
+    doc.text('Desconto:', labelX, totalsY);
+    doc.setTextColor(220, 38, 38);
+    doc.text(`- ${formatCurrency(order.discount)}`, valueX, totalsY, { align: 'right' });
+    doc.setTextColor(80, 80, 80);
+    totalsY += 6;
   }
   
-  // Shipping (if any)
+  // Shipping
   if (order.shipping && order.shipping > 0) {
-    doc.text('Frete:', totalsX, y, { align: 'right' });
-    doc.text(formatCurrency(order.shipping), valuesX, y, { align: 'right' });
-    y += 6;
+    doc.text('Frete:', labelX, totalsY);
+    doc.text(formatCurrency(order.shipping), valueX, totalsY, { align: 'right' });
+    totalsY += 6;
   }
+  
+  // Divider line
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.3);
+  doc.line(labelX, totalsY, valueX, totalsY);
+  totalsY += 5;
   
   // Total
-  y += 4;
-  doc.setFontSize(13);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('Valor pago:', totalsX, y, { align: 'right' });
-  doc.text(formatCurrency(order.total), valuesX, y, { align: 'right' });
+  doc.setTextColor(...BRAND_ORANGE);
+  doc.text('TOTAL:', labelX, totalsY);
+  doc.text(formatCurrency(order.total), valueX, totalsY, { align: 'right' });
+  
+  y += 40;
+  
+  // ==================== NOTES SECTION (if present) ====================
+  if (order.notes) {
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...BRAND_ORANGE);
+    doc.text('OBSERVAÇÕES', margin, y);
+    
+    y += 5;
+    doc.setDrawColor(220, 220, 220);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(margin, y, contentWidth, 20, 2, 2, 'S');
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(60, 60, 60);
+    
+    // Wrap text within box
+    const notesLines = doc.splitTextToSize(order.notes, contentWidth - 8);
+    doc.text(notesLines.slice(0, 3), margin + 4, y + 6);
+  }
+  
+  // ==================== FOOTER BAR ====================
+  doc.setFillColor(...BRAND_ORANGE_LIGHT);
+  doc.rect(0, 287, pageWidth, 10, 'F');
+  
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(255, 255, 255);
+  doc.text('Documento gerado automaticamente pelo sistema', pageWidth / 2, 293, { align: 'center' });
   
   return doc;
 };

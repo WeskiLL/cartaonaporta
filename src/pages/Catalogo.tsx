@@ -319,49 +319,6 @@ const Catalogo = () => {
             </div>}
         </div>
 
-        {/* Info Notice Section */}
-        <div className={`px-4 py-8 sm:py-12 transition-colors duration-300 ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
-          <div className="max-w-md mx-auto text-center space-y-6">
-            {/* Customization Notice */}
-            <div className={`p-4 rounded-2xl ${isDarkMode ? "bg-primary/20" : "bg-primary/10"}`}>
-              <p className={`text-lg sm:text-xl font-bold mb-2 ${isDarkMode ? "text-white" : "text-gray-800"}`}>
-                ✨ PERSONALIZAÇÃO TOTAL!
-              </p>
-              <p className={`text-sm sm:text-base ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
-                Você escolhe: cores, logo, estilo, informações e o que mais desejar!
-              </p>
-            </div>
-
-            {/* Cut Warning */}
-            <div className={`p-4 rounded-2xl border-2 border-dashed ${isDarkMode ? "border-yellow-500/50 bg-yellow-500/10" : "border-yellow-500/40 bg-yellow-50"}`}>
-              <p className={`text-sm sm:text-base font-medium ${isDarkMode ? "text-yellow-300" : "text-yellow-700"}`}>
-                ⚠️ Os cortes são exatamente como na imagem e <strong>NÃO PODEM SER ALTERADOS</strong>.
-              </p>
-            </div>
-
-            {/* Custom Order Notice */}
-            <p className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
-              Caso deseje fazer um pedido de um material diferente do que está no catálogo, converse com a gente no WhatsApp
-            </p>
-
-            {/* Shipping Info */}
-            <p className={`text-base sm:text-lg font-semibold ${isDarkMode ? "text-white" : "text-gray-700"}`}>
-              🚚 Entregamos para todo o Brasil
-            </p>
-
-            {/* WhatsApp CTA */}
-            <div className="pt-2">
-              <button
-                onClick={handleWhatsAppContact}
-                className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-full text-sm sm:text-base font-semibold transition-colors shadow-lg hover:shadow-xl"
-              >
-                <img src={whatsappIcon} alt="WhatsApp" className="h-5 w-5" />
-                Faça seu pedido pelo WhatsApp
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* Footer */}
         <div className={`py-4 sm:py-6 text-center text-xs sm:text-sm transition-colors duration-300 ${isDarkMode ? "bg-gray-800 text-gray-400" : "bg-gray-100 text-gray-600"}`}>
           <p>© {new Date().getFullYear()} Prime Print. Todos os direitos reservados.</p>

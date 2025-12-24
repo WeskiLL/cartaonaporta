@@ -68,6 +68,7 @@ export interface Quote {
   items?: QuoteItem[];
   subtotal: number;
   discount: number;
+  shipping: number;
   total: number;
   notes?: string;
   status: 'pending' | 'approved' | 'rejected' | 'converted';
@@ -95,6 +96,7 @@ export interface Order {
   items?: QuoteItem[];
   subtotal: number;
   discount: number;
+  shipping: number;
   total: number;
   notes?: string;
   status: 'awaiting_payment' | 'creating_art' | 'production' | 'shipping' | 'delivered';

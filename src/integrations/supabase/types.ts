@@ -236,6 +236,7 @@ export type Database = {
           number: string
           quote_id: string | null
           revenue_added: boolean | null
+          shipping: number | null
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number | null
           total: number | null
@@ -253,6 +254,7 @@ export type Database = {
           number: string
           quote_id?: string | null
           revenue_added?: boolean | null
+          shipping?: number | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number | null
           total?: number | null
@@ -270,6 +272,7 @@ export type Database = {
           number?: string
           quote_id?: string | null
           revenue_added?: boolean | null
+          shipping?: number | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number | null
           total?: number | null
@@ -425,6 +428,7 @@ export type Database = {
           id: string
           notes: string | null
           number: string
+          shipping: number | null
           status: Database["public"]["Enums"]["quote_status"]
           subtotal: number | null
           total: number | null
@@ -439,6 +443,7 @@ export type Database = {
           id?: string
           notes?: string | null
           number: string
+          shipping?: number | null
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number | null
           total?: number | null
@@ -453,6 +458,7 @@ export type Database = {
           id?: string
           notes?: string | null
           number?: string
+          shipping?: number | null
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number | null
           total?: number | null

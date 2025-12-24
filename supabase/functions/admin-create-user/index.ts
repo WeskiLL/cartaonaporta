@@ -6,54 +6,65 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
+  console.log('Received request:', req.method);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Não autorizado' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const body = await req.json();
+    console.log('Request body received:', JSON.stringify(body));
+    const { email, password, role, setup_key } = body;
 
-    // Create client with user's token to verify they're admin
+    // For initial setup without any admin, allow using a setup key
+    const SETUP_KEY = 'cartao-na-porta-setup-2024';
+    
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    // If setup_key is provided, allow creating user without auth (for initial setup)
+    if (setup_key === SETUP_KEY) {
+      console.log('Using setup key for initial user creation');
+    } else {
+      // Normal flow - require admin auth
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: 'Não autorizado' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
-    // Get current user
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Não autorizado' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
+
+      // Get current user
+      const { data: { user }, error: userError } = await userClient.auth.getUser();
+      if (userError || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Não autorizado' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Check if user is admin
+      const { data: roleData, error: roleError } = await userClient
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .single();
+
+      if (roleError || !roleData) {
+        return new Response(
+          JSON.stringify({ error: 'Acesso negado. Apenas administradores podem criar usuários.' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
-
-    // Check if user is admin
-    const { data: roleData, error: roleError } = await userClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .single();
-
-    if (roleError || !roleData) {
-      return new Response(
-        JSON.stringify({ error: 'Acesso negado. Apenas administradores podem criar usuários.' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Parse request body
-    const { email, password, role } = await req.json();
 
     if (!email || !password) {
       return new Response(
@@ -71,7 +82,7 @@ Deno.serve(async (req) => {
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // Auto-confirm email
+      email_confirm: true,
     });
 
     if (createError) {
@@ -82,7 +93,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Add role to user_roles table (default to vendedor if not specified)
+    // Add role to user_roles table
     const validRoles = ['admin', 'vendedor', 'financeiro'];
     const userRole = validRoles.includes(role) ? role : 'vendedor';
     
@@ -92,8 +103,9 @@ Deno.serve(async (req) => {
 
     if (insertRoleError) {
       console.error('Error inserting role:', insertRoleError);
-      // User was created but role failed - still return success but log the error
     }
+
+    console.log(`User ${email} created with role ${userRole}`);
 
     return new Response(
       JSON.stringify({ success: true, user_id: newUser.user.id }),

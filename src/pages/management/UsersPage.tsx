@@ -119,22 +119,33 @@ export default function UsersPage() {
     }
   };
 
-  const handleDelete = async (userId: string) => {
+  const handleDelete = async (userId: string, userAuthId: string) => {
     if (!confirm('Deseja excluir este usuário?')) return;
 
     try {
-      const { error } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('id', userId);
+      const { data: currentSession } = await supabase.auth.getSession();
+      
+      // Delete user via edge function (deletes from auth.users and user_roles)
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-delete-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentSession.session?.access_token}`,
+        },
+        body: JSON.stringify({ user_id: userAuthId }),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao excluir usuário');
+      }
 
       toast.success('Usuário excluído');
       fetchUsers();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting user:', error);
-      toast.error('Erro ao excluir usuário');
+      toast.error(error.message || 'Erro ao excluir usuário');
     }
   };
 
@@ -181,7 +192,7 @@ export default function UsersPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDelete(user.id)}
+                      onClick={() => handleDelete(user.id, user.user_id)}
                       className="text-destructive hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />

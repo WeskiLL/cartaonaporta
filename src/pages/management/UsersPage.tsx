@@ -55,6 +55,7 @@ export default function UsersPage() {
       const usersData: User[] = (data || []).map((role: any) => ({
         id: role.id,
         user_id: role.user_id,
+        email: role.email,
         role: role.role as 'admin' | 'vendedor' | 'financeiro',
         created_at: role.created_at,
       }));
@@ -183,8 +184,8 @@ export default function UsersPage() {
                         {roleInfo.icon}
                       </div>
                       <div>
-                        <p className="font-medium text-sm text-foreground truncate max-w-[180px]">
-                          {user.user_id.substring(0, 8)}...
+                        <p className="font-medium text-sm text-foreground truncate max-w-[200px]">
+                          {user.email || user.user_id.substring(0, 8) + '...'}
                         </p>
                         <p className={`text-xs ${roleInfo.color}`}>{roleInfo.label}</p>
                       </div>

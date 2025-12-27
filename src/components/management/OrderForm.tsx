@@ -448,11 +448,13 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
       result = success;
     } else {
       // Create new
+      console.log('Creating new order/quote with items:', itemsData);
       if (mode === 'quote') {
         result = await addQuote(data, itemsData);
       } else {
         result = await addOrder(data, itemsData);
       }
+      console.log('Create result:', result);
     }
 
     setLoading(false);

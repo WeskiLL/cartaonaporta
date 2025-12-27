@@ -42,7 +42,7 @@ const categoryTitles: Record<CategoryId, string> = {
 const Catalogo = () => {
   const [activeCategory, setActiveCategory] = useState<CategoryId>("tags");
   const [selectedQuantities, setSelectedQuantities] = useState<Record<string, number>>({});
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const {
     data: products = [],

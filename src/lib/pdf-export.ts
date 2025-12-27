@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Quote, Order, Transaction, Company, DeliveryAddress, Client } from '@/types/management';
+import { Quote, Order, Transaction, Company, DeliveryAddress, Client, ManagementProduct } from '@/types/management';
 
 // Brand colors
 const BRAND_ORANGE = [232, 86, 22] as [number, number, number]; // #e85616
@@ -188,10 +188,14 @@ const addClientInfo = (doc: jsPDF, client: Client | null, clientName: string, y:
   return y + 8;
 };
 
-export const generateQuotePDF = async (quote: Quote, company: Company | null, client?: Client | null): Promise<jsPDF> => {
+export const generateQuotePDF = async (quote: Quote, company: Company | null, client?: Client | null, products?: ManagementProduct[]): Promise<jsPDF> => {
   const doc = new jsPDF();
   const quoteNumber = quote.number.replace('ORC', '');
   let y = await addHeader(doc, company, `Orçamento_${quoteNumber}`);
+  
+  const margin = 14;
+  const pageWidth = 210;
+  const contentWidth = pageWidth - (margin * 2);
   
   // Client info
   y = addClientInfo(doc, client || null, quote.client_name, y);
@@ -200,29 +204,122 @@ export const generateQuotePDF = async (quote: Quote, company: Company | null, cl
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(60, 60, 60);
-  doc.text(`Data: ${formatDate(quote.created_at)}`, 14, y);
+  doc.text(`Data: ${formatDate(quote.created_at)}`, margin, y);
   if (quote.valid_until) {
     doc.text(`Válido até: ${formatDate(quote.valid_until)}`, 80, y);
   }
   
   y += 10;
   
-  // Items table - using total price per item (not unit price)
+  // Items table with images
   if (quote.items && quote.items.length > 0) {
-    autoTable(doc, {
-      startY: y,
-      head: [['Produto', 'Qtd', 'Valor']],
-      body: quote.items.map(item => [
-        item.product_name,
-        item.quantity.toString(),
-        formatCurrency(item.total),
-      ]),
-      theme: 'grid',
-      headStyles: { fillColor: BRAND_ORANGE, textColor: [255, 255, 255] },
-      alternateRowStyles: { fillColor: [255, 245, 240] },
-    });
+    // Pre-load product images
+    const productImages: Map<string, { data: string; width: number; height: number } | null> = new Map();
     
-    y = (doc as any).lastAutoTable.finalY + 10;
+    for (const item of quote.items) {
+      if (item.product_id && products) {
+        const product = products.find(p => p.id === item.product_id);
+        if (product?.image_url) {
+          try {
+            const imgData = await loadImageAsBase64WithDimensions(product.image_url);
+            productImages.set(item.product_id, imgData);
+          } catch {
+            productImages.set(item.product_id, null);
+          }
+        }
+      }
+    }
+    
+    // Check if any items have images
+    const hasImages = Array.from(productImages.values()).some(img => img !== null);
+    
+    if (hasImages) {
+      // Render items with images manually
+      const rowHeight = 16;
+      const imgSize = 12;
+      const tableStartY = y;
+      
+      // Header
+      doc.setFillColor(...BRAND_ORANGE);
+      doc.rect(margin, y, contentWidth, 7, 'F');
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(255, 255, 255);
+      doc.text('Produto', margin + 18, y + 4.5);
+      doc.text('Qtd', margin + contentWidth - 55, y + 4.5);
+      doc.text('Valor', margin + contentWidth - 10, y + 4.5, { align: 'right' });
+      y += 7;
+      
+      // Rows
+      quote.items.forEach((item, index) => {
+        const isAlt = index % 2 === 1;
+        if (isAlt) {
+          doc.setFillColor(255, 245, 240);
+          doc.rect(margin, y, contentWidth, rowHeight, 'F');
+        }
+        
+        // Image
+        const imgData = item.product_id ? productImages.get(item.product_id) : null;
+        if (imgData) {
+          const aspectRatio = imgData.width / imgData.height;
+          let imgW = imgSize;
+          let imgH = imgSize;
+          if (aspectRatio > 1) {
+            imgH = imgSize / aspectRatio;
+          } else {
+            imgW = imgSize * aspectRatio;
+          }
+          const imgX = margin + 2 + (imgSize - imgW) / 2;
+          const imgY = y + (rowHeight - imgH) / 2;
+          doc.addImage(imgData.data, 'PNG', imgX, imgY, imgW, imgH);
+        } else {
+          // Placeholder
+          doc.setFillColor(240, 240, 240);
+          doc.rect(margin + 2, y + 2, imgSize, imgSize, 'F');
+        }
+        
+        // Text
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(60, 60, 60);
+        
+        // Product name (truncate if too long)
+        const maxNameWidth = contentWidth - 80;
+        let productName = item.product_name;
+        while (doc.getTextWidth(productName) > maxNameWidth && productName.length > 10) {
+          productName = productName.slice(0, -4) + '...';
+        }
+        doc.text(productName, margin + 18, y + rowHeight / 2 + 1);
+        
+        doc.text(item.quantity.toString(), margin + contentWidth - 50, y + rowHeight / 2 + 1);
+        doc.text(formatCurrency(item.total), margin + contentWidth - 4, y + rowHeight / 2 + 1, { align: 'right' });
+        
+        y += rowHeight;
+      });
+      
+      // Border around table
+      doc.setDrawColor(220, 220, 220);
+      doc.setLineWidth(0.3);
+      doc.rect(margin, tableStartY, contentWidth, y - tableStartY, 'S');
+      
+      y += 8;
+    } else {
+      // No images, use simple autoTable
+      autoTable(doc, {
+        startY: y,
+        head: [['Produto', 'Qtd', 'Valor']],
+        body: quote.items.map(item => [
+          item.product_name,
+          item.quantity.toString(),
+          formatCurrency(item.total),
+        ]),
+        theme: 'grid',
+        headStyles: { fillColor: BRAND_ORANGE, textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [255, 245, 240] },
+      });
+      
+      y = (doc as any).lastAutoTable.finalY + 10;
+    }
   }
   
   // Totals
@@ -243,8 +340,8 @@ export const generateQuotePDF = async (quote: Quote, company: Company | null, cl
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(100, 100, 100);
-    doc.text('Observações:', 14, y);
-    doc.text(quote.notes, 14, y + 5);
+    doc.text('Observações:', margin, y);
+    doc.text(quote.notes, margin, y + 5);
   }
   
   // Footer bar
@@ -264,15 +361,15 @@ const sanitizeFileName = (name: string): string => {
     .substring(0, 50); // Limit length
 };
 
-export const exportQuoteToPDF = async (quote: Quote, company: Company | null, client?: Client | null) => {
-  const doc = await generateQuotePDF(quote, company, client);
+export const exportQuoteToPDF = async (quote: Quote, company: Company | null, client?: Client | null, products?: ManagementProduct[]) => {
+  const doc = await generateQuotePDF(quote, company, client, products);
   const quoteNumber = quote.number.replace('ORC', '');
   const clientName = sanitizeFileName(client?.name || quote.client_name);
   doc.save(`Orcamento_${quoteNumber}_${clientName}.pdf`);
 };
 
 // ============= NEW ORDER PDF LAYOUT - CLEAN & PROFESSIONAL =============
-export const generateOrderPDF = async (order: Order, company: Company | null, client?: Client | null): Promise<jsPDF> => {
+export const generateOrderPDF = async (order: Order, company: Company | null, client?: Client | null, products?: ManagementProduct[]): Promise<jsPDF> => {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -489,7 +586,7 @@ export const generateOrderPDF = async (order: Order, company: Company | null, cl
   
   y += 14;
   
-  // ==================== PRODUCTS TABLE ====================
+  // ==================== PRODUCTS TABLE WITH IMAGES ====================
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...BRAND_ORANGE);
@@ -497,39 +594,134 @@ export const generateOrderPDF = async (order: Order, company: Company | null, cl
   y += 4;
   
   if (order.items && order.items.length > 0) {
-    autoTable(doc, {
-      startY: y,
-      head: [['Produto/Serviço', 'Qtd', 'Valor Unit.', 'Subtotal']],
-      body: order.items.map(item => [
-        item.product_name,
-        item.quantity.toString(),
-        formatCurrency(item.unit_price),
-        formatCurrency(item.total),
-      ]),
-      theme: 'striped',
-      styles: {
-        fontSize: 9,
-        cellPadding: 3,
-      },
-      headStyles: {
-        fillColor: BRAND_ORANGE,
-        textColor: [255, 255, 255],
-        fontStyle: 'bold',
-        fontSize: 9,
-      },
-      alternateRowStyles: {
-        fillColor: [255, 248, 245],
-      },
-      columnStyles: {
-        0: { halign: 'left', cellWidth: 'auto' },
-        1: { halign: 'center', cellWidth: 18 },
-        2: { halign: 'right', cellWidth: 28 },
-        3: { halign: 'right', cellWidth: 28 },
-      },
-      margin: { left: margin, right: margin },
-    });
+    // Pre-load product images
+    const productImages: Map<string, { data: string; width: number; height: number } | null> = new Map();
     
-    y = (doc as any).lastAutoTable.finalY + 6;
+    for (const item of order.items) {
+      if (item.product_id && products) {
+        const product = products.find(p => p.id === item.product_id);
+        if (product?.image_url) {
+          try {
+            const imgData = await loadImageAsBase64WithDimensions(product.image_url);
+            productImages.set(item.product_id, imgData);
+          } catch {
+            productImages.set(item.product_id, null);
+          }
+        }
+      }
+    }
+    
+    // Check if any items have images
+    const hasImages = Array.from(productImages.values()).some(img => img !== null);
+    
+    if (hasImages) {
+      // Render items with images manually
+      const rowHeight = 18;
+      const imgSize = 14;
+      const tableStartY = y;
+      
+      // Header
+      doc.setFillColor(...BRAND_ORANGE);
+      doc.rect(margin, y, contentWidth, 8, 'F');
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(255, 255, 255);
+      doc.text('Produto/Serviço', margin + 20, y + 5.5);
+      doc.text('Qtd', margin + contentWidth - 70, y + 5.5);
+      doc.text('Valor', margin + contentWidth - 40, y + 5.5);
+      doc.text('Subtotal', margin + contentWidth - 12, y + 5.5, { align: 'right' });
+      y += 8;
+      
+      // Rows
+      order.items.forEach((item, index) => {
+        const isAlt = index % 2 === 1;
+        if (isAlt) {
+          doc.setFillColor(255, 248, 245);
+          doc.rect(margin, y, contentWidth, rowHeight, 'F');
+        }
+        
+        // Image
+        const imgData = item.product_id ? productImages.get(item.product_id) : null;
+        if (imgData) {
+          const aspectRatio = imgData.width / imgData.height;
+          let imgW = imgSize;
+          let imgH = imgSize;
+          if (aspectRatio > 1) {
+            imgH = imgSize / aspectRatio;
+          } else {
+            imgW = imgSize * aspectRatio;
+          }
+          const imgX = margin + 2 + (imgSize - imgW) / 2;
+          const imgY = y + (rowHeight - imgH) / 2;
+          doc.addImage(imgData.data, 'PNG', imgX, imgY, imgW, imgH);
+        } else {
+          // Placeholder
+          doc.setFillColor(240, 240, 240);
+          doc.rect(margin + 2, y + 2, imgSize, imgSize, 'F');
+        }
+        
+        // Text
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(60, 60, 60);
+        
+        // Product name (truncate if too long)
+        const maxNameWidth = contentWidth - 95;
+        let productName = item.product_name;
+        while (doc.getTextWidth(productName) > maxNameWidth && productName.length > 10) {
+          productName = productName.slice(0, -4) + '...';
+        }
+        doc.text(productName, margin + 20, y + rowHeight / 2 + 1);
+        
+        doc.text(item.quantity.toString(), margin + contentWidth - 65, y + rowHeight / 2 + 1);
+        doc.text(formatCurrency(item.unit_price), margin + contentWidth - 35, y + rowHeight / 2 + 1);
+        doc.text(formatCurrency(item.total), margin + contentWidth - 4, y + rowHeight / 2 + 1, { align: 'right' });
+        
+        y += rowHeight;
+      });
+      
+      // Border around table
+      doc.setDrawColor(220, 220, 220);
+      doc.setLineWidth(0.3);
+      doc.rect(margin, tableStartY, contentWidth, y - tableStartY, 'S');
+      
+      y += 6;
+    } else {
+      // No images, use simple autoTable
+      autoTable(doc, {
+        startY: y,
+        head: [['Produto/Serviço', 'Qtd', 'Valor Unit.', 'Subtotal']],
+        body: order.items.map(item => [
+          item.product_name,
+          item.quantity.toString(),
+          formatCurrency(item.unit_price),
+          formatCurrency(item.total),
+        ]),
+        theme: 'striped',
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+        },
+        headStyles: {
+          fillColor: BRAND_ORANGE,
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 9,
+        },
+        alternateRowStyles: {
+          fillColor: [255, 248, 245],
+        },
+        columnStyles: {
+          0: { halign: 'left', cellWidth: 'auto' },
+          1: { halign: 'center', cellWidth: 18 },
+          2: { halign: 'right', cellWidth: 28 },
+          3: { halign: 'right', cellWidth: 28 },
+        },
+        margin: { left: margin, right: margin },
+      });
+      
+      y = (doc as any).lastAutoTable.finalY + 6;
+    }
   }
   
   // ==================== TOTALS SECTION ====================
@@ -616,8 +808,8 @@ export const generateOrderPDF = async (order: Order, company: Company | null, cl
   return doc;
 };
 
-export const exportOrderToPDF = async (order: Order, company: Company | null, client?: Client | null) => {
-  const doc = await generateOrderPDF(order, company, client);
+export const exportOrderToPDF = async (order: Order, company: Company | null, client?: Client | null, products?: ManagementProduct[]) => {
+  const doc = await generateOrderPDF(order, company, client, products);
   const orderNumber = order.number.replace('PED', '');
   const clientName = sanitizeFileName(client?.name || order.client_name);
   doc.save(`Pedido_${orderNumber}_${clientName}.pdf`);

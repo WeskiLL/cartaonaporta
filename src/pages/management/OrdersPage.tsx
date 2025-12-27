@@ -35,8 +35,8 @@ const QUOTE_STATUS_OPTIONS: { value: QuoteStatus; label: string }[] = [
 
 export default function OrdersPage() {
   const { 
-    orders, quotes, clients, loadingOrders, loadingQuotes, company,
-    fetchOrders, fetchQuotes, fetchClients, fetchCompany, updateOrder, updateQuote, 
+    orders, quotes, clients, products, loadingOrders, loadingQuotes, company,
+    fetchOrders, fetchQuotes, fetchClients, fetchCompany, fetchProducts, updateOrder, updateQuote, 
     deleteOrder, deleteQuote, convertQuoteToOrder 
   } = useManagement();
   const [search, setSearch] = useState('');
@@ -55,7 +55,8 @@ export default function OrdersPage() {
     fetchQuotes();
     fetchClients();
     fetchCompany();
-  }, [fetchOrders, fetchQuotes, fetchClients, fetchCompany]);
+    fetchProducts();
+  }, [fetchOrders, fetchQuotes, fetchClients, fetchCompany, fetchProducts]);
 
   const getClientById = (clientId?: string) => {
     if (!clientId) return null;
@@ -387,8 +388,8 @@ export default function OrdersPage() {
           }
           const client = getClientById(pdfItem.client_id);
           return pdfType === 'order' 
-            ? generateOrderPDF(pdfItem as Order, company, client)
-            : generateQuotePDF(pdfItem as Quote, company, client);
+            ? generateOrderPDF(pdfItem as Order, company, client, products)
+            : generateQuotePDF(pdfItem as Quote, company, client, products);
         }}
       />
     </ManagementLayout>

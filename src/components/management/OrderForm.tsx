@@ -743,7 +743,7 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
                                 />
                               </div>
                             </>
-                          ) : (
+                          ) : item.isManual ? (
                             <>
                               <div className="col-span-3">
                                 <Label className="text-xs">Qtd</Label>
@@ -757,12 +757,20 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
                               <div className="col-span-4">
                                 <Label className="text-xs">Valor Total</Label>
                                 <Input
-                                  value={maskCurrency(item.total * 100)}
-                                  onChange={(e) => updateItem(index, 'total', parseFloat(unmask(e.target.value)) / 100 || 0)}
+                                  value={maskCurrency(item.total)}
+                                  onChange={(e) => {
+                                    const cleaned = unmask(e.target.value);
+                                    const cents = parseInt(cleaned, 10) || 0;
+                                    updateItem(index, 'total', cents / 100);
+                                  }}
                                   placeholder="R$ 0,00"
                                 />
                               </div>
                             </>
+                          ) : (
+                            <div className="col-span-7 flex items-center text-sm text-muted-foreground">
+                              Selecione um produto ou escolha "Digite manualmente"
+                            </div>
                           )}
                           
                           <div className="col-span-1">

@@ -124,15 +124,26 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
       // Populate items
       if (editingItem.items && editingItem.items.length > 0) {
         const mappedItems = editingItem.items.map(item => {
-          const product = products.find(p => p.id === item.product_id);
+          const product = item.product_id ? products.find(p => p.id === item.product_id) : null;
+          const isManualItem = !item.product_id || !product;
+          
+          // Extract quantity from product_name if it's a catalog product (format: "Name (250 un)")
+          let extractedQuantity = item.quantity;
+          if (product && item.product_name) {
+            const match = item.product_name.match(/\((\d+)\s*un\)/);
+            if (match) {
+              extractedQuantity = parseInt(match[1], 10);
+            }
+          }
+          
           return {
             product_id: item.product_id || '',
-            product_name: item.product_name,
+            product_name: product ? product.name : item.product_name,
             quantity: item.quantity,
-            selectedQuantity: item.quantity,
+            selectedQuantity: extractedQuantity,
             unit_price: item.unit_price,
             total: item.total,
-            isManual: !item.product_id,
+            isManual: isManualItem,
             productImage: product?.image_url,
           };
         });
@@ -391,12 +402,12 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
     }
 
     const itemsData = items.map(item => ({
-      product_id: item.product_id || undefined,
+      product_id: item.product_id && item.product_id.length > 0 ? item.product_id : null,
       product_name: item.isManual 
         ? item.product_name 
         : `${item.product_name} (${item.selectedQuantity} un)`,
-      quantity: item.isManual ? item.quantity : 1,
-      unit_price: item.total, // Use total as unit price for display
+      quantity: item.isManual ? item.quantity : item.selectedQuantity || 1,
+      unit_price: item.total,
       total: item.total,
     }));
 

@@ -17,7 +17,7 @@ type OrderStatus = typeof ORDER_STATUSES[number]['id'];
 
 interface OrderKanbanProps {
   orders: Order[];
-  onStatusChange: (orderId: string, newStatus: OrderStatus, addRevenue: boolean) => Promise<void>;
+  onStatusChange: (orderId: string, newStatus: OrderStatus, revenueAction: 'add' | 'remove' | 'none') => Promise<void>;
   onViewOrder?: (order: Order) => void;
 }
 
@@ -52,11 +52,20 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
     ));
     setPendingUpdates(prev => new Set(prev).add(orderId));
 
-    // Add revenue when moving to "creating_art"
-    const addRevenue = newStatus === 'creating_art' && oldStatus === 'awaiting_payment';
+    // Determine revenue action
+    let revenueAction: 'add' | 'remove' | 'none' = 'none';
+    
+    // Add revenue when moving from awaiting_payment to any other status (and revenue wasn't added yet)
+    if (oldStatus === 'awaiting_payment' && newStatus !== 'awaiting_payment' && !order.revenue_added) {
+      revenueAction = 'add';
+    }
+    // Remove revenue when moving back to awaiting_payment (and revenue was previously added)
+    else if (newStatus === 'awaiting_payment' && oldStatus !== 'awaiting_payment' && order.revenue_added) {
+      revenueAction = 'remove';
+    }
 
     try {
-      await onStatusChange(orderId, newStatus, addRevenue);
+      await onStatusChange(orderId, newStatus, revenueAction);
       toast.success(`Pedido ${order.number} atualizado`);
     } catch (error) {
       // Rollback on error

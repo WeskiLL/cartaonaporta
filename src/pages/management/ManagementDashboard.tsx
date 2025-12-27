@@ -30,6 +30,7 @@ export default function ManagementDashboard() {
     loadingQuotes,
     updateOrder,
     addTransaction,
+    deleteTransaction,
     convertQuoteToOrder 
   } = useManagement();
 
@@ -78,19 +79,19 @@ export default function ManagementDashboard() {
     };
   }, [orders, quotes, transactions, clients]);
 
-  const handleStatusChange = useCallback(async (orderId: string, newStatus: OrderStatus, addRevenue: boolean) => {
+  const handleStatusChange = useCallback(async (orderId: string, newStatus: OrderStatus, revenueAction: 'add' | 'remove' | 'none') => {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
-    // Update order status
+    // Update order status and revenue_added flag
     const success = await updateOrder(orderId, { 
       status: newStatus,
-      revenue_added: addRevenue ? true : order.revenue_added 
+      revenue_added: revenueAction === 'add' ? true : revenueAction === 'remove' ? false : order.revenue_added 
     });
 
     if (success) {
-      // Add revenue when moving to "creating_art" and not already added
-      if (addRevenue && !order.revenue_added) {
+      // Add revenue when moving out of "awaiting_payment"
+      if (revenueAction === 'add') {
         await addTransaction({
           type: 'income',
           amount: Number(order.total),
@@ -102,9 +103,20 @@ export default function ManagementDashboard() {
         toast.success('Receita adicionada ao financeiro');
       }
       
+      // Remove revenue when moving back to "awaiting_payment"
+      if (revenueAction === 'remove') {
+        // Find the transaction associated with this order
+        const orderTransaction = transactions.find(t => t.order_id === order.id);
+        if (orderTransaction) {
+          await deleteTransaction(orderTransaction.id);
+          toast.success('Receita removida do financeiro');
+        }
+      }
+      
       fetchOrders();
+      fetchTransactions();
     }
-  }, [orders, updateOrder, addTransaction, fetchOrders]);
+  }, [orders, transactions, updateOrder, addTransaction, deleteTransaction, fetchOrders, fetchTransactions]);
 
   const handleConvertQuote = async (quoteId: string) => {
     setConvertingQuoteId(quoteId);

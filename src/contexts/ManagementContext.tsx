@@ -435,12 +435,10 @@ export function ManagementProvider({ children }: { children: ReactNode }) {
       let insertedItems: QuoteItem[] = [];
       if (items.length > 0) {
         const itemsWithOrderId = items.map(item => ({ ...item, order_id: data.id }));
-        console.log('Inserting order items:', itemsWithOrderId);
         const { data: itemsData, error: itemsError } = await supabase.from('quote_items').insert(itemsWithOrderId).select();
         if (itemsError) {
           console.error('Error inserting order items:', itemsError);
         }
-        console.log('Inserted order items:', itemsData);
         insertedItems = (itemsData as QuoteItem[]) || [];
       }
 

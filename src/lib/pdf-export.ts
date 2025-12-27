@@ -21,16 +21,33 @@ const formatDateTime = (date: string) =>
 const loadImageAsBase64WithDimensions = (url: string): Promise<{ data: string; width: number; height: number } | null> => {
   return new Promise((resolve) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
+    
+    const loadImage = () => {
       const canvas = document.createElement('canvas');
       canvas.width = img.width;
       canvas.height = img.height;
       const ctx = canvas.getContext('2d');
       ctx?.drawImage(img, 0, 0);
-      resolve({ data: canvas.toDataURL('image/png'), width: img.width, height: img.height });
+      try {
+        resolve({ data: canvas.toDataURL('image/png'), width: img.width, height: img.height });
+      } catch {
+        resolve(null);
+      }
     };
-    img.onerror = () => resolve(null);
+    
+    img.onload = loadImage;
+    img.onerror = () => {
+      // Try without CORS if it fails
+      if (img.crossOrigin) {
+        img.crossOrigin = '';
+        img.src = url;
+      } else {
+        resolve(null);
+      }
+    };
+    
+    // Try with CORS first
+    img.crossOrigin = 'anonymous';
     img.src = url;
   });
 };

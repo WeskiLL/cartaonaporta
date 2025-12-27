@@ -124,21 +124,33 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
       // Populate items
       if (editingItem.items && editingItem.items.length > 0) {
         const mappedItems = editingItem.items.map(item => {
+          // Check if product exists in catalog by ID
           const product = item.product_id ? products.find(p => p.id === item.product_id) : null;
-          const isManualItem = !item.product_id || !product;
+          
+          // Item is manual only if it has no product_id
+          const isManualItem = !item.product_id;
           
           // Extract quantity from product_name if it's a catalog product (format: "Name (250 un)")
           let extractedQuantity = item.quantity;
-          if (product && item.product_name) {
+          if (!isManualItem && item.product_name) {
             const match = item.product_name.match(/\((\d+)\s*un\)/);
             if (match) {
               extractedQuantity = parseInt(match[1], 10);
             }
           }
           
+          // Get product name - use the base name from catalog if available, otherwise strip the quantity suffix
+          let productName = item.product_name;
+          if (product) {
+            productName = product.name;
+          } else if (!isManualItem && item.product_name) {
+            // Product ID exists but product not found in catalog - extract base name
+            productName = item.product_name.replace(/\s*\(\d+\s*un\)$/, '');
+          }
+          
           return {
             product_id: item.product_id || '',
-            product_name: product ? product.name : item.product_name,
+            product_name: productName,
             quantity: item.quantity,
             selectedQuantity: extractedQuantity,
             unit_price: item.unit_price,

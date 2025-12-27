@@ -117,8 +117,8 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
       const client = clients.find(c => c.id === editingItem.client_id);
       setSelectedClient(client || null);
       setClientMode('select');
-      setDiscount(editingItem.discount ? maskCurrency(editingItem.discount * 100) : '');
-      setShipping(editingItem.shipping ? maskCurrency(editingItem.shipping * 100) : '');
+      setDiscount(editingItem.discount ? maskCurrency(editingItem.discount) : '');
+      setShipping(editingItem.shipping ? maskCurrency(editingItem.shipping) : '');
       setNotes(editingItem.notes || '');
       
       // Populate items

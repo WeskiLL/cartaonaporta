@@ -557,19 +557,9 @@ const AdminDashboard = () => {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="size">Tamanho</Label>
+                        <Label htmlFor="product-size">Tamanho</Label>
                         <Input
-                          id="size"
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          placeholder="Ex: Tag para brincos"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="size">Tamanho</Label>
-                        <Input
-                          id="size"
+                          id="product-size"
                           value={formData.size}
                           onChange={(e) => setFormData({ ...formData, size: e.target.value })}
                           placeholder="Ex: 4x5"

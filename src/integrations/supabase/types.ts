@@ -407,7 +407,7 @@ export type Database = {
             foreignKeyName: "quote_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
-            referencedRelation: "management_products"
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
           {

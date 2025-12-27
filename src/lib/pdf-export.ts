@@ -236,10 +236,21 @@ export const generateQuotePDF = async (quote: Quote, company: Company | null, cl
   return doc;
 };
 
+// Helper to sanitize filename (remove special characters)
+const sanitizeFileName = (name: string): string => {
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove accents
+    .replace(/[^a-zA-Z0-9\s-]/g, '') // Remove special chars
+    .replace(/\s+/g, '_') // Replace spaces with underscores
+    .substring(0, 50); // Limit length
+};
+
 export const exportQuoteToPDF = async (quote: Quote, company: Company | null, client?: Client | null) => {
   const doc = await generateQuotePDF(quote, company, client);
   const quoteNumber = quote.number.replace('ORC', '');
-  doc.save(`Orçamento_${quoteNumber}.pdf`);
+  const clientName = sanitizeFileName(client?.name || quote.client_name);
+  doc.save(`Orcamento_${quoteNumber}_${clientName}.pdf`);
 };
 
 // ============= NEW ORDER PDF LAYOUT - CLEAN & PROFESSIONAL =============
@@ -578,7 +589,8 @@ export const generateOrderPDF = async (order: Order, company: Company | null, cl
 export const exportOrderToPDF = async (order: Order, company: Company | null, client?: Client | null) => {
   const doc = await generateOrderPDF(order, company, client);
   const orderNumber = order.number.replace('PED', '');
-  doc.save(`Pedido_${orderNumber}.pdf`);
+  const clientName = sanitizeFileName(client?.name || order.client_name);
+  doc.save(`Pedido_${orderNumber}_${clientName}.pdf`);
 };
 
 export const generateFinancialReportPDF = async (

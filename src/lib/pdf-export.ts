@@ -334,15 +334,43 @@ export const generateQuotePDF = async (quote: Quote, company: Company | null, cl
   doc.setTextColor(...BRAND_ORANGE);
   doc.text(`Total: ${formatCurrency(quote.total)}`, 140, y + 6, { align: 'left' });
   
-  // Notes
+  // Custom notes
   if (quote.notes) {
     y += 20;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(100, 100, 100);
-    doc.text('Observações:', margin, y);
-    doc.text(quote.notes, margin, y + 5);
+    doc.text('Observações adicionais:', margin, y);
+    
+    // Split long notes text into lines
+    const notesLines = doc.splitTextToSize(quote.notes, contentWidth);
+    doc.text(notesLines, margin, y + 5);
+    y += 5 + (notesLines.length * 4);
   }
+  
+  // Default observation message
+  y += 15;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(...BRAND_ORANGE);
+  doc.text('Observação:', margin, y);
+  
+  y += 5;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(80, 80, 80);
+  
+  const validUntilDate = quote.valid_until ? formatDate(quote.valid_until) : formatDate(quote.created_at);
+  const companyName = company?.name || 'Empresa';
+  
+  const defaultObsText = `Gostaríamos de informar que este orçamento tem validade até ${validUntilDate}. Após esta data, os preços e condições podem ser revisados, visto que estamos constantemente atualizando nossas ofertas para melhor atendê-lo(a).
+
+Recomendamos que, caso deseje prosseguir com o pedido, entre em contato conosco antes do prazo expirar para garantir a disponibilidade dos produtos/serviços mencionados neste orçamento.
+
+Estamos à disposição para qualquer esclarecimento. Agradecemos a oportunidade de colaborar em seu projeto. Atenciosamente, ${companyName}`;
+  
+  const obsLines = doc.splitTextToSize(defaultObsText, contentWidth);
+  doc.text(obsLines, margin, y);
   
   // Footer bar
   doc.setFillColor(...BRAND_ORANGE_LIGHT);

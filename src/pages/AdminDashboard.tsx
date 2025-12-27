@@ -540,26 +540,27 @@ const AdminDashboard = () => {
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="name">Nome do Produto</Label>
+                          <Label htmlFor="product-name">Nome do Produto</Label>
                           <Input
-                            id="name"
+                            id="product-name"
+                            name="product-name"
+                            autoComplete="off"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                           />
                         </div>
 
-                        <div className="space-y-2">
-                          <Label>Imagem do Produto</Label>
-                          <ImageUpload
-                            value={formData.image_url}
-                            onChange={(url) => setFormData({ ...formData, image_url: url })}
-                          />
-                        </div>
+                        <ImageUpload
+                          value={formData.image_url}
+                          onChange={(url) => setFormData({ ...formData, image_url: url })}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="product-size">Tamanho</Label>
                         <Input
                           id="product-size"
+                          name="product-size"
+                          autoComplete="off"
                           value={formData.size}
                           onChange={(e) => setFormData({ ...formData, size: e.target.value })}
                           placeholder="Ex: 4x5"

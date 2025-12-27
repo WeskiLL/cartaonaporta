@@ -36,7 +36,7 @@ const QUOTE_STATUS_OPTIONS: { value: QuoteStatus; label: string }[] = [
 export default function OrdersPage() {
   const { 
     orders, quotes, clients, loadingOrders, loadingQuotes, company,
-    fetchOrders, fetchQuotes, fetchClients, updateOrder, updateQuote, 
+    fetchOrders, fetchQuotes, fetchClients, fetchCompany, updateOrder, updateQuote, 
     deleteOrder, deleteQuote, convertQuoteToOrder 
   } = useManagement();
   const [search, setSearch] = useState('');
@@ -54,7 +54,8 @@ export default function OrdersPage() {
     fetchOrders();
     fetchQuotes();
     fetchClients();
-  }, [fetchOrders, fetchQuotes, fetchClients]);
+    fetchCompany();
+  }, [fetchOrders, fetchQuotes, fetchClients, fetchCompany]);
 
   const getClientById = (clientId?: string) => {
     if (!clientId) return null;

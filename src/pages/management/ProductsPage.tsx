@@ -36,12 +36,16 @@ export default function ProductsPage() {
     category: 'tags',
     is_active: true,
     price_qty100: '',
+    price_qty200: '',
     price_qty250: '',
     price_qty500: '',
     price_qty1000: '',
+    price_qty2000: '',
     kit_description: '',
     is_kit: false,
     image_url: '',
+    available_quantities: '',
+    custom_specs: '',
   });
 
   useEffect(() => {
@@ -68,12 +72,16 @@ export default function ProductsPage() {
       category: 'tags', 
       is_active: true,
       price_qty100: '',
+      price_qty200: '',
       price_qty250: '',
       price_qty500: '',
       price_qty1000: '',
+      price_qty2000: '',
       kit_description: '',
       is_kit: false,
       image_url: '',
+      available_quantities: '',
+      custom_specs: '',
     });
     setFormOpen(true);
   };
@@ -86,18 +94,32 @@ export default function ProductsPage() {
       category: product.category || 'tags',
       is_active: product.is_active ?? true,
       price_qty100: product.price_qty100 ? maskCurrency(product.price_qty100) : '',
+      price_qty200: product.price_qty200 ? maskCurrency(product.price_qty200) : '',
       price_qty250: product.price_qty250 ? maskCurrency(product.price_qty250) : '',
       price_qty500: product.price_qty500 ? maskCurrency(product.price_qty500) : '',
       price_qty1000: product.price_qty1000 ? maskCurrency(product.price_qty1000) : '',
+      price_qty2000: product.price_qty2000 ? maskCurrency(product.price_qty2000) : '',
       kit_description: product.kit_description || '',
       is_kit: product.is_kit ?? false,
       image_url: product.image_url || '',
+      available_quantities: product.available_quantities?.join(', ') || '',
+      custom_specs: product.custom_specs?.join(', ') || '',
     });
     setFormOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Parse available quantities
+    const availableQuantities = formData.available_quantities
+      ? formData.available_quantities.split(',').map(q => parseInt(q.trim())).filter(q => !isNaN(q))
+      : null;
+    
+    // Parse custom specs
+    const customSpecs = formData.custom_specs
+      ? formData.custom_specs.split(',').map(s => s.trim()).filter(s => s.length > 0)
+      : null;
     
     const data: any = {
       name: formData.name,
@@ -108,9 +130,13 @@ export default function ProductsPage() {
       kit_description: formData.kit_description || null,
       image_url: formData.image_url || null,
       price_qty100: parseCurrencyToNumber(formData.price_qty100) || 0,
+      price_qty200: parseCurrencyToNumber(formData.price_qty200) || 0,
       price_qty250: parseCurrencyToNumber(formData.price_qty250) || 0,
       price_qty500: parseCurrencyToNumber(formData.price_qty500) || 0,
       price_qty1000: parseCurrencyToNumber(formData.price_qty1000) || 0,
+      price_qty2000: parseCurrencyToNumber(formData.price_qty2000) || 0,
+      available_quantities: availableQuantities,
+      custom_specs: customSpecs,
     };
 
     if (editingProduct) {
@@ -323,14 +349,42 @@ export default function ProductsPage() {
               folder="products"
             />
 
+            <div className="space-y-2">
+              <Label htmlFor="custom_specs">Especificações (separadas por vírgula)</Label>
+              <Input
+                id="custom_specs"
+                value={formData.custom_specs}
+                onChange={(e) => setFormData(prev => ({ ...prev, custom_specs: e.target.value }))}
+                placeholder="Ex: Frente e Verso, Couchê 250g, Verniz Total"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="available_quantities">Quantidades Disponíveis (separadas por vírgula, deixe vazio para padrão)</Label>
+              <Input
+                id="available_quantities"
+                value={formData.available_quantities}
+                onChange={(e) => setFormData(prev => ({ ...prev, available_quantities: e.target.value }))}
+                placeholder="Ex: 250, 500, 1000"
+              />
+            </div>
+
             <div className="space-y-3">
               <Label>Preços por Quantidade</Label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">100 unidades</Label>
                   <Input
                     value={formData.price_qty100}
                     onChange={(e) => setFormData(prev => ({ ...prev, price_qty100: maskCurrency(e.target.value) }))}
+                    placeholder="R$ 0,00"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">200 unidades</Label>
+                  <Input
+                    value={formData.price_qty200}
+                    onChange={(e) => setFormData(prev => ({ ...prev, price_qty200: maskCurrency(e.target.value) }))}
                     placeholder="R$ 0,00"
                   />
                 </div>
@@ -355,6 +409,14 @@ export default function ProductsPage() {
                   <Input
                     value={formData.price_qty1000}
                     onChange={(e) => setFormData(prev => ({ ...prev, price_qty1000: maskCurrency(e.target.value) }))}
+                    placeholder="R$ 0,00"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">2.000 unidades</Label>
+                  <Input
+                    value={formData.price_qty2000}
+                    onChange={(e) => setFormData(prev => ({ ...prev, price_qty2000: maskCurrency(e.target.value) }))}
                     placeholder="R$ 0,00"
                   />
                 </div>

@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import whatsappIcon from "@/assets/whatsapp-icon.png";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface ProductCardProps {
   id: string;
@@ -44,6 +45,8 @@ const ProductCard = ({
   customSpecs,
   prices,
 }: ProductCardProps) => {
+  const [imageOpen, setImageOpen] = useState(false);
+  
   // Determinar opções de quantidade disponíveis
   const quantityOptions = availableQuantities
     ? ALL_QUANTITIES.filter((opt) =>
@@ -109,14 +112,24 @@ const ProductCard = ({
   };
 
   return (
+    <>
     <div className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-brand-lg transition-all duration-300 hover:-translate-y-1 flex flex-col">
       {/* Product Image */}
-      <div className="aspect-square relative overflow-hidden bg-muted/30">
+      <div 
+        className="aspect-square relative overflow-hidden bg-muted/30 cursor-pointer group"
+        onClick={() => setImageOpen(true)}
+      >
         <img
           src={image}
           alt={name}
-          className="w-full h-full object-contain p-4"
+          className="w-full h-full object-contain p-4 transition-transform group-hover:scale-105"
         />
+        {/* Magnifying glass overlay */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-3 shadow-lg">
+            <Search className="w-6 h-6 text-primary" />
+          </div>
+        </div>
       </div>
 
       {/* Content */}
@@ -205,6 +218,18 @@ const ProductCard = ({
         </div>
       </div>
     </div>
+    
+    {/* Image Modal */}
+    <Dialog open={imageOpen} onOpenChange={setImageOpen}>
+      <DialogContent className="max-w-3xl p-2">
+        <img
+          src={image}
+          alt={name}
+          className="w-full h-auto object-contain max-h-[80vh]"
+        />
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 

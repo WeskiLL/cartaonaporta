@@ -236,11 +236,13 @@ export default function ProductsPage() {
           <DialogHeader>
             <DialogTitle>{editingProduct ? 'Editar Produto' : 'Novo Produto'}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome</Label>
+              <Label htmlFor="product-name">Nome</Label>
               <Input
-                id="name"
+                id="product-name"
+                name="product-name"
+                autoComplete="off"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               />
@@ -248,9 +250,11 @@ export default function ProductsPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="size">Tamanho (cm)</Label>
+                <Label htmlFor="product-size">Tamanho (cm)</Label>
                 <Input
-                  id="size"
+                  id="product-size"
+                  name="product-size"
+                  autoComplete="off"
                   value={formData.size}
                   onChange={(e) => setFormData(prev => ({ ...prev, size: e.target.value }))}
                   placeholder="Ex: 5x9"

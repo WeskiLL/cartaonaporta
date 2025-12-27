@@ -17,8 +17,8 @@ const formatDate = (date: string) =>
 const formatDateTime = (date: string) =>
   format(new Date(date), "dd/MM/yyyy HH:mm:ss", { locale: ptBR });
 
-// Helper to load image as base64
-const loadImageAsBase64 = (url: string): Promise<string | null> => {
+// Helper to load image as base64 with dimensions
+const loadImageAsBase64WithDimensions = (url: string): Promise<{ data: string; width: number; height: number } | null> => {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -28,11 +28,20 @@ const loadImageAsBase64 = (url: string): Promise<string | null> => {
       canvas.height = img.height;
       const ctx = canvas.getContext('2d');
       ctx?.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL('image/png'));
+      resolve({ data: canvas.toDataURL('image/png'), width: img.width, height: img.height });
     };
     img.onerror = () => resolve(null);
     img.src = url;
   });
+};
+
+// Helper to detect CPF or CNPJ based on digit count
+const getDocumentLabel = (document: string): string => {
+  const digits = document.replace(/\D/g, '');
+  if (digits.length <= 11) {
+    return 'CPF';
+  }
+  return 'CNPJ';
 };
 
 // Helper to add company header with logo and complete data (OLD VERSION for quotes/financial)
@@ -46,34 +55,24 @@ const addHeader = async (doc: jsPDF, company: Company | null, title: string): Pr
   // Add company logo if available
   if (company?.logo_url) {
     try {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => {
-          // Calculate proportional dimensions (max height 25mm)
-          const maxHeight = 25;
-          const maxWidth = 50;
-          let width = img.width;
-          let height = img.height;
-          
-          if (height > maxHeight) {
-            width = (width * maxHeight) / height;
-            height = maxHeight;
-          }
-          if (width > maxWidth) {
-            height = (height * maxWidth) / width;
-            width = maxWidth;
-          }
-          
-          doc.addImage(img, 'PNG', 14, startY, width, height);
-          resolve();
-        };
-        img.onerror = () => reject();
-        img.src = company.logo_url!;
-      });
-      
-      startY += 30;
+      const imgData = await loadImageAsBase64WithDimensions(company.logo_url);
+      if (imgData) {
+        // Calculate proportional dimensions (max height 25mm, max width 50mm)
+        const maxHeight = 25;
+        const maxWidth = 50;
+        const aspectRatio = imgData.width / imgData.height;
+        
+        let width = maxHeight * aspectRatio;
+        let height = maxHeight;
+        
+        if (width > maxWidth) {
+          width = maxWidth;
+          height = maxWidth / aspectRatio;
+        }
+        
+        doc.addImage(imgData.data, 'PNG', 14, startY, width, height);
+        startY += height + 5;
+      }
     } catch {
       // If logo fails, continue without it
     }
@@ -93,7 +92,8 @@ const addHeader = async (doc: jsPDF, company: Company | null, title: string): Pr
   let detailY = startY + 6;
   
   if (company?.cnpj) {
-    doc.text(`CNPJ: ${company.cnpj}`, 14, detailY);
+    const docLabel = getDocumentLabel(company.cnpj);
+    doc.text(`${docLabel}: ${company.cnpj}`, 14, detailY);
     detailY += 4;
   }
   if (company?.phone) {
@@ -146,7 +146,8 @@ const addClientInfo = (doc: jsPDF, client: Client | null, clientName: string, y:
   
   if (client?.document) {
     y += 4;
-    doc.text(`CPF/CNPJ: ${client.document}`, 14, y);
+    const docLabel = getDocumentLabel(client.document);
+    doc.text(`${docLabel}: ${client.document}`, 14, y);
   }
   if (client?.phone) {
     y += 4;
@@ -280,10 +281,20 @@ export const generateOrderPDF = async (order: Order, company: Company | null, cl
   // Add logo if available
   if (company?.logo_url) {
     try {
-      const imgData = await loadImageAsBase64(company.logo_url);
+      const imgData = await loadImageAsBase64WithDimensions(company.logo_url);
       if (imgData) {
-        doc.addImage(imgData, 'PNG', margin, y, logoMaxWidth, logoMaxHeight);
-        logoEndX = margin + logoMaxWidth + 8;
+        // Calculate proportional dimensions maintaining aspect ratio
+        const aspectRatio = imgData.width / imgData.height;
+        let width = logoMaxHeight * aspectRatio;
+        let height = logoMaxHeight;
+        
+        if (width > logoMaxWidth) {
+          width = logoMaxWidth;
+          height = logoMaxWidth / aspectRatio;
+        }
+        
+        doc.addImage(imgData.data, 'PNG', margin, y, width, height);
+        logoEndX = margin + width + 8;
       }
     } catch {
       // Logo failed, continue without it
@@ -333,7 +344,8 @@ export const generateOrderPDF = async (order: Order, company: Company | null, cl
   companyY += 6;
   
   if (company?.cnpj) {
-    doc.text(`CNPJ: ${company.cnpj}`, col1X, companyY);
+    const docLabel = getDocumentLabel(company.cnpj);
+    doc.text(`${docLabel}: ${company.cnpj}`, col1X, companyY);
   }
   if (company?.phone) {
     doc.text(`WhatsApp: ${company.phone}`, col2X, companyY);
@@ -398,7 +410,8 @@ export const generateOrderPDF = async (order: Order, company: Company | null, cl
   
   if (client?.document) {
     clientY += 5;
-    doc.text(`CPF/CNPJ: ${client.document}`, clientX, clientY);
+    const docLabel = getDocumentLabel(client.document);
+    doc.text(`${docLabel}: ${client.document}`, clientX, clientY);
   }
   if (client?.phone) {
     clientY += 5;

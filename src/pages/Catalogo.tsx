@@ -231,18 +231,18 @@ const Catalogo = () => {
             return <div key={product.id} className={`rounded-2xl shadow-sm border p-4 sm:p-5 hover:shadow-md transition-all ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white"}`}>
                     {/* Header: Image + Name + Buttons */}
                     <div className="flex items-center gap-3 mb-3">
-                      {/* Product Image - Small with magnifying glass */}
+                      {/* Product Image - Small with magnifying glass - always visible */}
                       <div 
-                        className="relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 cursor-pointer group"
+                        className="relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 cursor-pointer"
                         onClick={() => setSelectedImage(product.image || "/placeholder.svg")}
                       >
                         <img 
                           src={product.image || "/placeholder.svg"} 
                           alt={product.name} 
-                          className="w-full h-full object-cover rounded-lg bg-gray-100 group-hover:opacity-80 transition-opacity" 
+                          className="w-full h-full object-cover rounded-lg bg-gray-100" 
                         />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Search className="w-4 h-4 text-white" />
+                        <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-md border border-border">
+                          <Search className="w-3 h-3 text-primary" />
                         </div>
                       </div>
                       

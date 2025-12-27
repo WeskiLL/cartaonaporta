@@ -1,5 +1,6 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ThemeProvider } from 'next-themes';
 import { ManagementSidebar } from './ManagementSidebar';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { cn } from '@/lib/utils';
@@ -33,17 +34,19 @@ export function ManagementLayout({ children }: ManagementLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <ManagementSidebar isCollapsed={isCollapsed} onToggle={() => setIsCollapsed(!isCollapsed)} />
-      <main className={cn(
-        'min-h-screen transition-all duration-300 ease-in-out',
-        isCollapsed ? 'lg:ml-[72px]' : 'lg:ml-64',
-        'pt-16 lg:pt-0'
-      )}>
-        <div className="p-4 lg:p-8">
-          {children}
-        </div>
-      </main>
-    </div>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} forcedTheme="dark">
+      <div className="min-h-screen bg-background dark">
+        <ManagementSidebar isCollapsed={isCollapsed} onToggle={() => setIsCollapsed(!isCollapsed)} />
+        <main className={cn(
+          'min-h-screen transition-all duration-300 ease-in-out',
+          isCollapsed ? 'lg:ml-[72px]' : 'lg:ml-64',
+          'pt-16 lg:pt-0'
+        )}>
+          <div className="p-4 lg:p-8">
+            {children}
+          </div>
+        </main>
+      </div>
+    </ThemeProvider>
   );
 }

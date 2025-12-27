@@ -125,7 +125,7 @@ const ProductCard = ({
           className="w-full h-full object-contain p-4 transition-transform group-hover:scale-105"
         />
         {/* Magnifying glass overlay - always visible */}
-        <div className="absolute bottom-3 right-3 bg-white/90 rounded-full p-2 shadow-md hover:bg-white transition-colors">
+        <div className="absolute bottom-3 right-3 z-10 bg-white rounded-full p-2 shadow-lg border border-border">
           <Search className="w-5 h-5 text-primary" />
         </div>
       </div>

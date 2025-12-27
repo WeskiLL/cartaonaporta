@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Order } from '@/types/management';
 import { maskCurrency } from '@/lib/masks';
-import { GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -121,6 +120,7 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
                               <div
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
+                                {...provided.dragHandleProps}
                                 className={`bg-card border rounded-lg p-3 cursor-grab active:cursor-grabbing transition-all ${
                                   snapshot.isDragging 
                                     ? 'shadow-lg scale-105 rotate-1 ring-2 ring-primary' 
@@ -128,12 +128,6 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
                                 } ${isPending ? 'opacity-70' : ''}`}
                               >
                                 <div className="flex items-start gap-2">
-                                  <div 
-                                    {...provided.dragHandleProps}
-                                    className="mt-1 text-muted-foreground hover:text-foreground transition-colors"
-                                  >
-                                    <GripVertical className="h-4 w-4" />
-                                  </div>
                                   <div className="flex-1 min-w-0">
                                     <div className="font-bold text-sm text-foreground">
                                       {order.number}

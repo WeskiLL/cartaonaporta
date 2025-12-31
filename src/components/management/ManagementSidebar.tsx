@@ -13,10 +13,10 @@ import {
   ChevronLeft,
   Menu,
   X,
-  ArrowLeft,
   Sun,
   Moon,
   Truck,
+  Globe,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -29,6 +29,7 @@ const menuItems = [
   { path: '/admin/gestao/financeiro', label: 'Financeiro', icon: DollarSign },
   { path: '/admin/gestao/relatorios', label: 'Relatórios', icon: BarChart3 },
   { path: '/admin/gestao/mockups', label: 'Mockups', icon: Image },
+  { path: '/admin/gestao/site', label: 'Gerenciar Site', icon: Globe },
   { path: '/admin/gestao/usuarios', label: 'Usuários', icon: Users },
   { path: '/admin/gestao/empresa', label: 'Minha Empresa', icon: Building2 },
 ];
@@ -129,7 +130,7 @@ export function ManagementSidebar({ isCollapsed, onToggle }: ManagementSidebarPr
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-border space-y-2">
+          <div className="p-4 border-t border-border">
             {/* Theme Toggle */}
             <Button
               variant="ghost"
@@ -152,18 +153,6 @@ export function ManagementSidebar({ isCollapsed, onToggle }: ManagementSidebarPr
                 </>
               )}
             </Button>
-
-            {/* Back to Admin */}
-            <NavLink
-              to="/admin/dashboard"
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
-                'text-muted-foreground hover:bg-muted hover:text-foreground'
-              )}
-            >
-              <ArrowLeft className="h-5 w-5 shrink-0" />
-              {!isCollapsed && <span className="text-sm font-medium">Voltar ao Admin</span>}
-            </NavLink>
           </div>
         </div>
       </aside>

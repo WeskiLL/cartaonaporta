@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
 import { CartProvider } from "@/contexts/CartContext";
@@ -10,7 +10,6 @@ import { ManagementProvider } from "@/contexts/ManagementContext";
 import Index from "./pages/Index";
 import Catalogo from "./pages/Catalogo";
 import AdminLogin from "./pages/AdminLogin";
-import AdminDashboard from "./pages/AdminDashboard";
 import ManagementDashboard from "./pages/management/ManagementDashboard";
 import ClientsPage from "./pages/management/ClientsPage";
 import OrdersPage from "./pages/management/OrdersPage";
@@ -21,6 +20,7 @@ import CompanyPage from "./pages/management/CompanyPage";
 import ReportsPage from "./pages/management/ReportsPage";
 import UsersPage from "./pages/management/UsersPage";
 import TrackingPage from "./pages/management/TrackingPage";
+import SitePage from "./pages/management/SitePage";
 import TrackingPublic from "./pages/TrackingPublic";
 import NotFound from "./pages/NotFound";
 
@@ -40,7 +40,7 @@ const App = () => (
                   <Route path="/" element={<Index />} />
                   <Route path="/catalogo" element={<Catalogo />} />
                   <Route path="/admin" element={<AdminLogin />} />
-                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                  <Route path="/admin/dashboard" element={<Navigate to="/admin/gestao" replace />} />
                   {/* Management Routes */}
                   <Route path="/admin/gestao" element={<ManagementDashboard />} />
                   <Route path="/admin/gestao/clientes" element={<ClientsPage />} />
@@ -50,6 +50,7 @@ const App = () => (
                   <Route path="/admin/gestao/produtos" element={<ProductsPage />} />
                   <Route path="/admin/gestao/relatorios" element={<ReportsPage />} />
                   <Route path="/admin/gestao/mockups" element={<MockupsPage />} />
+                  <Route path="/admin/gestao/site" element={<SitePage />} />
                   <Route path="/admin/gestao/usuarios" element={<UsersPage />} />
                   <Route path="/admin/gestao/empresa" element={<CompanyPage />} />
                   {/* Public Tracking */}

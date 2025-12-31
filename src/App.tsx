@@ -21,6 +21,7 @@ import ReportsPage from "./pages/management/ReportsPage";
 import UsersPage from "./pages/management/UsersPage";
 import TrackingPage from "./pages/management/TrackingPage";
 import SitePage from "./pages/management/SitePage";
+import CatalogoSettingsPage from "./pages/management/CatalogoSettingsPage";
 import TrackingPublic from "./pages/TrackingPublic";
 import NotFound from "./pages/NotFound";
 
@@ -51,6 +52,7 @@ const App = () => (
                   <Route path="/admin/gestao/relatorios" element={<ReportsPage />} />
                   <Route path="/admin/gestao/mockups" element={<MockupsPage />} />
                   <Route path="/admin/gestao/site" element={<SitePage />} />
+                  <Route path="/admin/gestao/catalogo" element={<CatalogoSettingsPage />} />
                   <Route path="/admin/gestao/usuarios" element={<UsersPage />} />
                   <Route path="/admin/gestao/empresa" element={<CompanyPage />} />
                   {/* Public Tracking */}

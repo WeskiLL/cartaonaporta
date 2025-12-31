@@ -17,6 +17,7 @@ import {
   Moon,
   Truck,
   Globe,
+  BookOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -30,6 +31,7 @@ const menuItems = [
   { path: '/admin/gestao/relatorios', label: 'Relatórios', icon: BarChart3 },
   { path: '/admin/gestao/mockups', label: 'Mockups', icon: Image },
   { path: '/admin/gestao/site', label: 'Gerenciar Site', icon: Globe },
+  { path: '/admin/gestao/catalogo', label: 'Catálogo', icon: BookOpen },
   { path: '/admin/gestao/usuarios', label: 'Usuários', icon: Users },
   { path: '/admin/gestao/empresa', label: 'Minha Empresa', icon: Building2 },
 ];

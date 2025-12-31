@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { Instagram, Tag, CreditCard, Sticker, MoreHorizontal, Package, Moon, Sun, ShoppingCart, X, Search } from "lucide-react";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
+import { useCatalogSettings } from "@/hooks/useCatalogSettings";
 import CartPanel from "@/components/catalog/CartPanel";
 import logoPrimePrintWhite from "@/assets/logo-prime-print-white.png";
 import logoCartaoNaPortaWhite from "@/assets/logo-cartao-na-porta-white.png";
@@ -10,28 +11,17 @@ import logoPrimePrint from "@/assets/logo-prime-print.png";
 import logoCartaoNaPorta from "@/assets/logo-cartao-na-porta.png";
 import whatsappIcon from "@/assets/whatsapp-icon.png";
 import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
-const categories = [{
-  id: "tags",
-  label: "Tags",
-  icon: Tag
-}, {
-  id: "kits",
-  label: "Kits",
-  icon: Package
-}, {
-  id: "cartoes",
-  label: "Cartões",
-  icon: CreditCard
-}, {
-  id: "adesivos",
-  label: "Adesivos",
-  icon: Sticker
-}, {
-  id: "outros",
-  label: "Outros",
-  icon: MoreHorizontal
-}] as const;
-type CategoryId = typeof categories[number]["id"];
+const categoryIcons = {
+  tags: Tag,
+  kits: Package,
+  cartoes: CreditCard,
+  adesivos: Sticker,
+  outros: MoreHorizontal,
+} as const;
+
+const categoryIds = ["tags", "kits", "cartoes", "adesivos", "outros"] as const;
+type CategoryId = typeof categoryIds[number];
+
 const categoryTitles: Record<CategoryId, string> = {
   tags: "🏷️ Tags Individuais",
   kits: "📦 Kits Especiais",
@@ -44,6 +34,7 @@ const Catalogo = () => {
   const [selectedQuantities, setSelectedQuantities] = useState<Record<string, number>>({});
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const hasTrackedVisit = useRef(false);
   const {
     data: products = [],
     isLoading
@@ -53,6 +44,16 @@ const Catalogo = () => {
     setIsCartOpen,
     items
   } = useCart();
+  const { settings, getCategoryLabel, trackEvent } = useCatalogSettings();
+
+  // Track page visit on mount
+  useEffect(() => {
+    if (!hasTrackedVisit.current) {
+      trackEvent("visit");
+      hasTrackedVisit.current = true;
+    }
+  }, [trackEvent]);
+
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add("dark");
@@ -102,6 +103,7 @@ const Catalogo = () => {
     const qty = getSelectedQty(product);
     const price = getPriceForQty(product, qty);
     const formattedPrice = formatPrice(price);
+    trackEvent("whatsapp_click", product.id);
     const message = encodeURIComponent(`Olá! Quero comprar ${qty} unidades do produto ${product.name}${formattedPrice ? ` por ${formattedPrice}` : ""}.`);
     window.open(`https://wa.me/5574981138033?text=${message}`, "_blank");
   };
@@ -118,6 +120,7 @@ const Catalogo = () => {
     });
   };
   const handleWhatsAppContact = () => {
+    trackEvent("whatsapp_click");
     const message = encodeURIComponent("Olá! Vim pelo catálogo e gostaria de saber mais sobre as tags para joias personalizadas.");
     window.open(`https://wa.me/5574981138033?text=${message}`, "_blank");
   };
@@ -196,12 +199,12 @@ const Catalogo = () => {
         <div className={`border-b transition-colors duration-300 ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white"}`}>
           <div className="max-w-4xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
             <div className="flex overflow-x-auto gap-1.5 sm:gap-2 pb-1 sm:pb-0 sm:flex-wrap sm:justify-center scrollbar-hide">
-              {categories.map(category => {
-              const Icon = category.icon;
-              const hasProducts = products.some(p => p.category === category.id);
-              return <button key={category.id} onClick={() => setActiveCategory(category.id)} disabled={!hasProducts} className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${activeCategory === category.id ? "bg-primary text-white shadow-md" : hasProducts ? isDarkMode ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-100 text-gray-700 hover:bg-gray-200" : isDarkMode ? "bg-gray-800 text-gray-600 cursor-not-allowed" : "bg-gray-50 text-gray-400 cursor-not-allowed"}`}>
+              {categoryIds.map(catId => {
+              const Icon = categoryIcons[catId];
+              const hasProducts = products.some(p => p.category === catId);
+              return <button key={catId} onClick={() => setActiveCategory(catId)} disabled={!hasProducts} className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${activeCategory === catId ? "bg-primary text-white shadow-md" : hasProducts ? isDarkMode ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-100 text-gray-700 hover:bg-gray-200" : isDarkMode ? "bg-gray-800 text-gray-600 cursor-not-allowed" : "bg-gray-50 text-gray-400 cursor-not-allowed"}`}>
                     <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    {category.label}
+                    {getCategoryLabel(catId)}
                   </button>;
             })}
             </div>

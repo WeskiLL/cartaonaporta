@@ -153,18 +153,28 @@ const Catalogo = () => {
       </button>
 
       <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "bg-gray-900" : "bg-gray-50"}`}>
-        {/* Hero Header - Simple Orange */}
-        <div className="relative py-4 px-4 bg-primary">
+        {/* Hero Header - Custom Image or Solid Color */}
+        <div 
+          className="relative py-4 px-4"
+          style={{
+            backgroundColor: settings.header.custom_image_url ? undefined : settings.header.background_color,
+            backgroundImage: settings.header.custom_image_url ? `url(${settings.header.custom_image_url})` : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
           {/* Dark Mode Toggle */}
           <button onClick={() => setIsDarkMode(!isDarkMode)} className="absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 sm:p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors text-white" aria-label="Toggle dark mode">
             {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
 
-          <div className="max-w-4xl mx-auto flex items-center justify-center gap-3 sm:gap-4">
-            {/* Dual Logos - White versions */}
-            <img src={logoPrimePrintWhite} alt="Prime Print" className="h-8 sm:h-10 md:h-12 drop-shadow-lg" />
-            <img src={logoCartaoNaPortaWhite} alt="Cartão na Porta" className="h-8 sm:h-10 md:h-12 drop-shadow-lg" />
-          </div>
+          {settings.header.show_logos && (
+            <div className="max-w-4xl mx-auto flex items-center justify-center gap-3 sm:gap-4">
+              {/* Dual Logos - White versions */}
+              <img src={logoPrimePrintWhite} alt="Prime Print" className="h-8 sm:h-10 md:h-12 drop-shadow-lg" />
+              <img src={logoCartaoNaPortaWhite} alt="Cartão na Porta" className="h-8 sm:h-10 md:h-12 drop-shadow-lg" />
+            </div>
+          )}
         </div>
 
         {/* Company Info Bar */}

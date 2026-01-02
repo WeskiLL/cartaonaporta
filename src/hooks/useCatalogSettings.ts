@@ -5,6 +5,7 @@ interface CatalogSettings {
   header: {
     background_color: string;
     show_logos: boolean;
+    custom_image_url?: string;
   };
   footer: {
     show_customization_notice: boolean;
@@ -21,7 +22,7 @@ interface CatalogSettings {
 }
 
 const DEFAULT_SETTINGS: CatalogSettings = {
-  header: { background_color: "#e85616", show_logos: true },
+  header: { background_color: "#e85616", show_logos: true, custom_image_url: "" },
   footer: { show_customization_notice: true, show_cut_warning: true, show_whatsapp_cta: true },
   category_names: { tags: "", kits: "", cartoes: "", adesivos: "", outros: "" },
 };

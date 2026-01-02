@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,9 @@ import {
   MousePointerClick,
   TrendingUp,
   Calendar,
+  Upload,
+  X,
+  ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ManagementLayout } from "@/components/management/ManagementLayout";
@@ -54,6 +57,7 @@ interface CatalogSettings {
   header: {
     background_color: string;
     show_logos: boolean;
+    custom_image_url?: string;
   };
   footer: {
     show_customization_notice: boolean;
@@ -94,15 +98,17 @@ export default function CatalogoSettingsPage() {
   const [activeTab, setActiveTab] = useState("capa");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [settings, setSettings] = useState<CatalogSettings>({
-    header: { background_color: "#e85616", show_logos: true },
+    header: { background_color: "#e85616", show_logos: true, custom_image_url: "" },
     footer: { show_customization_notice: true, show_cut_warning: true, show_whatsapp_cta: true },
     category_names: { tags: "", kits: "", cartoes: "", adesivos: "", outros: "" },
   });
   const [metrics, setMetrics] = useState<MetricData[]>([]);
   const [metricsPeriod, setMetricsPeriod] = useState("7");
   const [metricsLoading, setMetricsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchData();
@@ -285,6 +291,62 @@ export default function CatalogoSettingsPage() {
     );
   }, [metrics]);
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Por favor, selecione um arquivo de imagem");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("A imagem deve ter no máximo 5MB");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `catalog-header-${Date.now()}.${fileExt}`;
+      const filePath = `catalog/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("product-images")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("product-images")
+        .getPublicUrl(filePath);
+
+      setSettings({
+        ...settings,
+        header: { ...settings.header, custom_image_url: publicUrl },
+      });
+
+      toast.success("Imagem enviada com sucesso!");
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast.error("Erro ao enviar imagem");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSettings({
+      ...settings,
+      header: { ...settings.header, custom_image_url: "" },
+    });
+  };
+
   if (isLoading) {
     return (
       <ManagementLayout>
@@ -380,6 +442,61 @@ export default function CatalogoSettingsPage() {
                   className="w-4 h-4"
                 />
                 <Label htmlFor="show-logos">Exibir logos no cabeçalho</Label>
+              </div>
+
+              {/* Custom Image Upload */}
+              <div className="space-y-3">
+                <Label>Imagem Customizada do Header</Label>
+                <p className="text-sm text-muted-foreground">
+                  Faça upload de uma imagem para substituir o fundo de cor sólida
+                </p>
+                
+                {settings.header.custom_image_url ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={settings.header.custom_image_url}
+                      alt="Header customizado"
+                      className="max-w-full h-32 object-cover rounded-lg border"
+                    />
+                    <button
+                      onClick={handleRemoveImage}
+                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90 transition-colors"
+                      type="button"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                  >
+                    {isUploading ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                        <span className="text-sm text-muted-foreground">Enviando...</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2">
+                        <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">
+                          Clique para enviar uma imagem
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          PNG, JPG ou WEBP (máx. 5MB)
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
               </div>
 
               <Button

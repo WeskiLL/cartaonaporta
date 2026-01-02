@@ -222,7 +222,7 @@ const Catalogo = () => {
         </div>
 
         {/* Products Section */}
-        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
+        <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
           <h2 className={`text-lg sm:text-2xl font-bold mb-4 sm:mb-6 ${isDarkMode ? "text-white" : "text-gray-800"}`}>
             {categoryTitles[activeCategory]}
           </h2>
@@ -234,7 +234,123 @@ const Catalogo = () => {
               <p className={`text-sm sm:text-base ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
                 Nenhum produto disponível nesta categoria no momento.
               </p>
-            </div> : <div className="space-y-3 sm:space-y-4">
+            </div> : settings.display.view_mode === "cards" ? (
+              /* Cards View Mode */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {filteredProducts.map(product => {
+                  const availableQtys = getAvailableQuantities(product);
+                  const selectedQty = getSelectedQty(product);
+                  const selectedPrice = getPriceForQty(product, selectedQty);
+                  const formattedSelectedPrice = formatPrice(selectedPrice);
+                  const isInCart = items.some(item => item.name === product.name && item.selectedQty === selectedQty);
+                  
+                  return (
+                    <div 
+                      key={product.id} 
+                      className={`rounded-2xl shadow-sm border overflow-hidden hover:shadow-lg transition-all ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white"}`}
+                    >
+                      {/* Product Image - Large */}
+                      <div 
+                        className="relative w-full aspect-square cursor-pointer overflow-hidden bg-gray-100"
+                        onClick={() => setSelectedImage(product.image || "/placeholder.svg")}
+                      >
+                        <img 
+                          src={product.image || "/placeholder.svg"} 
+                          alt={product.name} 
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
+                        />
+                        <div className="absolute bottom-2 right-2 bg-white/90 rounded-full p-1.5 shadow-md">
+                          <Search className="w-4 h-4 text-primary" />
+                        </div>
+                      </div>
+                      
+                      {/* Product Info */}
+                      <div className="p-3 sm:p-4">
+                        {/* Name */}
+                        <h3 className={`text-sm sm:text-base font-bold mb-2 line-clamp-2 ${isDarkMode ? "text-white" : "text-gray-800"}`}>
+                          {product.name}
+                        </h3>
+                        
+                        {/* Specs */}
+                        <div className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] sm:text-xs mb-3 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
+                          {product.size && (
+                            <span className="flex items-center gap-1">
+                              <Tag className="h-3 w-3" />
+                              {product.size}
+                            </span>
+                          )}
+                          {getProductSpecs(product).slice(0, 1).map((spec: string, index: number) => (
+                            <span key={index} className="flex items-center gap-1">
+                              ✦ {spec}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Kit Description */}
+                        {product.isKit && product.kitDescription && (
+                          <p className={`text-[10px] sm:text-xs mb-3 p-2 rounded-lg line-clamp-2 ${isDarkMode ? "bg-gray-700 text-gray-300" : "bg-gray-50 text-gray-600"}`}>
+                            📦 {product.kitDescription}
+                          </p>
+                        )}
+
+                        {/* Quantity Selector */}
+                        {!product.isKit && (
+                          <div className="mb-3">
+                            <select
+                              value={selectedQty}
+                              onChange={(e) => handleQuantityChange(product.id, Number(e.target.value))}
+                              className={`w-full px-3 py-2 rounded-lg text-xs sm:text-sm border-2 transition-colors ${
+                                isDarkMode 
+                                  ? "bg-gray-700 border-gray-600 text-white" 
+                                  : "bg-white border-gray-200 text-gray-800"
+                              } focus:border-primary focus:outline-none`}
+                            >
+                              {availableQtys.map((qty: number) => {
+                                const price = getPriceForQty(product, qty);
+                                const formattedPrice = formatPrice(price);
+                                if (!formattedPrice) return null;
+                                return (
+                                  <option key={qty} value={qty}>
+                                    {qty} un. - {formattedPrice}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </div>
+                        )}
+
+                        {/* Price Display */}
+                        <div className="mb-3">
+                          <span className="text-lg sm:text-xl font-bold text-primary">
+                            {formattedSelectedPrice || "Sob consulta"}
+                          </span>
+                          {!product.isKit && (
+                            <p className={`text-[10px] sm:text-xs ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>
+                              {selectedQty} unidades
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Add to Cart Button */}
+                        <button 
+                          onClick={() => handleAddToCart(product)} 
+                          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+                            isInCart 
+                              ? "bg-green-500 text-white" 
+                              : "bg-primary hover:bg-primary/90 text-white"
+                          }`}
+                        >
+                          <ShoppingCart className="h-4 w-4" />
+                          {isInCart ? "Adicionado ✓" : "Adicionar ao carrinho"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              /* List View Mode (Default) */
+              <div className="space-y-3 sm:space-y-4">
               {filteredProducts.map(product => {
             const availableQtys = getAvailableQuantities(product);
             const selectedQty = getSelectedQty(product);
@@ -329,7 +445,8 @@ const Catalogo = () => {
                       </div>}
                   </div>;
           })}
-            </div>}
+            </div>
+            )}
         </div>
 
         {/* Info Notice Section */}

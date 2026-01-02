@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-interface CatalogSettings {
+export interface CatalogSettings {
   header: {
     background_color: string;
     show_logos: boolean;
@@ -19,12 +19,16 @@ interface CatalogSettings {
     adesivos: string;
     outros: string;
   };
+  display: {
+    view_mode: "list" | "cards";
+  };
 }
 
 const DEFAULT_SETTINGS: CatalogSettings = {
   header: { background_color: "#e85616", show_logos: true, custom_image_url: "" },
   footer: { show_customization_notice: true, show_cut_warning: true, show_whatsapp_cta: true },
   category_names: { tags: "", kits: "", cartoes: "", adesivos: "", outros: "" },
+  display: { view_mode: "list" },
 };
 
 const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
@@ -62,6 +66,8 @@ export function useCatalogSettings() {
           newSettings.footer = item.setting_value as CatalogSettings["footer"];
         } else if (item.setting_key === "category_names") {
           newSettings.category_names = item.setting_value as CatalogSettings["category_names"];
+        } else if (item.setting_key === "display") {
+          newSettings.display = item.setting_value as CatalogSettings["display"];
         }
       });
       setSettings(newSettings);

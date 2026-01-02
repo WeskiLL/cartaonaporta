@@ -71,6 +71,9 @@ interface CatalogSettings {
     adesivos: string;
     outros: string;
   };
+  display: {
+    view_mode: "list" | "cards";
+  };
 }
 
 interface MetricData {
@@ -104,6 +107,7 @@ export default function CatalogoSettingsPage() {
     header: { background_color: "#e85616", show_logos: true, custom_image_url: "" },
     footer: { show_customization_notice: true, show_cut_warning: true, show_whatsapp_cta: true },
     category_names: { tags: "", kits: "", cartoes: "", adesivos: "", outros: "" },
+    display: { view_mode: "list" },
   });
   const [metrics, setMetrics] = useState<MetricData[]>([]);
   const [metricsPeriod, setMetricsPeriod] = useState("7");
@@ -138,6 +142,8 @@ export default function CatalogoSettingsPage() {
           newSettings.footer = item.setting_value as CatalogSettings["footer"];
         } else if (item.setting_key === "category_names") {
           newSettings.category_names = item.setting_value as CatalogSettings["category_names"];
+        } else if (item.setting_key === "display") {
+          newSettings.display = item.setting_value as CatalogSettings["display"];
         }
       });
       setSettings(newSettings);
@@ -371,6 +377,10 @@ export default function CatalogoSettingsPage() {
             <LayoutTemplate className="w-4 h-4" />
             Capa
           </TabsTrigger>
+          <TabsTrigger value="visualizacao" className="gap-2">
+            <Eye className="w-4 h-4" />
+            Visualização
+          </TabsTrigger>
           <TabsTrigger value="rodape" className="gap-2">
             <FileText className="w-4 h-4" />
             Rodapé
@@ -501,6 +511,103 @@ export default function CatalogoSettingsPage() {
 
               <Button
                 onClick={() => saveSetting("header", settings.header)}
+                disabled={isSaving}
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                Salvar Alterações
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* View Mode Tab */}
+        <TabsContent value="visualizacao">
+          <Card>
+            <CardHeader>
+              <CardTitle>Modo de Visualização</CardTitle>
+              <CardDescription>
+                Escolha como os produtos serão exibidos no catálogo
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* List Mode Option */}
+                <div
+                  onClick={() =>
+                    setSettings({
+                      ...settings,
+                      display: { ...settings.display, view_mode: "list" },
+                    })
+                  }
+                  className={`cursor-pointer rounded-xl border-2 p-4 transition-all hover:border-primary/50 ${
+                    settings.display.view_mode === "list"
+                      ? "border-primary bg-primary/5"
+                      : "border-border"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      settings.display.view_mode === "list" ? "bg-primary text-white" : "bg-muted"
+                    }`}>
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">Lista</h4>
+                      <p className="text-xs text-muted-foreground">Visualização compacta em linhas</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-8 bg-muted rounded flex items-center gap-2 px-2">
+                      <div className="w-6 h-6 bg-muted-foreground/20 rounded" />
+                      <div className="flex-1 h-3 bg-muted-foreground/20 rounded" />
+                    </div>
+                    <div className="h-8 bg-muted rounded flex items-center gap-2 px-2">
+                      <div className="w-6 h-6 bg-muted-foreground/20 rounded" />
+                      <div className="flex-1 h-3 bg-muted-foreground/20 rounded" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cards Mode Option */}
+                <div
+                  onClick={() =>
+                    setSettings({
+                      ...settings,
+                      display: { ...settings.display, view_mode: "cards" },
+                    })
+                  }
+                  className={`cursor-pointer rounded-xl border-2 p-4 transition-all hover:border-primary/50 ${
+                    settings.display.view_mode === "cards"
+                      ? "border-primary bg-primary/5"
+                      : "border-border"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      settings.display.view_mode === "cards" ? "bg-primary text-white" : "bg-muted"
+                    }`}>
+                      <LayoutTemplate className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">Cartões</h4>
+                      <p className="text-xs text-muted-foreground">Destaque para imagens dos produtos</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-muted rounded p-1.5">
+                      <div className="w-full aspect-square bg-muted-foreground/20 rounded mb-1" />
+                      <div className="h-2 bg-muted-foreground/20 rounded w-3/4" />
+                    </div>
+                    <div className="bg-muted rounded p-1.5">
+                      <div className="w-full aspect-square bg-muted-foreground/20 rounded mb-1" />
+                      <div className="h-2 bg-muted-foreground/20 rounded w-3/4" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                onClick={() => saveSetting("display", settings.display)}
                 disabled={isSaving}
               >
                 {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}

@@ -257,6 +257,25 @@ export default function CatalogoSettingsPage() {
     }
   };
 
+  // Handle image reorder via drag and drop
+  const handleImageReorder = (result: DropResult) => {
+    if (!result.destination) return;
+    
+    const sourceIndex = result.source.index;
+    const destIndex = result.destination.index;
+    
+    if (sourceIndex === destIndex) return;
+    
+    const newImages = [...(settings.header.custom_images || [])];
+    const [removed] = newImages.splice(sourceIndex, 1);
+    newImages.splice(destIndex, 0, removed);
+    
+    setSettings({
+      ...settings,
+      header: { ...settings.header, custom_images: newImages },
+    });
+  };
+
   const handleDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
 
@@ -493,28 +512,56 @@ export default function CatalogoSettingsPage() {
                 </div>
                 
                 {/* Display uploaded images */}
+                {/* Draggable images list */}
                 {(settings.header.custom_images?.length || 0) > 0 && (
-                  <div className="flex flex-wrap gap-3">
-                    {settings.header.custom_images?.map((imageUrl, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={imageUrl}
-                          alt={`Header ${index + 1}`}
-                          className="w-48 h-16 object-cover rounded-lg border"
-                        />
-                        <button
-                          onClick={() => handleRemoveImage(index)}
-                          className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90 transition-colors"
-                          type="button"
+                  <DragDropContext onDragEnd={handleImageReorder}>
+                    <Droppable droppableId="header-images" direction="horizontal">
+                      {(provided) => (
+                        <div 
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className="flex flex-wrap gap-3"
                         >
-                          <X className="w-4 h-4" />
-                        </button>
-                        <span className="absolute bottom-1 left-1 bg-black/50 text-white text-xs px-1.5 py-0.5 rounded">
-                          {index + 1}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                          {settings.header.custom_images?.map((imageUrl, index) => (
+                            <Draggable key={imageUrl} draggableId={imageUrl} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  className={`relative group ${snapshot.isDragging ? 'z-50' : ''}`}
+                                >
+                                  <div 
+                                    {...provided.dragHandleProps}
+                                    className="absolute top-1 left-1 bg-black/50 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing z-10"
+                                  >
+                                    <GripVertical className="w-3 h-3" />
+                                  </div>
+                                  <img
+                                    src={imageUrl}
+                                    alt={`Header ${index + 1}`}
+                                    className={`w-48 h-16 object-cover rounded-lg border transition-shadow ${
+                                      snapshot.isDragging ? 'shadow-xl ring-2 ring-primary' : ''
+                                    }`}
+                                  />
+                                  <button
+                                    onClick={() => handleRemoveImage(index)}
+                                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90 transition-colors"
+                                    type="button"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                  <span className="absolute bottom-1 right-1 bg-black/50 text-white text-xs px-1.5 py-0.5 rounded">
+                                    {index + 1}
+                                  </span>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
                 )}
 
                 {/* Upload button */}

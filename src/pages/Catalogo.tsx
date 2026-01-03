@@ -189,36 +189,45 @@ const Catalogo = () => {
             }`}
             style={{ maxWidth: '1500px', margin: '0 auto' }}
           >
-            {/* Image Carousel */}
+            {/* Image Carousel with smooth fade + scale transition */}
             {headerImages.length > 0 && (
-              <div className="relative w-full h-full">
+              <div className="relative w-full h-full overflow-hidden">
                 {headerImages.map((imageUrl, index) => (
                   <img
                     key={index}
                     src={imageUrl}
                     alt={`Header ${index + 1}`}
-                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
-                      index === currentImageIndex ? 'opacity-100' : 'opacity-0'
-                    }`}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    style={{
+                      opacity: index === currentImageIndex ? 1 : 0,
+                      transform: index === currentImageIndex ? 'scale(1)' : 'scale(1.05)',
+                      transition: 'opacity 800ms ease-in-out, transform 800ms ease-in-out',
+                    }}
                   />
                 ))}
                 {/* Carousel Indicators */}
                 {headerImages.length > 1 && (
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-                  {headerImages.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentImageIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-all ${
-                        index === currentImageIndex ? 'bg-white w-4' : 'bg-white/50'
-                      }`}
-                      aria-label={`Ir para imagem ${index + 1}`}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                    {headerImages.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentImageIndex(index)}
+                        className="group relative p-1"
+                        aria-label={`Ir para imagem ${index + 1}`}
+                      >
+                        <span 
+                          className={`block rounded-full transition-all duration-300 ${
+                            index === currentImageIndex 
+                              ? 'w-6 h-2 bg-white shadow-lg' 
+                              : 'w-2 h-2 bg-white/50 group-hover:bg-white/70'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Dark Mode Toggle */}
             <button onClick={() => setIsDarkMode(!isDarkMode)} className="absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 sm:p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors text-white z-10" aria-label="Toggle dark mode">

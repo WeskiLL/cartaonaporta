@@ -15,8 +15,58 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
+    // Authentication check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.error("No authorization header provided");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify user identity using anon key with user's token
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    if (userError || !user) {
+      console.error("User authentication failed:", userError?.message);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Authenticated user:", user.id);
+
+    // Check user role (admin, vendedor, or financeiro)
+    const { data: roleData, error: roleError } = await userClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .in("role", ["admin", "vendedor", "financeiro"])
+      .maybeSingle();
+
+    if (roleError) {
+      console.error("Role check error:", roleError.message);
+    }
+
+    if (!roleData) {
+      console.error("User does not have required role:", user.id);
+      return new Response(
+        JSON.stringify({ error: "Forbidden - Insufficient permissions" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("User role verified:", roleData.role);
+
+    // Use service role client for database operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const url = new URL(req.url);
 
     // GET - Fetch all video testimonials
@@ -28,6 +78,8 @@ Deno.serve(async (req) => {
 
       if (error) throw error;
 
+      console.log("Fetched video testimonials:", data?.length || 0);
+
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -36,6 +88,8 @@ Deno.serve(async (req) => {
     // POST - Create new video testimonial
     if (req.method === "POST") {
       const body = await req.json();
+      console.log("Creating video testimonial:", body);
+
       const { data, error } = await supabase
         .from("video_testimonials")
         .insert([body])
@@ -43,6 +97,8 @@ Deno.serve(async (req) => {
         .single();
 
       if (error) throw error;
+
+      console.log("Created video testimonial:", data.id);
 
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -55,6 +111,8 @@ Deno.serve(async (req) => {
       const body = await req.json();
       const { id, ...updateData } = body;
 
+      console.log("Updating video testimonial:", id);
+
       const { data, error } = await supabase
         .from("video_testimonials")
         .update(updateData)
@@ -63,6 +121,8 @@ Deno.serve(async (req) => {
         .single();
 
       if (error) throw error;
+
+      console.log("Updated video testimonial:", id);
 
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -80,12 +140,16 @@ Deno.serve(async (req) => {
         });
       }
 
+      console.log("Deleting video testimonial:", id);
+
       const { error } = await supabase
         .from("video_testimonials")
         .delete()
         .eq("id", id);
 
       if (error) throw error;
+
+      console.log("Deleted video testimonial:", id);
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

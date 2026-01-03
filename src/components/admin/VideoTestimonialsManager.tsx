@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Save, Trash2, Video, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import VideoUpload from "./VideoUpload";
 
 interface VideoTestimonial {
@@ -34,12 +35,36 @@ const VideoTestimonialsManager = () => {
     fetchVideos();
   }, []);
 
+  const getAuthHeaders = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      throw new Error("Not authenticated");
+    }
+    return {
+      "Authorization": `Bearer ${session.access_token}`,
+      "Content-Type": "application/json",
+    };
+  };
+
   const fetchVideos = async () => {
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-video-testimonials`,
-        { method: "GET" }
+        { 
+          method: "GET",
+          headers,
+        }
       );
+      
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          toast.error("Sem permissão para acessar vídeos");
+          return;
+        }
+        throw new Error("Failed to fetch videos");
+      }
+      
       const data = await response.json();
       setVideos(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -82,6 +107,7 @@ const VideoTestimonialsManager = () => {
 
     setIsSaving(true);
     try {
+      const headers = await getAuthHeaders();
       const method = selectedVideo ? "PUT" : "POST";
       const body = selectedVideo
         ? { id: selectedVideo.id, ...formData }
@@ -91,12 +117,18 @@ const VideoTestimonialsManager = () => {
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-video-testimonials`,
         {
           method,
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify(body),
         }
       );
 
-      if (!response.ok) throw new Error("Failed to save");
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          toast.error("Sem permissão para salvar vídeo");
+          return;
+        }
+        throw new Error("Failed to save");
+      }
 
       toast.success(selectedVideo ? "Vídeo atualizado!" : "Vídeo adicionado!");
       fetchVideos();
@@ -114,12 +146,22 @@ const VideoTestimonialsManager = () => {
     if (!confirm("Tem certeza que deseja excluir este vídeo?")) return;
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-video-testimonials?id=${id}`,
-        { method: "DELETE" }
+        { 
+          method: "DELETE",
+          headers,
+        }
       );
 
-      if (!response.ok) throw new Error("Failed to delete");
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          toast.error("Sem permissão para excluir vídeo");
+          return;
+        }
+        throw new Error("Failed to delete");
+      }
 
       toast.success("Vídeo excluído!");
       fetchVideos();

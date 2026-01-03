@@ -13,17 +13,23 @@ Deno.serve(async (req) => {
   try {
     const { email, password, role, setup_key } = await req.json();
 
-    const SETUP_KEY = 'cartao-na-porta-setup-2024';
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    if (setup_key !== SETUP_KEY) {
+    // Get setup key from environment variable (secure secret)
+    const SETUP_KEY = Deno.env.get('ADMIN_SETUP_KEY');
+    
+    // Validate setup key from secure environment variable
+    if (!setup_key || !SETUP_KEY || setup_key !== SETUP_KEY) {
+      console.log('Invalid or missing setup key');
       return new Response(
         JSON.stringify({ error: 'Chave de setup inválida' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    console.log('Setup key verified, proceeding with password reset');
 
     const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false }
@@ -43,6 +49,7 @@ Deno.serve(async (req) => {
     const targetUser = usersData.users.find(u => u.email === email);
     
     if (!targetUser) {
+      console.log('User not found:', email);
       return new Response(
         JSON.stringify({ error: 'Usuário não encontrado' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -70,7 +77,7 @@ Deno.serve(async (req) => {
       .from('user_roles')
       .select('*')
       .eq('user_id', targetUser.id)
-      .single();
+      .maybeSingle();
 
     if (!existingRole) {
       // Add role
@@ -89,6 +96,8 @@ Deno.serve(async (req) => {
     } else {
       console.log(`User ${email} already has role ${existingRole.role}`);
     }
+
+    console.log(`Password reset successful for user ${email}`);
 
     return new Response(
       JSON.stringify({ success: true, user_id: targetUser.id }),

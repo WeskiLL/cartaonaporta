@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -28,6 +29,7 @@ const categories = [
 export default function ProductsPage() {
   const { products, loadingProducts, fetchProducts, addProduct, updateProduct, deleteProduct } = useManagement();
   const [search, setSearch] = useState('');
+  const [activeCategory, setActiveCategory] = useState('tags');
   const [formOpen, setFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ManagementProduct | null>(null);
   const [formData, setFormData] = useState({
@@ -203,72 +205,80 @@ export default function ProductsPage() {
         <div className="flex justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      ) : filteredProducts.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>Nenhum produto cadastrado</p>
-          </CardContent>
-        </Card>
       ) : (
-        <div className="space-y-8">
+        <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
+          <TabsList className="w-full flex-wrap h-auto gap-1 mb-6">
+            {categories.map(cat => {
+              const count = filteredProducts.filter(p => p.category === cat.id).length;
+              return (
+                <TabsTrigger key={cat.id} value={cat.id} className="gap-1.5">
+                  {cat.label}
+                  <span className="text-xs text-muted-foreground">({count})</span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+
           {categories.map(category => {
             const categoryProducts = filteredProducts.filter(p => p.category === category.id);
-            if (categoryProducts.length === 0) return null;
-            
+
             return (
-              <div key={category.id}>
-                <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-primary" />
-                  {category.label}
-                  <span className="text-sm font-normal text-muted-foreground">({categoryProducts.length})</span>
-                </h2>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {categoryProducts.map(product => (
-                    <Card key={product.id} className={!product.is_active ? 'opacity-60' : ''}>
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-start gap-3">
-                            {product.image_url && (
-                              <img 
-                                src={product.image_url} 
-                                alt={product.name}
-                                className="w-12 h-12 object-cover rounded"
-                              />
-                            )}
-                            <div>
-                              <h3 className="font-semibold text-foreground">{product.name}</h3>
-                              <div className="flex gap-2 items-center">
-                                {product.size && (
-                                  <span className="text-xs text-muted-foreground">{product.size}cm</span>
-                                )}
-                                {!product.is_active && (
-                                  <span className="text-xs bg-destructive/20 text-destructive px-1.5 py-0.5 rounded">Inativo</span>
-                                )}
+              <TabsContent key={category.id} value={category.id} className="mt-0">
+                {categoryProducts.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                      <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Nenhum produto nesta categoria</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {categoryProducts.map(product => (
+                      <Card key={product.id} className={!product.is_active ? 'opacity-60' : ''}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-start gap-3">
+                              {product.image_url && (
+                                <img 
+                                  src={product.image_url} 
+                                  alt={product.name}
+                                  className="w-12 h-12 object-cover rounded"
+                                />
+                              )}
+                              <div>
+                                <h3 className="font-semibold text-foreground">{product.name}</h3>
+                                <div className="flex gap-2 items-center">
+                                  {product.size && (
+                                    <span className="text-xs text-muted-foreground">{product.size}cm</span>
+                                  )}
+                                  {!product.is_active && (
+                                    <span className="text-xs bg-destructive/20 text-destructive px-1.5 py-0.5 rounded">Inativo</span>
+                                  )}
+                                </div>
                               </div>
                             </div>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => openEdit(product)}>
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(product.id)}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => openEdit(product)}>
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(product.id)}>
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                          <div className="flex justify-between text-sm mt-3">
+                            <span className="text-muted-foreground">Preço (250un):</span>
+                            <span className="font-medium text-primary">{formatCurrency(getMainPrice(product))}</span>
                           </div>
-                        </div>
-                        <div className="flex justify-between text-sm mt-3">
-                          <span className="text-muted-foreground">Preço (250un):</span>
-                          <span className="font-medium text-primary">{formatCurrency(getMainPrice(product))}</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
             );
           })}
-        </div>
+        </Tabs>
       )}
 
       {/* Product Form Dialog */}

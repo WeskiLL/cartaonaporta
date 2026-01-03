@@ -693,46 +693,104 @@ export default function CatalogoSettingsPage() {
             <CardHeader>
               <CardTitle>Ordem dos Produtos</CardTitle>
               <CardDescription>
-                Arraste e solte para reorganizar os produtos no catálogo
+                Arraste e solte para reorganizar os produtos no catálogo (por categoria)
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="products-order">
-                  {(provided) => (
-                    <div
-                      {...provided.droppableProps}
-                      ref={provided.innerRef}
-                      className="space-y-2 max-h-[500px] overflow-y-auto"
-                    >
-                      {products.map((product, index) => (
-                        <Draggable key={product.id} draggableId={product.id} index={index}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className={`p-3 rounded-lg border transition-all flex items-center gap-3 ${
-                                snapshot.isDragging
-                                  ? "bg-primary/10 border-primary"
-                                  : "bg-muted/50 hover:bg-muted border-border"
-                              }`}
-                            >
-                              <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
-                              <span className="text-sm text-muted-foreground w-6">{index + 1}.</span>
-                              <span className="font-medium text-foreground flex-1">{product.name}</span>
-                              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                                {DEFAULT_CATEGORY_LABELS[product.category] || product.category}
-                              </span>
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              </DragDropContext>
+            <CardContent className="space-y-6">
+              {Object.entries(DEFAULT_CATEGORY_LABELS).map(([categoryKey, categoryLabel]) => {
+                const categoryProducts = products.filter(p => p.category === categoryKey);
+                if (categoryProducts.length === 0) return null;
+
+                return (
+                  <div key={categoryKey}>
+                    <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-primary" />
+                      {categoryLabel}
+                      <span className="text-xs font-normal text-muted-foreground">({categoryProducts.length})</span>
+                    </h3>
+                    <DragDropContext onDragEnd={(result) => {
+                      if (!result.destination) return;
+                      
+                      const sourceIndex = result.source.index;
+                      const destIndex = result.destination.index;
+                      
+                      if (sourceIndex === destIndex) return;
+                      
+                      // Get the global indices
+                      const globalSourceIndex = products.findIndex(p => p.id === categoryProducts[sourceIndex].id);
+                      const globalDestIndex = products.findIndex(p => p.id === categoryProducts[destIndex].id);
+                      
+                      const newProducts = [...products];
+                      const [removed] = newProducts.splice(globalSourceIndex, 1);
+                      newProducts.splice(globalDestIndex, 0, removed);
+                      
+                      setProducts(newProducts);
+                      
+                      const orders = newProducts.map((p, i) => ({
+                        id: p.id,
+                        display_order: i,
+                      }));
+                      
+                      (async () => {
+                        try {
+                          const { data: { session } } = await supabase.auth.getSession();
+                          
+                          const response = await fetch(
+                            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-products`,
+                            {
+                              method: "PATCH",
+                              headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${session?.access_token || ""}`,
+                              },
+                              body: JSON.stringify({ orders }),
+                            }
+                          );
+                          
+                          if (!response.ok) throw new Error("Failed to update order");
+                          toast.success("Ordem atualizada!");
+                        } catch (error) {
+                          console.error("Error updating order:", error);
+                          toast.error("Erro ao atualizar ordem");
+                          fetchData();
+                        }
+                      })();
+                    }}>
+                      <Droppable droppableId={`products-order-${categoryKey}`}>
+                        {(provided) => (
+                          <div
+                            {...provided.droppableProps}
+                            ref={provided.innerRef}
+                            className="space-y-2"
+                          >
+                            {categoryProducts.map((product, index) => (
+                              <Draggable key={product.id} draggableId={product.id} index={index}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    className={`p-3 rounded-lg border transition-all flex items-center gap-3 ${
+                                      snapshot.isDragging
+                                        ? "bg-primary/10 border-primary"
+                                        : "bg-muted/50 hover:bg-muted border-border"
+                                    }`}
+                                  >
+                                    <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
+                                    <span className="text-sm text-muted-foreground w-6">{index + 1}.</span>
+                                    <span className="font-medium text-foreground flex-1">{product.name}</span>
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         </TabsContent>

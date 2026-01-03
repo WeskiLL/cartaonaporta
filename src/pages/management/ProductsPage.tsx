@@ -211,48 +211,63 @@ export default function ProductsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredProducts.map(product => (
-            <Card key={product.id} className={!product.is_active ? 'opacity-60' : ''}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-start gap-3">
-                    {product.image_url && (
-                      <img 
-                        src={product.image_url} 
-                        alt={product.name}
-                        className="w-12 h-12 object-cover rounded"
-                      />
-                    )}
-                    <div>
-                      <h3 className="font-semibold text-foreground">{product.name}</h3>
-                      <div className="flex gap-2 items-center">
-                        <span className="text-xs text-muted-foreground capitalize">{product.category}</span>
-                        {product.size && (
-                          <span className="text-xs text-muted-foreground">• {product.size}cm</span>
-                        )}
-                        {!product.is_active && (
-                          <span className="text-xs bg-destructive/20 text-destructive px-1.5 py-0.5 rounded">Inativo</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(product)}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(product.id)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+        <div className="space-y-8">
+          {categories.map(category => {
+            const categoryProducts = filteredProducts.filter(p => p.category === category.id);
+            if (categoryProducts.length === 0) return null;
+            
+            return (
+              <div key={category.id}>
+                <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary" />
+                  {category.label}
+                  <span className="text-sm font-normal text-muted-foreground">({categoryProducts.length})</span>
+                </h2>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {categoryProducts.map(product => (
+                    <Card key={product.id} className={!product.is_active ? 'opacity-60' : ''}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-start gap-3">
+                            {product.image_url && (
+                              <img 
+                                src={product.image_url} 
+                                alt={product.name}
+                                className="w-12 h-12 object-cover rounded"
+                              />
+                            )}
+                            <div>
+                              <h3 className="font-semibold text-foreground">{product.name}</h3>
+                              <div className="flex gap-2 items-center">
+                                {product.size && (
+                                  <span className="text-xs text-muted-foreground">{product.size}cm</span>
+                                )}
+                                {!product.is_active && (
+                                  <span className="text-xs bg-destructive/20 text-destructive px-1.5 py-0.5 rounded">Inativo</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => openEdit(product)}>
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(product.id)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex justify-between text-sm mt-3">
+                          <span className="text-muted-foreground">Preço (250un):</span>
+                          <span className="font-medium text-primary">{formatCurrency(getMainPrice(product))}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-                <div className="flex justify-between text-sm mt-3">
-                  <span className="text-muted-foreground">Preço (250un):</span>
-                  <span className="font-medium text-primary">{formatCurrency(getMainPrice(product))}</span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+            );
+          })}
         </div>
       )}
 

@@ -14,7 +14,7 @@ import { useManagement } from '@/contexts/ManagementContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { maskPhone } from '@/lib/masks';
+
 
 interface TrackingEvent {
   date: string;
@@ -49,7 +49,6 @@ export default function TrackingPage() {
   const [formData, setFormData] = useState({
     order_id: '',
     client_name: '',
-    client_phone: '',
     tracking_code: '',
     carrier: 'correios',
   });
@@ -109,7 +108,6 @@ export default function TrackingPage() {
           order_id: formData.order_id || null,
           order_number: order?.number || null,
           client_name: formData.client_name,
-          client_phone: formData.client_phone || null,
           tracking_code: formData.tracking_code,
           carrier: formData.carrier,
           status: 'pending',
@@ -128,7 +126,6 @@ export default function TrackingPage() {
       setFormData({
         order_id: '',
         client_name: '',
-        client_phone: '',
         tracking_code: '',
         carrier: 'correios',
       });
@@ -170,13 +167,7 @@ export default function TrackingPage() {
     toast.success('Link copiado!');
   };
 
-  const sendWhatsAppNotification = (tracking: TrackingItem) => {
-    const phone = tracking.client_phone?.replace(/\D/g, '');
-    if (!phone) {
-      toast.error('Cliente não tem WhatsApp cadastrado');
-      return;
-    }
-    
+  const copyWhatsAppMessage = (tracking: TrackingItem) => {
     // Link personalizado do site
     const shareLink = `https://cartaonaporta.com.br/rastreio/${tracking.tracking_code}`;
     
@@ -186,8 +177,8 @@ export default function TrackingPage() {
     message += `Acompanhe seu pedido:\n${shareLink}\n\n`;
     message += `Prime Print - Sua marca, nossa impressão! ✨`;
     
-    const whatsappUrl = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    navigator.clipboard.writeText(message);
+    toast.success('Mensagem copiada! Cole no WhatsApp do cliente.');
   };
 
   const getStatusBadge = (status: string) => {
@@ -246,16 +237,6 @@ export default function TrackingPage() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label>WhatsApp do Cliente (para notificações)</Label>
-                  <Input
-                    type="tel"
-                    value={formData.client_phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, client_phone: maskPhone(e.target.value) }))}
-                    placeholder="(74) 98113-8033"
-                    maxLength={15}
-                  />
-                </div>
 
                 <div className="space-y-2">
                   <Label>Código de Rastreio *</Label>
@@ -344,8 +325,8 @@ export default function TrackingPage() {
                       variant="outline"
                       size="icon"
                       className="h-8 w-8 text-green-600 hover:text-green-700"
-                      onClick={() => sendWhatsAppNotification(tracking)}
-                      title="Enviar WhatsApp"
+                      onClick={() => copyWhatsAppMessage(tracking)}
+                      title="Copiar mensagem para WhatsApp"
                     >
                       <MessageCircle className="w-3.5 h-3.5" />
                     </Button>

@@ -61,8 +61,12 @@ interface CatalogSettings {
   };
   footer: {
     show_customization_notice: boolean;
+    customization_title: string;
+    customization_text: string;
     show_cut_warning: boolean;
+    cut_warning_text: string;
     show_whatsapp_cta: boolean;
+    whatsapp_cta_text: string;
   };
   category_names: {
     tags: string;
@@ -105,7 +109,15 @@ export default function CatalogoSettingsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [settings, setSettings] = useState<CatalogSettings>({
     header: { background_color: "#e85616", show_logos: true, custom_image_url: "" },
-    footer: { show_customization_notice: true, show_cut_warning: true, show_whatsapp_cta: true },
+    footer: { 
+      show_customization_notice: true, 
+      customization_title: "✨ PERSONALIZAÇÃO TOTAL!",
+      customization_text: "Você escolhe: cores, logo, estilo, informações e o que mais desejar!",
+      show_cut_warning: true, 
+      cut_warning_text: "⚠️ Os cortes são exatamente como na imagem e NÃO PODEM SER ALTERADOS.",
+      show_whatsapp_cta: true,
+      whatsapp_cta_text: "Faça seu pedido pelo WhatsApp",
+    },
     category_names: { tags: "", kits: "", cartoes: "", adesivos: "", outros: "" },
     display: { view_mode: "list" },
   });
@@ -626,53 +638,128 @@ export default function CatalogoSettingsPage() {
                 Personalize as seções exibidas no final do catálogo
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="show-customization"
-                  checked={settings.footer.show_customization_notice}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      footer: { ...settings.footer, show_customization_notice: e.target.checked },
-                    })
-                  }
-                  className="w-4 h-4"
-                />
-                <Label htmlFor="show-customization">Exibir aviso de personalização</Label>
+            <CardContent className="space-y-6">
+              {/* Customization Notice */}
+              <div className="space-y-3 p-4 rounded-lg border bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="show-customization"
+                    checked={settings.footer.show_customization_notice}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        footer: { ...settings.footer, show_customization_notice: e.target.checked },
+                      })
+                    }
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="show-customization" className="font-semibold">Exibir aviso de personalização</Label>
+                </div>
+                {settings.footer.show_customization_notice && (
+                  <div className="space-y-2 pl-7">
+                    <div>
+                      <Label htmlFor="customization-title" className="text-sm text-muted-foreground">Título</Label>
+                      <Input
+                        id="customization-title"
+                        value={settings.footer.customization_title || ""}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            footer: { ...settings.footer, customization_title: e.target.value },
+                          })
+                        }
+                        placeholder="✨ PERSONALIZAÇÃO TOTAL!"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="customization-text" className="text-sm text-muted-foreground">Texto</Label>
+                      <textarea
+                        id="customization-text"
+                        value={settings.footer.customization_text || ""}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            footer: { ...settings.footer, customization_text: e.target.value },
+                          })
+                        }
+                        placeholder="Você escolhe: cores, logo, estilo, informações e o que mais desejar!"
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="show-cut-warning"
-                  checked={settings.footer.show_cut_warning}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      footer: { ...settings.footer, show_cut_warning: e.target.checked },
-                    })
-                  }
-                  className="w-4 h-4"
-                />
-                <Label htmlFor="show-cut-warning">Exibir aviso sobre cortes fixos</Label>
+              {/* Cut Warning */}
+              <div className="space-y-3 p-4 rounded-lg border bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="show-cut-warning"
+                    checked={settings.footer.show_cut_warning}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        footer: { ...settings.footer, show_cut_warning: e.target.checked },
+                      })
+                    }
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="show-cut-warning" className="font-semibold">Exibir aviso sobre cortes fixos</Label>
+                </div>
+                {settings.footer.show_cut_warning && (
+                  <div className="pl-7">
+                    <Label htmlFor="cut-warning-text" className="text-sm text-muted-foreground">Texto do aviso</Label>
+                    <textarea
+                      id="cut-warning-text"
+                      value={settings.footer.cut_warning_text || ""}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          footer: { ...settings.footer, cut_warning_text: e.target.value },
+                        })
+                      }
+                      placeholder="⚠️ Os cortes são exatamente como na imagem e NÃO PODEM SER ALTERADOS."
+                      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="show-whatsapp-cta"
-                  checked={settings.footer.show_whatsapp_cta}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      footer: { ...settings.footer, show_whatsapp_cta: e.target.checked },
-                    })
-                  }
-                  className="w-4 h-4"
-                />
-                <Label htmlFor="show-whatsapp-cta">Exibir CTA do WhatsApp</Label>
+              {/* WhatsApp CTA */}
+              <div className="space-y-3 p-4 rounded-lg border bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="show-whatsapp-cta"
+                    checked={settings.footer.show_whatsapp_cta}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        footer: { ...settings.footer, show_whatsapp_cta: e.target.checked },
+                      })
+                    }
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="show-whatsapp-cta" className="font-semibold">Exibir CTA do WhatsApp</Label>
+                </div>
+                {settings.footer.show_whatsapp_cta && (
+                  <div className="pl-7">
+                    <Label htmlFor="whatsapp-cta-text" className="text-sm text-muted-foreground">Texto do botão</Label>
+                    <Input
+                      id="whatsapp-cta-text"
+                      value={settings.footer.whatsapp_cta_text || ""}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          footer: { ...settings.footer, whatsapp_cta_text: e.target.value },
+                        })
+                      }
+                      placeholder="Faça seu pedido pelo WhatsApp"
+                    />
+                  </div>
+                )}
               </div>
 
               <Button

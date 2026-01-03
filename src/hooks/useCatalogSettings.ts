@@ -9,8 +9,12 @@ export interface CatalogSettings {
   };
   footer: {
     show_customization_notice: boolean;
+    customization_title: string;
+    customization_text: string;
     show_cut_warning: boolean;
+    cut_warning_text: string;
     show_whatsapp_cta: boolean;
+    whatsapp_cta_text: string;
   };
   category_names: {
     tags: string;
@@ -26,7 +30,15 @@ export interface CatalogSettings {
 
 const DEFAULT_SETTINGS: CatalogSettings = {
   header: { background_color: "#e85616", show_logos: true, custom_image_url: "" },
-  footer: { show_customization_notice: true, show_cut_warning: true, show_whatsapp_cta: true },
+  footer: { 
+    show_customization_notice: true, 
+    customization_title: "✨ PERSONALIZAÇÃO TOTAL!",
+    customization_text: "Você escolhe: cores, logo, estilo, informações e o que mais desejar!",
+    show_cut_warning: true, 
+    cut_warning_text: "⚠️ Os cortes são exatamente como na imagem e NÃO PODEM SER ALTERADOS.",
+    show_whatsapp_cta: true,
+    whatsapp_cta_text: "Faça seu pedido pelo WhatsApp",
+  },
   category_names: { tags: "", kits: "", cartoes: "", adesivos: "", outros: "" },
   display: { view_mode: "list" },
 };

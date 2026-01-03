@@ -6,6 +6,7 @@ export interface CatalogSettings {
     background_color: string;
     show_logos: boolean;
     custom_image_url?: string;
+    custom_images?: string[];
   };
   footer: {
     show_customization_notice: boolean;
@@ -29,7 +30,7 @@ export interface CatalogSettings {
 }
 
 const DEFAULT_SETTINGS: CatalogSettings = {
-  header: { background_color: "#e85616", show_logos: true, custom_image_url: "" },
+  header: { background_color: "#e85616", show_logos: true, custom_image_url: "", custom_images: [] },
   footer: { 
     show_customization_notice: true, 
     customization_title: "✨ PERSONALIZAÇÃO TOTAL!",

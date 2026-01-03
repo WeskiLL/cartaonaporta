@@ -34,6 +34,7 @@ const Catalogo = () => {
   const [selectedQuantities, setSelectedQuantities] = useState<Record<string, number>>({});
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const hasTrackedVisit = useRef(false);
   const {
     data: products = [],
@@ -45,6 +46,24 @@ const Catalogo = () => {
     items
   } = useCart();
   const { settings, getCategoryLabel, trackEvent } = useCatalogSettings();
+
+  // Get header images (prefer new array, fallback to legacy single image)
+  const headerImages = settings.header.custom_images?.length 
+    ? settings.header.custom_images 
+    : settings.header.custom_image_url 
+      ? [settings.header.custom_image_url] 
+      : [];
+
+  // Auto-rotate images every 3 seconds if more than 1 image
+  useEffect(() => {
+    if (headerImages.length <= 1) return;
+    
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % headerImages.length);
+    }, 3000);
+    
+    return () => clearInterval(interval);
+  }, [headerImages.length]);
 
   // Track page visit on mount
   useEffect(() => {
@@ -153,24 +172,56 @@ const Catalogo = () => {
       </button>
 
       <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "bg-gray-900" : "bg-gray-50"}`}>
-        {/* Hero Header - Custom Image or Solid Color */}
+        {/* Hero Header - Custom Images Carousel or Solid Color */}
         <div 
-          className="relative py-4 px-4"
+          className="relative w-full overflow-hidden"
           style={{
-            backgroundColor: settings.header.custom_image_url ? undefined : settings.header.background_color,
-            backgroundImage: settings.header.custom_image_url ? `url(${settings.header.custom_image_url})` : undefined,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
+            maxWidth: '1500px',
+            height: headerImages.length > 0 ? 'auto' : '120px',
+            aspectRatio: headerImages.length > 0 ? '1500 / 500' : undefined,
+            margin: '0 auto',
+            backgroundColor: headerImages.length > 0 ? undefined : settings.header.background_color,
           }}
         >
+          {/* Image Carousel */}
+          {headerImages.length > 0 && (
+            <div className="relative w-full h-full">
+              {headerImages.map((imageUrl, index) => (
+                <img
+                  key={index}
+                  src={imageUrl}
+                  alt={`Header ${index + 1}`}
+                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+                    index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+                  }`}
+                />
+              ))}
+              {/* Carousel Indicators */}
+              {headerImages.length > 1 && (
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  {headerImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        index === currentImageIndex ? 'bg-white w-4' : 'bg-white/50'
+                      }`}
+                      aria-label={`Ir para imagem ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Dark Mode Toggle */}
-          <button onClick={() => setIsDarkMode(!isDarkMode)} className="absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 sm:p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors text-white" aria-label="Toggle dark mode">
+          <button onClick={() => setIsDarkMode(!isDarkMode)} className="absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 sm:p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors text-white z-10" aria-label="Toggle dark mode">
             {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
 
-          {settings.header.show_logos && (
-            <div className="max-w-4xl mx-auto flex items-center justify-center gap-3 sm:gap-4">
-              {/* Dual Logos - White versions */}
+          {/* Logos overlay - only show on solid color background */}
+          {headerImages.length === 0 && settings.header.show_logos && (
+            <div className="absolute inset-0 flex items-center justify-center gap-3 sm:gap-4">
               <img src={logoPrimePrintWhite} alt="Prime Print" className="h-8 sm:h-10 md:h-12 drop-shadow-lg" />
               <img src={logoCartaoNaPortaWhite} alt="Cartão na Porta" className="h-8 sm:h-10 md:h-12 drop-shadow-lg" />
             </div>

@@ -58,6 +58,7 @@ interface CatalogSettings {
     background_color: string;
     show_logos: boolean;
     custom_image_url?: string;
+    custom_images?: string[];
   };
   footer: {
     show_customization_notice: boolean;
@@ -108,7 +109,7 @@ export default function CatalogoSettingsPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [settings, setSettings] = useState<CatalogSettings>({
-    header: { background_color: "#e85616", show_logos: true, custom_image_url: "" },
+    header: { background_color: "#e85616", show_logos: true, custom_image_url: "", custom_images: [] },
     footer: { 
       show_customization_notice: true, 
       customization_title: "✨ PERSONALIZAÇÃO TOTAL!",
@@ -313,6 +314,12 @@ export default function CatalogoSettingsPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    const currentImages = settings.header.custom_images || [];
+    if (currentImages.length >= 3) {
+      toast.error("Você pode adicionar no máximo 3 imagens");
+      return;
+    }
+
     // Validate file type
     if (!file.type.startsWith("image/")) {
       toast.error("Por favor, selecione um arquivo de imagem");
@@ -341,9 +348,10 @@ export default function CatalogoSettingsPage() {
         .from("product-images")
         .getPublicUrl(filePath);
 
+      const newImages = [...currentImages, publicUrl];
       setSettings({
         ...settings,
-        header: { ...settings.header, custom_image_url: publicUrl },
+        header: { ...settings.header, custom_images: newImages },
       });
 
       toast.success("Imagem enviada com sucesso!");
@@ -358,10 +366,12 @@ export default function CatalogoSettingsPage() {
     }
   };
 
-  const handleRemoveImage = () => {
+  const handleRemoveImage = (index: number) => {
+    const currentImages = settings.header.custom_images || [];
+    const newImages = currentImages.filter((_, i) => i !== index);
     setSettings({
       ...settings,
-      header: { ...settings.header, custom_image_url: "" },
+      header: { ...settings.header, custom_images: newImages },
     });
   };
 
@@ -466,29 +476,40 @@ export default function CatalogoSettingsPage() {
                 <Label htmlFor="show-logos">Exibir logos no cabeçalho</Label>
               </div>
 
-              {/* Custom Image Upload */}
+              {/* Custom Images Upload */}
               <div className="space-y-3">
-                <Label>Imagem Customizada do Header</Label>
+                <Label>Imagens do Header (até 3)</Label>
                 <p className="text-sm text-muted-foreground">
-                  Faça upload de uma imagem para substituir o fundo de cor sólida
+                  Adicione até 3 imagens (1500x500px recomendado). Com múltiplas imagens, elas alternam automaticamente a cada 3 segundos.
                 </p>
                 
-                {settings.header.custom_image_url ? (
-                  <div className="relative inline-block">
-                    <img
-                      src={settings.header.custom_image_url}
-                      alt="Header customizado"
-                      className="max-w-full h-32 object-cover rounded-lg border"
-                    />
-                    <button
-                      onClick={handleRemoveImage}
-                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90 transition-colors"
-                      type="button"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                {/* Display uploaded images */}
+                {(settings.header.custom_images?.length || 0) > 0 && (
+                  <div className="flex flex-wrap gap-3">
+                    {settings.header.custom_images?.map((imageUrl, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={imageUrl}
+                          alt={`Header ${index + 1}`}
+                          className="w-48 h-16 object-cover rounded-lg border"
+                        />
+                        <button
+                          onClick={() => handleRemoveImage(index)}
+                          className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90 transition-colors"
+                          type="button"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                        <span className="absolute bottom-1 left-1 bg-black/50 text-white text-xs px-1.5 py-0.5 rounded">
+                          {index + 1}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ) : (
+                )}
+
+                {/* Upload button */}
+                {(settings.header.custom_images?.length || 0) < 3 && (
                   <div
                     onClick={() => fileInputRef.current?.click()}
                     className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
@@ -502,10 +523,10 @@ export default function CatalogoSettingsPage() {
                       <div className="flex flex-col items-center gap-2">
                         <ImageIcon className="w-8 h-8 text-muted-foreground" />
                         <span className="text-sm text-muted-foreground">
-                          Clique para enviar uma imagem
+                          Clique para adicionar imagem ({settings.header.custom_images?.length || 0}/3)
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          PNG, JPG ou WEBP (máx. 5MB)
+                          PNG, JPG ou WEBP (máx. 5MB) - Tamanho ideal: 1500x500px
                         </span>
                       </div>
                     )}

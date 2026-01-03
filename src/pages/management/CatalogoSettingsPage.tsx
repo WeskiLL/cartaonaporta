@@ -479,9 +479,18 @@ export default function CatalogoSettingsPage() {
               {/* Custom Images Upload */}
               <div className="space-y-3">
                 <Label>Imagens do Header (até 3)</Label>
-                <p className="text-sm text-muted-foreground">
-                  Adicione até 3 imagens (1500x500px recomendado). Com múltiplas imagens, elas alternam automaticamente a cada 3 segundos.
-                </p>
+                <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                  <p className="text-sm font-medium">📐 Tamanho recomendado da imagem:</p>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Desktop:</strong> 1500 x 500 pixels (proporção 3:1)
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    A imagem será ajustada automaticamente para tablets e celulares mantendo o foco central.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    💡 Com múltiplas imagens, elas alternam automaticamente a cada 3 segundos.
+                  </p>
+                </div>
                 
                 {/* Display uploaded images */}
                 {(settings.header.custom_images?.length || 0) > 0 && (
@@ -526,7 +535,7 @@ export default function CatalogoSettingsPage() {
                           Clique para adicionar imagem ({settings.header.custom_images?.length || 0}/3)
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          PNG, JPG ou WEBP (máx. 5MB) - Tamanho ideal: 1500x500px
+                          PNG, JPG ou WEBP (máx. 5MB) • 1500x500px
                         </span>
                       </div>
                     )}

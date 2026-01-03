@@ -173,31 +173,37 @@ const Catalogo = () => {
 
       <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "bg-gray-900" : "bg-gray-50"}`}>
         {/* Hero Header - Custom Images Carousel or Solid Color */}
+        {/* Responsive: Desktop 1500x500 (3:1), Tablet 900x400 (2.25:1), Mobile 600x300 (2:1) */}
         <div 
-          className="relative w-full overflow-hidden"
+          className="relative w-full overflow-hidden mx-auto"
           style={{
-            maxWidth: '1500px',
-            height: headerImages.length > 0 ? 'auto' : '120px',
-            aspectRatio: headerImages.length > 0 ? '1500 / 500' : undefined,
-            margin: '0 auto',
             backgroundColor: headerImages.length > 0 ? undefined : settings.header.background_color,
           }}
         >
-          {/* Image Carousel */}
-          {headerImages.length > 0 && (
-            <div className="relative w-full h-full">
-              {headerImages.map((imageUrl, index) => (
-                <img
-                  key={index}
-                  src={imageUrl}
-                  alt={`Header ${index + 1}`}
-                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
-                    index === currentImageIndex ? 'opacity-100' : 'opacity-0'
-                  }`}
-                />
-              ))}
-              {/* Carousel Indicators */}
-              {headerImages.length > 1 && (
+          {/* Responsive container with aspect ratio */}
+          <div 
+            className={`relative w-full ${
+              headerImages.length > 0 
+                ? 'aspect-[2/1] sm:aspect-[2.25/1] md:aspect-[3/1]' 
+                : 'h-20 sm:h-24 md:h-28'
+            }`}
+            style={{ maxWidth: '1500px', margin: '0 auto' }}
+          >
+            {/* Image Carousel */}
+            {headerImages.length > 0 && (
+              <div className="relative w-full h-full">
+                {headerImages.map((imageUrl, index) => (
+                  <img
+                    key={index}
+                    src={imageUrl}
+                    alt={`Header ${index + 1}`}
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+                      index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  />
+                ))}
+                {/* Carousel Indicators */}
+                {headerImages.length > 1 && (
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
                   {headerImages.map((_, index) => (
                     <button
@@ -214,18 +220,19 @@ const Catalogo = () => {
             </div>
           )}
 
-          {/* Dark Mode Toggle */}
-          <button onClick={() => setIsDarkMode(!isDarkMode)} className="absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 sm:p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors text-white z-10" aria-label="Toggle dark mode">
-            {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
+            {/* Dark Mode Toggle */}
+            <button onClick={() => setIsDarkMode(!isDarkMode)} className="absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 sm:p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors text-white z-10" aria-label="Toggle dark mode">
+              {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
 
-          {/* Logos overlay - only show on solid color background */}
-          {headerImages.length === 0 && settings.header.show_logos && (
-            <div className="absolute inset-0 flex items-center justify-center gap-3 sm:gap-4">
-              <img src={logoPrimePrintWhite} alt="Prime Print" className="h-8 sm:h-10 md:h-12 drop-shadow-lg" />
-              <img src={logoCartaoNaPortaWhite} alt="Cartão na Porta" className="h-8 sm:h-10 md:h-12 drop-shadow-lg" />
-            </div>
-          )}
+            {/* Logos overlay - only show on solid color background */}
+            {headerImages.length === 0 && settings.header.show_logos && (
+              <div className="absolute inset-0 flex items-center justify-center gap-3 sm:gap-4">
+                <img src={logoPrimePrintWhite} alt="Prime Print" className="h-8 sm:h-10 md:h-12 drop-shadow-lg" />
+                <img src={logoCartaoNaPortaWhite} alt="Cartão na Porta" className="h-8 sm:h-10 md:h-12 drop-shadow-lg" />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Company Info Bar */}

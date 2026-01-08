@@ -79,7 +79,12 @@ export default function ManagementDashboard() {
     };
   }, [orders, quotes, transactions, clients]);
 
-  const handleStatusChange = useCallback(async (orderId: string, newStatus: OrderStatus, revenueAction: 'add' | 'remove' | 'none') => {
+  const handleStatusChange = useCallback(async (
+    orderId: string, 
+    newStatus: OrderStatus, 
+    revenueAction: 'add' | 'remove' | 'none',
+    expenseAction?: { type: 'add' | 'remove'; amount?: number }
+  ) => {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
@@ -105,11 +110,35 @@ export default function ManagementDashboard() {
       
       // Remove revenue when moving back to "awaiting_payment"
       if (revenueAction === 'remove') {
-        // Find the transaction associated with this order
-        const orderTransaction = transactions.find(t => t.order_id === order.id);
+        // Find the income transaction associated with this order
+        const orderTransaction = transactions.find(t => t.order_id === order.id && t.type === 'income');
         if (orderTransaction) {
           await deleteTransaction(orderTransaction.id);
           toast.success('Receita removida do financeiro');
+        }
+      }
+
+      // Handle production expense
+      if (expenseAction?.type === 'add' && expenseAction.amount) {
+        await addTransaction({
+          type: 'expense',
+          amount: expenseAction.amount,
+          category: 'Produção',
+          description: `Despesa do pedido ${order.number} - ${order.client_name}`,
+          date: new Date().toISOString(),
+          order_id: order.id,
+        });
+        toast.success('Despesa de produção adicionada');
+      }
+
+      // Remove production expense when moving back from production to creating_art
+      if (expenseAction?.type === 'remove') {
+        const expenseTransaction = transactions.find(
+          t => t.order_id === order.id && t.type === 'expense' && t.category === 'Produção'
+        );
+        if (expenseTransaction) {
+          await deleteTransaction(expenseTransaction.id);
+          toast.success('Despesa de produção removida');
         }
       }
       

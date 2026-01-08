@@ -4,6 +4,15 @@ import { Order } from '@/types/management';
 import { maskCurrency } from '@/lib/masks';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const ORDER_STATUSES = [
   { id: 'awaiting_payment', label: 'Aguardando Pagamento', color: 'bg-amber-500' },
@@ -15,9 +24,20 @@ const ORDER_STATUSES = [
 
 type OrderStatus = typeof ORDER_STATUSES[number]['id'];
 
+interface ExpenseAction {
+  type: 'add' | 'remove';
+  orderId: string;
+  orderNumber: string;
+}
+
 interface OrderKanbanProps {
   orders: Order[];
-  onStatusChange: (orderId: string, newStatus: OrderStatus, revenueAction: 'add' | 'remove' | 'none') => Promise<void>;
+  onStatusChange: (
+    orderId: string,
+    newStatus: OrderStatus,
+    revenueAction: 'add' | 'remove' | 'none',
+    expenseAction?: { type: 'add' | 'remove'; amount?: number }
+  ) => Promise<void>;
   onViewOrder?: (order: Order) => void;
 }
 
@@ -25,6 +45,17 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
   // Local state for optimistic updates
   const [localOrders, setLocalOrders] = useState<Order[]>(orders);
   const [pendingUpdates, setPendingUpdates] = useState<Set<string>>(new Set());
+  
+  // Expense modal state
+  const [expenseModalOpen, setExpenseModalOpen] = useState(false);
+  const [expenseAmount, setExpenseAmount] = useState('');
+  const [pendingDrag, setPendingDrag] = useState<{
+    orderId: string;
+    orderNumber: string;
+    newStatus: OrderStatus;
+    oldStatus: OrderStatus;
+    revenueAction: 'add' | 'remove' | 'none';
+  } | null>(null);
 
   // Sync with props when orders change from external source
   if (orders !== localOrders && pendingUpdates.size === 0) {
@@ -46,12 +77,6 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
     const order = localOrders.find(o => o.id === orderId);
     if (!order) return;
 
-    // Optimistic update - immediately update local state
-    setLocalOrders(prev => prev.map(o => 
-      o.id === orderId ? { ...o, status: newStatus } : o
-    ));
-    setPendingUpdates(prev => new Set(prev).add(orderId));
-
     // Determine revenue action
     let revenueAction: 'add' | 'remove' | 'none' = 'none';
     
@@ -64,9 +89,45 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
       revenueAction = 'remove';
     }
 
+    // Check if moving to production - need to ask for expense amount
+    if (newStatus === 'production' && oldStatus !== 'production') {
+      setPendingDrag({
+        orderId,
+        orderNumber: order.number,
+        newStatus,
+        oldStatus,
+        revenueAction,
+      });
+      setExpenseAmount('');
+      setExpenseModalOpen(true);
+      return;
+    }
+
+    // Check if moving from production to creating_art - remove expense
+    const expenseAction = oldStatus === 'production' && newStatus === 'creating_art' 
+      ? { type: 'remove' as const } 
+      : undefined;
+
+    await executeStatusChange(orderId, order.number, newStatus, oldStatus, revenueAction, expenseAction);
+  };
+
+  const executeStatusChange = async (
+    orderId: string,
+    orderNumber: string,
+    newStatus: OrderStatus,
+    oldStatus: OrderStatus,
+    revenueAction: 'add' | 'remove' | 'none',
+    expenseAction?: { type: 'add' | 'remove'; amount?: number }
+  ) => {
+    // Optimistic update - immediately update local state
+    setLocalOrders(prev => prev.map(o => 
+      o.id === orderId ? { ...o, status: newStatus } : o
+    ));
+    setPendingUpdates(prev => new Set(prev).add(orderId));
+
     try {
-      await onStatusChange(orderId, newStatus, revenueAction);
-      toast.success(`Pedido ${order.number} atualizado`);
+      await onStatusChange(orderId, newStatus, revenueAction, expenseAction);
+      toast.success(`Pedido ${orderNumber} atualizado`);
     } catch (error) {
       // Rollback on error
       setLocalOrders(prev => prev.map(o => 
@@ -82,102 +143,163 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
     }
   };
 
-  return (
-    <DragDropContext onDragEnd={handleDragEnd}>
-      {/* Status tabs header */}
-      <div className="flex items-center gap-6 mb-4 border-b pb-3 overflow-x-auto">
-        {ORDER_STATUSES.map((status) => {
-          const count = getOrdersByStatus(status.id).length;
-          return (
-            <div key={status.id} className="flex items-center gap-2 shrink-0">
-              <div className={`w-3 h-3 rounded-full ${status.color}`} />
-              <span className="text-sm font-medium text-foreground">{status.label}</span>
-              <span className="text-sm text-muted-foreground">{count}</span>
-            </div>
-          );
-        })}
-      </div>
+  const handleExpenseConfirm = async () => {
+    if (!pendingDrag) return;
 
-      {/* Kanban columns */}
-      <div className="flex gap-4 overflow-x-auto pb-4">
-        {ORDER_STATUSES.map((status) => {
-          const statusOrders = getOrdersByStatus(status.id);
-          
-          return (
-            <Droppable key={status.id} droppableId={status.id}>
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className={`flex-1 min-w-[200px] min-h-[200px] p-2 rounded-lg transition-colors ${
-                    snapshot.isDraggingOver 
-                      ? 'bg-primary/10 border-2 border-dashed border-primary' 
-                      : 'bg-muted/30'
-                  }`}
-                >
-                  {statusOrders.length === 0 ? (
-                    <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
-                      Nenhum pedido
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {statusOrders.map((order, index) => {
-                        const isPending = pendingUpdates.has(order.id);
-                        return (
-                          <Draggable key={order.id} draggableId={order.id} index={index}>
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className={`bg-card border rounded-lg p-3 cursor-grab active:cursor-grabbing transition-all ${
-                                  snapshot.isDragging 
-                                    ? 'shadow-lg scale-105 rotate-1 ring-2 ring-primary' 
-                                    : 'hover:shadow-md'
-                                } ${isPending ? 'opacity-70' : ''}`}
-                              >
-                                <div className="flex items-start gap-2">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-bold text-sm text-foreground">
-                                      {order.number}
-                                    </div>
-                                    <div className="text-sm text-muted-foreground truncate">
-                                      {order.client_name}
-                                    </div>
-                                    <div className="flex items-center justify-between mt-2">
-                                      <span className="text-sm font-bold text-primary">
-                                        {maskCurrency(Number(order.total))}
-                                      </span>
-                                      {onViewOrder && (
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-6 px-2 text-xs text-muted-foreground hover:text-primary"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            onViewOrder(order);
-                                          }}
-                                        >
-                                          Ver
-                                        </Button>
-                                      )}
+    const amount = parseFloat(expenseAmount.replace(',', '.'));
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Informe um valor válido para a despesa');
+      return;
+    }
+
+    setExpenseModalOpen(false);
+    
+    await executeStatusChange(
+      pendingDrag.orderId,
+      pendingDrag.orderNumber,
+      pendingDrag.newStatus,
+      pendingDrag.oldStatus,
+      pendingDrag.revenueAction,
+      { type: 'add', amount }
+    );
+
+    setPendingDrag(null);
+  };
+
+  const handleExpenseCancel = () => {
+    setExpenseModalOpen(false);
+    setPendingDrag(null);
+  };
+
+  return (
+    <>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        {/* Status tabs header */}
+        <div className="flex items-center gap-6 mb-4 border-b pb-3 overflow-x-auto">
+          {ORDER_STATUSES.map((status) => {
+            const count = getOrdersByStatus(status.id).length;
+            return (
+              <div key={status.id} className="flex items-center gap-2 shrink-0">
+                <div className={`w-3 h-3 rounded-full ${status.color}`} />
+                <span className="text-sm font-medium text-foreground">{status.label}</span>
+                <span className="text-sm text-muted-foreground">{count}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Kanban columns */}
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {ORDER_STATUSES.map((status) => {
+            const statusOrders = getOrdersByStatus(status.id);
+            
+            return (
+              <Droppable key={status.id} droppableId={status.id}>
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={`flex-1 min-w-[200px] min-h-[200px] p-2 rounded-lg transition-colors ${
+                      snapshot.isDraggingOver 
+                        ? 'bg-primary/10 border-2 border-dashed border-primary' 
+                        : 'bg-muted/30'
+                    }`}
+                  >
+                    {statusOrders.length === 0 ? (
+                      <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+                        Nenhum pedido
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {statusOrders.map((order, index) => {
+                          const isPending = pendingUpdates.has(order.id);
+                          return (
+                            <Draggable key={order.id} draggableId={order.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`bg-card border rounded-lg p-3 cursor-grab active:cursor-grabbing transition-all ${
+                                    snapshot.isDragging 
+                                      ? 'shadow-lg scale-105 rotate-1 ring-2 ring-primary' 
+                                      : 'hover:shadow-md'
+                                  } ${isPending ? 'opacity-70' : ''}`}
+                                >
+                                  <div className="flex items-start gap-2">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-bold text-sm text-foreground">
+                                        {order.number}
+                                      </div>
+                                      <div className="text-sm text-muted-foreground truncate">
+                                        {order.client_name}
+                                      </div>
+                                      <div className="flex items-center justify-between mt-2">
+                                        <span className="text-sm font-bold text-primary">
+                                          {maskCurrency(Number(order.total))}
+                                        </span>
+                                        {onViewOrder && (
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 px-2 text-xs text-muted-foreground hover:text-primary"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              onViewOrder(order);
+                                            }}
+                                          >
+                                            Ver
+                                          </Button>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
-                              </div>
-                            )}
-                          </Draggable>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          );
-        })}
-      </div>
-    </DragDropContext>
+                              )}
+                            </Draggable>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            );
+          })}
+        </div>
+      </DragDropContext>
+
+      {/* Expense Modal */}
+      <Dialog open={expenseModalOpen} onOpenChange={setExpenseModalOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Despesa de Produção</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="expense-amount">
+              Informe o valor da despesa para o pedido {pendingDrag?.orderNumber}:
+            </Label>
+            <Input
+              id="expense-amount"
+              type="text"
+              placeholder="0,00"
+              value={expenseAmount}
+              onChange={(e) => setExpenseAmount(e.target.value)}
+              className="mt-2"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleExpenseCancel}>
+              Cancelar
+            </Button>
+            <Button onClick={handleExpenseConfirm}>
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

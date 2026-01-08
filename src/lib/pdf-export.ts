@@ -570,8 +570,13 @@ export const generateOrderPDF = async (order: Order, company: Company | null, cl
   const addr = order.delivery_address as unknown as DeliveryAddress | null;
   
   if (addr) {
-    const streetLine = `${addr.street || ''}${addr.number ? ', ' + addr.number : ''}${addr.complement ? ' - ' + addr.complement : ''}`;
+    const streetLine = `${addr.street || ''}${addr.number ? ', ' + addr.number : ''}`;
     doc.text(streetLine.substring(0, 50), addrX, addrY);
+    
+    if (addr.complement) {
+      addrY += 5;
+      doc.text(`Complemento: ${addr.complement}`, addrX, addrY);
+    }
     
     if (addr.neighborhood) {
       addrY += 5;

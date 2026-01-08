@@ -303,7 +303,7 @@ const Catalogo = () => {
               </p>
             </div> : settings.display.view_mode === "cards" ? (
               /* Cards View Mode */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                 {filteredProducts.map(product => {
                   const availableQtys = getAvailableQuantities(product);
                   const selectedQty = getSelectedQty(product);

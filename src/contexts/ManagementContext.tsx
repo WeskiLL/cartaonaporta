@@ -273,7 +273,21 @@ export function ManagementProvider({ children }: { children: ReactNode }) {
     items: Omit<QuoteItem, 'id' | 'quote_id'>[]
   ): Promise<Quote | null> => {
     try {
-      const number = generateNumber('ORC', quotes.length + 1);
+      // Get the max quote number from the database to avoid duplicates
+      const { data: maxQuoteData } = await supabase
+        .from('quotes')
+        .select('number')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      let nextNumber = 1;
+      if (maxQuoteData?.number) {
+        const currentNumber = parseInt(maxQuoteData.number.replace('ORC', ''), 10);
+        nextNumber = isNaN(currentNumber) ? 1 : currentNumber + 1;
+      }
+      
+      const number = generateNumber('ORC', nextNumber);
       const { data, error } = await supabase
         .from('quotes')
         .insert([{ ...quote, number }])
@@ -340,7 +354,21 @@ export function ManagementProvider({ children }: { children: ReactNode }) {
     if (!quote) return null;
 
     try {
-      const number = generateNumber('PED', orders.length + 1);
+      // Get the max order number from the database to avoid duplicates
+      const { data: maxOrderData } = await supabase
+        .from('orders')
+        .select('number')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      let nextNumber = 1;
+      if (maxOrderData?.number) {
+        const currentNumber = parseInt(maxOrderData.number.replace('PED', ''), 10);
+        nextNumber = isNaN(currentNumber) ? 1 : currentNumber + 1;
+      }
+      
+      const number = generateNumber('PED', nextNumber);
       const orderData = {
         number,
         quote_id: quoteId,
@@ -422,7 +450,21 @@ export function ManagementProvider({ children }: { children: ReactNode }) {
     items: Omit<QuoteItem, 'id' | 'order_id'>[]
   ): Promise<Order | null> => {
     try {
-      const number = generateNumber('PED', orders.length + 1);
+      // Get the max order number from the database to avoid duplicates
+      const { data: maxOrderData } = await supabase
+        .from('orders')
+        .select('number')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      let nextNumber = 1;
+      if (maxOrderData?.number) {
+        const currentNumber = parseInt(maxOrderData.number.replace('PED', ''), 10);
+        nextNumber = isNaN(currentNumber) ? 1 : currentNumber + 1;
+      }
+      
+      const number = generateNumber('PED', nextNumber);
       const { data, error } = await supabase
         .from('orders')
         .insert([{ ...order, number }])

@@ -4,6 +4,7 @@ import { Order } from '@/types/management';
 import { maskCurrency } from '@/lib/masks';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -52,6 +53,19 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
   const [pendingDrag, setPendingDrag] = useState<{
     orderId: string;
     orderNumber: string;
+    clientName: string;
+    newStatus: OrderStatus;
+    oldStatus: OrderStatus;
+    revenueAction: 'add' | 'remove' | 'none';
+  } | null>(null);
+
+  // Tracking modal state
+  const [trackingModalOpen, setTrackingModalOpen] = useState(false);
+  const [trackingCode, setTrackingCode] = useState('');
+  const [pendingShippingDrag, setPendingShippingDrag] = useState<{
+    orderId: string;
+    orderNumber: string;
+    clientName: string;
     newStatus: OrderStatus;
     oldStatus: OrderStatus;
     revenueAction: 'add' | 'remove' | 'none';
@@ -94,12 +108,28 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
       setPendingDrag({
         orderId,
         orderNumber: order.number,
+        clientName: order.client_name,
         newStatus,
         oldStatus,
         revenueAction,
       });
       setExpenseAmount('');
       setExpenseModalOpen(true);
+      return;
+    }
+
+    // Check if moving to shipping - need to ask for tracking code
+    if (newStatus === 'shipping' && oldStatus !== 'shipping') {
+      setPendingShippingDrag({
+        orderId,
+        orderNumber: order.number,
+        clientName: order.client_name,
+        newStatus,
+        oldStatus,
+        revenueAction,
+      });
+      setTrackingCode('');
+      setTrackingModalOpen(true);
       return;
     }
 
@@ -169,6 +199,69 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
   const handleExpenseCancel = () => {
     setExpenseModalOpen(false);
     setPendingDrag(null);
+  };
+
+  const handleTrackingConfirm = async () => {
+    if (!pendingShippingDrag) return;
+
+    const code = trackingCode.trim().toUpperCase();
+    if (!code) {
+      toast.error('Informe o código de rastreio');
+      return;
+    }
+
+    setTrackingModalOpen(false);
+
+    // Add tracking to order_trackings table
+    try {
+      await supabase
+        .from('order_trackings')
+        .insert([{
+          order_id: pendingShippingDrag.orderId,
+          order_number: pendingShippingDrag.orderNumber,
+          client_name: pendingShippingDrag.clientName,
+          tracking_code: code,
+          carrier: 'correios',
+          status: 'pending',
+          events: [],
+        }]);
+      
+      toast.success('Rastreio adicionado automaticamente!');
+    } catch (error) {
+      console.error('Error adding tracking:', error);
+      // Continue with status change even if tracking fails
+    }
+    
+    await executeStatusChange(
+      pendingShippingDrag.orderId,
+      pendingShippingDrag.orderNumber,
+      pendingShippingDrag.newStatus,
+      pendingShippingDrag.oldStatus,
+      pendingShippingDrag.revenueAction
+    );
+
+    setPendingShippingDrag(null);
+  };
+
+  const handleTrackingCancel = () => {
+    setTrackingModalOpen(false);
+    setPendingShippingDrag(null);
+  };
+
+  const handleTrackingSkip = async () => {
+    if (!pendingShippingDrag) return;
+
+    setTrackingModalOpen(false);
+    
+    await executeStatusChange(
+      pendingShippingDrag.orderId,
+      pendingShippingDrag.orderNumber,
+      pendingShippingDrag.newStatus,
+      pendingShippingDrag.oldStatus,
+      pendingShippingDrag.revenueAction
+    );
+
+    setPendingShippingDrag(null);
   };
 
   return (
@@ -295,6 +388,43 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
               Cancelar
             </Button>
             <Button onClick={handleExpenseConfirm}>
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tracking Modal */}
+      <Dialog open={trackingModalOpen} onOpenChange={setTrackingModalOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Código de Rastreio</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="tracking-code">
+              Informe o código de rastreio para o pedido {pendingShippingDrag?.orderNumber}:
+            </Label>
+            <Input
+              id="tracking-code"
+              type="text"
+              placeholder="Ex: AA123456789BR"
+              value={trackingCode}
+              onChange={(e) => setTrackingCode(e.target.value.toUpperCase())}
+              className="mt-2"
+              autoFocus
+            />
+            <p className="text-xs text-muted-foreground mt-2">
+              O rastreio será adicionado automaticamente na aba "Rastreio de Pedidos"
+            </p>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={handleTrackingCancel}>
+              Cancelar
+            </Button>
+            <Button variant="ghost" onClick={handleTrackingSkip}>
+              Pular
+            </Button>
+            <Button onClick={handleTrackingConfirm}>
               Confirmar
             </Button>
           </DialogFooter>

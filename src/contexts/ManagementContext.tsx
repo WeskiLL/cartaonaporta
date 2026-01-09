@@ -273,21 +273,22 @@ export function ManagementProvider({ children }: { children: ReactNode }) {
     items: Omit<QuoteItem, 'id' | 'quote_id'>[]
   ): Promise<Quote | null> => {
     try {
-      // Get the max quote number from the database to avoid duplicates
-      const { data: maxQuoteData } = await supabase
+      // Get ALL quote numbers and find the maximum to avoid duplicates
+      const { data: allQuotes } = await supabase
         .from('quotes')
-        .select('number')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .select('number');
       
-      let nextNumber = 1;
-      if (maxQuoteData?.number) {
-        const currentNumber = parseInt(maxQuoteData.number.replace('ORC', ''), 10);
-        nextNumber = isNaN(currentNumber) ? 1 : currentNumber + 1;
+      let maxNumber = 0;
+      if (allQuotes && allQuotes.length > 0) {
+        allQuotes.forEach(q => {
+          const num = parseInt(q.number.replace('ORC', ''), 10);
+          if (!isNaN(num) && num > maxNumber) {
+            maxNumber = num;
+          }
+        });
       }
       
-      const number = generateNumber('ORC', nextNumber);
+      const number = generateNumber('ORC', maxNumber + 1);
       const { data, error } = await supabase
         .from('quotes')
         .insert([{ ...quote, number }])
@@ -354,21 +355,22 @@ export function ManagementProvider({ children }: { children: ReactNode }) {
     if (!quote) return null;
 
     try {
-      // Get the max order number from the database to avoid duplicates
-      const { data: maxOrderData } = await supabase
+      // Get ALL order numbers and find the maximum to avoid duplicates
+      const { data: allOrders } = await supabase
         .from('orders')
-        .select('number')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .select('number');
       
-      let nextNumber = 1;
-      if (maxOrderData?.number) {
-        const currentNumber = parseInt(maxOrderData.number.replace('PED', ''), 10);
-        nextNumber = isNaN(currentNumber) ? 1 : currentNumber + 1;
+      let maxNumber = 0;
+      if (allOrders && allOrders.length > 0) {
+        allOrders.forEach(o => {
+          const num = parseInt(o.number.replace('PED', ''), 10);
+          if (!isNaN(num) && num > maxNumber) {
+            maxNumber = num;
+          }
+        });
       }
       
-      const number = generateNumber('PED', nextNumber);
+      const number = generateNumber('PED', maxNumber + 1);
       const orderData = {
         number,
         quote_id: quoteId,
@@ -450,21 +452,22 @@ export function ManagementProvider({ children }: { children: ReactNode }) {
     items: Omit<QuoteItem, 'id' | 'order_id'>[]
   ): Promise<Order | null> => {
     try {
-      // Get the max order number from the database to avoid duplicates
-      const { data: maxOrderData } = await supabase
+      // Get ALL order numbers and find the maximum to avoid duplicates
+      const { data: allOrders } = await supabase
         .from('orders')
-        .select('number')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .select('number');
       
-      let nextNumber = 1;
-      if (maxOrderData?.number) {
-        const currentNumber = parseInt(maxOrderData.number.replace('PED', ''), 10);
-        nextNumber = isNaN(currentNumber) ? 1 : currentNumber + 1;
+      let maxNumber = 0;
+      if (allOrders && allOrders.length > 0) {
+        allOrders.forEach(o => {
+          const num = parseInt(o.number.replace('PED', ''), 10);
+          if (!isNaN(num) && num > maxNumber) {
+            maxNumber = num;
+          }
+        });
       }
       
-      const number = generateNumber('PED', nextNumber);
+      const number = generateNumber('PED', maxNumber + 1);
       const { data, error } = await supabase
         .from('orders')
         .insert([{ ...order, number }])

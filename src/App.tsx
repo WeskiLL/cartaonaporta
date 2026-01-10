@@ -40,21 +40,21 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/catalogo" element={<Catalogo />} />
-                  <Route path="/admin" element={<AdminLogin />} />
-                  <Route path="/admin/dashboard" element={<Navigate to="/admin/gestao" replace />} />
+                  <Route path="/deep" element={<AdminLogin />} />
+                  <Route path="/deep/dashboard" element={<Navigate to="/deep/gestao" replace />} />
                   {/* Management Routes */}
-                  <Route path="/admin/gestao" element={<ManagementDashboard />} />
-                  <Route path="/admin/gestao/clientes" element={<ClientsPage />} />
-                  <Route path="/admin/gestao/pedidos" element={<OrdersPage />} />
-                  <Route path="/admin/gestao/rastreio" element={<TrackingPage />} />
-                  <Route path="/admin/gestao/financeiro" element={<FinancialPage />} />
-                  <Route path="/admin/gestao/produtos" element={<ProductsPage />} />
-                  <Route path="/admin/gestao/relatorios" element={<ReportsPage />} />
-                  <Route path="/admin/gestao/mockups" element={<MockupsPage />} />
-                  <Route path="/admin/gestao/site" element={<SitePage />} />
-                  <Route path="/admin/gestao/catalogo" element={<CatalogoSettingsPage />} />
-                  <Route path="/admin/gestao/usuarios" element={<UsersPage />} />
-                  <Route path="/admin/gestao/empresa" element={<CompanyPage />} />
+                  <Route path="/deep/gestao" element={<ManagementDashboard />} />
+                  <Route path="/deep/gestao/clientes" element={<ClientsPage />} />
+                  <Route path="/deep/gestao/pedidos" element={<OrdersPage />} />
+                  <Route path="/deep/gestao/rastreio" element={<TrackingPage />} />
+                  <Route path="/deep/gestao/financeiro" element={<FinancialPage />} />
+                  <Route path="/deep/gestao/produtos" element={<ProductsPage />} />
+                  <Route path="/deep/gestao/relatorios" element={<ReportsPage />} />
+                  <Route path="/deep/gestao/mockups" element={<MockupsPage />} />
+                  <Route path="/deep/gestao/site" element={<SitePage />} />
+                  <Route path="/deep/gestao/catalogo" element={<CatalogoSettingsPage />} />
+                  <Route path="/deep/gestao/usuarios" element={<UsersPage />} />
+                  <Route path="/deep/gestao/empresa" element={<CompanyPage />} />
                   {/* Public Tracking */}
                   <Route path="/rastreio/:trackingCode" element={<TrackingPublic />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

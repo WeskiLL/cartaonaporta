@@ -22,7 +22,7 @@ const AdminLogin = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/admin/gestao");
+      navigate("/deep/gestao");
     }
   }, [isAuthenticated, navigate]);
 
@@ -42,7 +42,7 @@ const AdminLogin = () => {
     const result = await login(email, password);
     
     if (result.success) {
-      navigate("/admin/gestao");
+      navigate("/deep/gestao");
     } else {
       setError(result.error || "Credenciais inválidas");
     }

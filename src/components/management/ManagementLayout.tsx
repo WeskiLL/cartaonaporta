@@ -17,7 +17,7 @@ export function ManagementLayout({ children }: ManagementLayoutProps) {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      navigate('/admin');
+      navigate('/deep');
     }
   }, [isAuthenticated, isLoading, navigate]);
 

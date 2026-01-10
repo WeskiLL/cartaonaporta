@@ -175,7 +175,7 @@ export default function ProductsPage() {
         description="Produtos sincronizados com o catálogo do site"
         actions={
           <div className="flex gap-2">
-            <Link to="/admin">
+            <Link to="/deep/gestao/catalogo">
               <Button variant="outline" size="sm">
                 <ExternalLink className="w-4 h-4 mr-2" />
                 Ir para Catálogo

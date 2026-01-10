@@ -22,18 +22,18 @@ import {
 import { Button } from '@/components/ui/button';
 
 const menuItems = [
-  { path: '/admin/gestao', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { path: '/admin/gestao/pedidos', label: 'Pedidos e Orçamentos', icon: FileText },
-  { path: '/admin/gestao/rastreio', label: 'Rastreio de Pedidos', icon: Truck },
-  { path: '/admin/gestao/clientes', label: 'Clientes', icon: Users },
-  { path: '/admin/gestao/produtos', label: 'Produtos', icon: Package },
-  { path: '/admin/gestao/financeiro', label: 'Financeiro', icon: DollarSign },
-  { path: '/admin/gestao/relatorios', label: 'Relatórios', icon: BarChart3 },
-  { path: '/admin/gestao/mockups', label: 'Mockups', icon: Image },
-  { path: '/admin/gestao/site', label: 'Gerenciar Site', icon: Globe },
-  { path: '/admin/gestao/catalogo', label: 'Catálogo', icon: BookOpen },
-  { path: '/admin/gestao/usuarios', label: 'Usuários', icon: Users },
-  { path: '/admin/gestao/empresa', label: 'Minha Empresa', icon: Building2 },
+  { path: '/deep/gestao', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { path: '/deep/gestao/pedidos', label: 'Pedidos e Orçamentos', icon: FileText },
+  { path: '/deep/gestao/rastreio', label: 'Rastreio de Pedidos', icon: Truck },
+  { path: '/deep/gestao/clientes', label: 'Clientes', icon: Users },
+  { path: '/deep/gestao/produtos', label: 'Produtos', icon: Package },
+  { path: '/deep/gestao/financeiro', label: 'Financeiro', icon: DollarSign },
+  { path: '/deep/gestao/relatorios', label: 'Relatórios', icon: BarChart3 },
+  { path: '/deep/gestao/mockups', label: 'Mockups', icon: Image },
+  { path: '/deep/gestao/site', label: 'Gerenciar Site', icon: Globe },
+  { path: '/deep/gestao/catalogo', label: 'Catálogo', icon: BookOpen },
+  { path: '/deep/gestao/usuarios', label: 'Usuários', icon: Users },
+  { path: '/deep/gestao/empresa', label: 'Minha Empresa', icon: Building2 },
 ];
 
 interface ManagementSidebarProps {

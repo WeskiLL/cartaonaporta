@@ -10,11 +10,27 @@ import { useManagement } from '@/contexts/ManagementContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ShoppingCart, DollarSign, Users, FileText, Plus, TrendingUp, TrendingDown, RefreshCw, Loader2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ShoppingCart, DollarSign, Users, FileText, Plus, TrendingUp, TrendingDown, RefreshCw, Loader2, Calendar } from 'lucide-react';
 import { maskCurrency } from '@/lib/masks';
 import { toast } from 'sonner';
 
 type OrderStatus = 'awaiting_payment' | 'creating_art' | 'production' | 'shipping' | 'delivered';
+
+const MONTHS = [
+  { value: '0', label: 'Janeiro' },
+  { value: '1', label: 'Fevereiro' },
+  { value: '2', label: 'Março' },
+  { value: '3', label: 'Abril' },
+  { value: '4', label: 'Maio' },
+  { value: '5', label: 'Junho' },
+  { value: '6', label: 'Julho' },
+  { value: '7', label: 'Agosto' },
+  { value: '8', label: 'Setembro' },
+  { value: '9', label: 'Outubro' },
+  { value: '10', label: 'Novembro' },
+  { value: '11', label: 'Dezembro' },
+];
 
 export default function ManagementDashboard() {
   const { 
@@ -37,6 +53,17 @@ export default function ManagementDashboard() {
   const [orderFormOpen, setOrderFormOpen] = useState(false);
   const [orderFormMode, setOrderFormMode] = useState<'quote' | 'order'>('order');
   const [convertingQuoteId, setConvertingQuoteId] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth()));
+  const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
+
+  // Generate available years (current year and 2 years back)
+  const availableYears = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return [currentYear - 2, currentYear - 1, currentYear, currentYear + 1].map(y => ({
+      value: String(y),
+      label: String(y)
+    }));
+  }, []);
 
 
   useEffect(() => {
@@ -47,18 +74,17 @@ export default function ManagementDashboard() {
   }, [fetchOrders, fetchQuotes, fetchTransactions, fetchClients]);
 
   const stats = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    const filterMonth = parseInt(selectedMonth, 10);
+    const filterYear = parseInt(selectedYear, 10);
 
     const monthlyOrders = orders.filter(o => {
       const orderDate = new Date(o.created_at);
-      return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
+      return orderDate.getMonth() === filterMonth && orderDate.getFullYear() === filterYear;
     });
 
     const monthlyTransactions = transactions.filter(t => {
       const transDate = new Date(t.date);
-      return transDate.getMonth() === currentMonth && transDate.getFullYear() === currentYear;
+      return transDate.getMonth() === filterMonth && transDate.getFullYear() === filterYear;
     });
 
     const totalRevenue = monthlyTransactions
@@ -77,7 +103,7 @@ export default function ManagementDashboard() {
       expenses: totalExpenses,
       profit: totalRevenue - totalExpenses,
     };
-  }, [orders, quotes, transactions, clients]);
+  }, [orders, quotes, transactions, clients, selectedMonth, selectedYear]);
 
   const handleStatusChange = useCallback(async (
     orderId: string, 
@@ -204,30 +230,63 @@ export default function ManagementDashboard() {
         />
       </div>
 
-      {/* Financial Summary */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8">
-        <div className="bg-card rounded-xl border border-border p-3 sm:p-6">
-          <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
-            <span className="text-xs sm:text-sm text-muted-foreground">Receitas</span>
+      {/* Month/Year Filter and Financial Summary */}
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Período:</span>
           </div>
-          <p className="text-sm sm:text-2xl font-display font-bold text-green-600">{maskCurrency(stats.revenue)}</p>
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Mês" />
+            </SelectTrigger>
+            <SelectContent>
+              {MONTHS.map((month) => (
+                <SelectItem key={month.value} value={month.value}>
+                  {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <SelectTrigger className="w-[100px]">
+              <SelectValue placeholder="Ano" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableYears.map((year) => (
+                <SelectItem key={year.value} value={year.value}>
+                  {year.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <div className="bg-card rounded-xl border border-border p-3 sm:p-6">
-          <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-            <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
-            <span className="text-xs sm:text-sm text-muted-foreground">Despesas</span>
+
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="bg-card rounded-xl border border-border p-3 sm:p-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+              <span className="text-xs sm:text-sm text-muted-foreground">Receitas</span>
+            </div>
+            <p className="text-sm sm:text-2xl font-display font-bold text-green-600">{maskCurrency(stats.revenue)}</p>
           </div>
-          <p className="text-sm sm:text-2xl font-display font-bold text-red-600">{maskCurrency(stats.expenses)}</p>
-        </div>
-        <div className="bg-card rounded-xl border border-border p-3 sm:p-6">
-          <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-            <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-            <span className="text-xs sm:text-sm text-muted-foreground">Lucro</span>
+          <div className="bg-card rounded-xl border border-border p-3 sm:p-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+              <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+              <span className="text-xs sm:text-sm text-muted-foreground">Despesas</span>
+            </div>
+            <p className="text-sm sm:text-2xl font-display font-bold text-red-600">{maskCurrency(stats.expenses)}</p>
           </div>
-          <p className={`text-sm sm:text-2xl font-display font-bold ${stats.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {maskCurrency(stats.profit)}
-          </p>
+          <div className="bg-card rounded-xl border border-border p-3 sm:p-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              <span className="text-xs sm:text-sm text-muted-foreground">Lucro</span>
+            </div>
+            <p className={`text-sm sm:text-2xl font-display font-bold ${stats.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {maskCurrency(stats.profit)}
+            </p>
+          </div>
         </div>
       </div>
 

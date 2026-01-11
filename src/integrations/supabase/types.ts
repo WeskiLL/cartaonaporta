@@ -155,6 +155,30 @@ export type Database = {
         }
         Relationships: []
       }
+      login_attempts: {
+        Row: {
+          attempted_at: string
+          email: string
+          id: string
+          ip_address: string | null
+          success: boolean
+        }
+        Insert: {
+          attempted_at?: string
+          email: string
+          id?: string
+          ip_address?: string | null
+          success?: boolean
+        }
+        Update: {
+          attempted_at?: string
+          email?: string
+          id?: string
+          ip_address?: string | null
+          success?: boolean
+        }
+        Relationships: []
+      }
       management_products: {
         Row: {
           base_price: number | null
@@ -629,6 +653,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_remaining_login_attempts: {
+        Args: { check_email: string }
+        Returns: number
+      }
+      get_unblock_time_minutes: {
+        Args: { check_email: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -636,6 +668,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_login_blocked: { Args: { check_email: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user" | "vendedor" | "financeiro"

@@ -6,9 +6,10 @@ interface AdminAuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   user: User | null;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; remainingAttempts?: number; blockedMinutes?: number }>;
   logout: () => Promise<void>;
   isLoading: boolean;
+  checkLoginBlocked: (email: string) => Promise<{ blocked: boolean; remainingAttempts: number; blockedMinutes: number }>;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
@@ -38,6 +39,58 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Error checking admin role");
       return { isAdmin: false, error: "Erro ao verificar permissões" };
+    }
+  };
+
+  // Check if login is blocked for an email
+  const checkLoginBlocked = async (email: string): Promise<{ blocked: boolean; remainingAttempts: number; blockedMinutes: number }> => {
+    try {
+      const normalizedEmail = email.toLowerCase().trim();
+      
+      // Check if blocked
+      const { data: blockedData, error: blockedError } = await supabase
+        .rpc('is_login_blocked', { check_email: normalizedEmail });
+      
+      if (blockedError) {
+        console.error("Error checking login blocked:", blockedError);
+        return { blocked: false, remainingAttempts: 10, blockedMinutes: 0 };
+      }
+
+      // Get remaining attempts
+      const { data: attemptsData } = await supabase
+        .rpc('get_remaining_login_attempts', { check_email: normalizedEmail });
+      
+      // Get unblock time if blocked
+      let blockedMinutes = 0;
+      if (blockedData) {
+        const { data: timeData } = await supabase
+          .rpc('get_unblock_time_minutes', { check_email: normalizedEmail });
+        blockedMinutes = timeData || 0;
+      }
+
+      return {
+        blocked: !!blockedData,
+        remainingAttempts: attemptsData || 0,
+        blockedMinutes
+      };
+    } catch (error) {
+      console.error("Error checking login status:", error);
+      return { blocked: false, remainingAttempts: 10, blockedMinutes: 0 };
+    }
+  };
+
+  // Record login attempt
+  const recordLoginAttempt = async (email: string, success: boolean) => {
+    try {
+      const normalizedEmail = email.toLowerCase().trim();
+      await supabase
+        .from('login_attempts')
+        .insert({
+          email: normalizedEmail,
+          success
+        });
+    } catch (error) {
+      console.error("Error recording login attempt:", error);
     }
   };
 
@@ -104,8 +157,19 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; remainingAttempts?: number; blockedMinutes?: number }> => {
     try {
+      // Check if login is blocked
+      const blockStatus = await checkLoginBlocked(email);
+      
+      if (blockStatus.blocked) {
+        return { 
+          success: false, 
+          error: `Muitas tentativas de login. Tente novamente em ${blockStatus.blockedMinutes} minutos.`,
+          blockedMinutes: blockStatus.blockedMinutes
+        };
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -113,10 +177,21 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error("Auth error");
-        return { success: false, error: error.message };
+        // Record failed attempt
+        await recordLoginAttempt(email, false);
+        
+        // Get updated remaining attempts
+        const updatedStatus = await checkLoginBlocked(email);
+        
+        return { 
+          success: false, 
+          error: error.message,
+          remainingAttempts: updatedStatus.remainingAttempts
+        };
       }
 
       if (!data.user) {
+        await recordLoginAttempt(email, false);
         return { success: false, error: "Erro ao fazer login" };
       }
 
@@ -126,19 +201,25 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
       if (adminCheck.error) {
         console.error("Admin check error");
         await supabase.auth.signOut();
+        await recordLoginAttempt(email, false);
         return { success: false, error: adminCheck.error };
       }
       
       if (!adminCheck.isAdmin) {
         // Sign out if not admin
         await supabase.auth.signOut();
+        await recordLoginAttempt(email, false);
         return { success: false, error: "Acesso não autorizado. Apenas administradores podem acessar." };
       }
 
+      // Record successful login
+      await recordLoginAttempt(email, true);
+      
       setIsAdmin(true);
       return { success: true };
     } catch (error) {
       console.error("Login error");
+      await recordLoginAttempt(email, false);
       return { success: false, error: "Erro de conexão" };
     }
   };
@@ -158,7 +239,8 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         login, 
         logout, 
-        isLoading 
+        isLoading,
+        checkLoginBlocked
       }}
     >
       {children}

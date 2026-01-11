@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
-import { Lock, Mail, AlertCircle, Loader2 } from "lucide-react";
+import { Lock, Mail, AlertCircle, Loader2, ShieldAlert } from "lucide-react";
 import { z } from "zod";
 
 const loginSchema = z.object({
@@ -16,8 +16,10 @@ const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
+  const [blockedMinutes, setBlockedMinutes] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login, isAuthenticated, isLoading } = useAdminAuth();
+  const { login, isAuthenticated, isLoading, checkLoginBlocked } = useAdminAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,6 +27,24 @@ const AdminLogin = () => {
       navigate("/deep/gestao");
     }
   }, [isAuthenticated, navigate]);
+
+  // Check block status when email changes (debounced)
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (email && email.includes('@')) {
+        const status = await checkLoginBlocked(email);
+        if (status.blocked) {
+          setBlockedMinutes(status.blockedMinutes);
+          setRemainingAttempts(0);
+        } else {
+          setBlockedMinutes(null);
+          setRemainingAttempts(status.remainingAttempts);
+        }
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [email, checkLoginBlocked]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +65,13 @@ const AdminLogin = () => {
       navigate("/deep/gestao");
     } else {
       setError(result.error || "Credenciais inválidas");
+      
+      if (result.blockedMinutes) {
+        setBlockedMinutes(result.blockedMinutes);
+        setRemainingAttempts(0);
+      } else if (result.remainingAttempts !== undefined) {
+        setRemainingAttempts(result.remainingAttempts);
+      }
     }
     
     setIsSubmitting(false);
@@ -57,6 +84,8 @@ const AdminLogin = () => {
       </div>
     );
   }
+
+  const isBlocked = blockedMinutes !== null && blockedMinutes > 0;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -75,7 +104,19 @@ const AdminLogin = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
+            {isBlocked && (
+              <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <ShieldAlert className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-destructive">Acesso temporariamente bloqueado</p>
+                  <p className="text-xs text-destructive/80 mt-1">
+                    Muitas tentativas de login. Tente novamente em {blockedMinutes} minutos.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {error && !isBlocked && (
               <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive">
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                 <span className="text-sm">{error}</span>
@@ -95,6 +136,7 @@ const AdminLogin = () => {
                   className="pl-10"
                   required
                   autoComplete="email"
+                  disabled={isBlocked}
                 />
               </div>
             </div>
@@ -112,22 +154,31 @@ const AdminLogin = () => {
                   className="pl-10"
                   required
                   autoComplete="current-password"
+                  disabled={isBlocked}
                 />
               </div>
             </div>
+
+            {remainingAttempts !== null && remainingAttempts < 5 && !isBlocked && (
+              <p className="text-xs text-amber-600 text-center">
+                ⚠️ {remainingAttempts} tentativas restantes
+              </p>
+            )}
 
             <Button
               type="submit"
               variant="hero"
               size="lg"
               className="w-full"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isBlocked}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Entrando...
                 </>
+              ) : isBlocked ? (
+                "Bloqueado"
               ) : (
                 "Entrar"
               )}

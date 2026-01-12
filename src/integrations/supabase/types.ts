@@ -247,6 +247,7 @@ export type Database = {
           carrier: string
           client_name: string
           created_at: string
+          estimated_delivery: string | null
           events: Json | null
           id: string
           last_update: string | null
@@ -260,6 +261,7 @@ export type Database = {
           carrier?: string
           client_name: string
           created_at?: string
+          estimated_delivery?: string | null
           events?: Json | null
           id?: string
           last_update?: string | null
@@ -273,6 +275,7 @@ export type Database = {
           carrier?: string
           client_name?: string
           created_at?: string
+          estimated_delivery?: string | null
           events?: Json | null
           id?: string
           last_update?: string | null

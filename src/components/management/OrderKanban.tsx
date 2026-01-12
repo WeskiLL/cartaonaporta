@@ -5,6 +5,10 @@ import { maskCurrency } from '@/lib/masks';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +18,12 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 const ORDER_STATUSES = [
   { id: 'awaiting_payment', label: 'Aguardando Pagamento', color: 'bg-amber-500' },
@@ -62,6 +72,7 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
   // Tracking modal state
   const [trackingModalOpen, setTrackingModalOpen] = useState(false);
   const [trackingCode, setTrackingCode] = useState('');
+  const [estimatedDelivery, setEstimatedDelivery] = useState<Date | undefined>(undefined);
   const [pendingShippingDrag, setPendingShippingDrag] = useState<{
     orderId: string;
     orderNumber: string;
@@ -129,6 +140,7 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
         revenueAction,
       });
       setTrackingCode('');
+      setEstimatedDelivery(undefined);
       setTrackingModalOpen(true);
       return;
     }
@@ -224,6 +236,7 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
           carrier: 'correios',
           status: 'pending',
           events: [],
+          estimated_delivery: estimatedDelivery ? format(estimatedDelivery, 'yyyy-MM-dd') : null,
         }]);
       
       toast.success('Rastreio adicionado automaticamente!');
@@ -241,6 +254,7 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
     );
 
     setPendingShippingDrag(null);
+    setEstimatedDelivery(undefined);
   };
 
   const handleTrackingCancel = () => {
@@ -396,24 +410,60 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
 
       {/* Tracking Modal */}
       <Dialog open={trackingModalOpen} onOpenChange={setTrackingModalOpen}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-[450px]">
           <DialogHeader>
-            <DialogTitle>Código de Rastreio</DialogTitle>
+            <DialogTitle>Informações de Envio</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="tracking-code">
-              Informe o código de rastreio para o pedido {pendingShippingDrag?.orderNumber}:
-            </Label>
-            <Input
-              id="tracking-code"
-              type="text"
-              placeholder="Ex: AA123456789BR"
-              value={trackingCode}
-              onChange={(e) => setTrackingCode(e.target.value.toUpperCase())}
-              className="mt-2"
-              autoFocus
-            />
-            <p className="text-xs text-muted-foreground mt-2">
+          <div className="py-4 space-y-4">
+            <div>
+              <Label htmlFor="tracking-code">
+                Código de Rastreio para o pedido {pendingShippingDrag?.orderNumber}:
+              </Label>
+              <Input
+                id="tracking-code"
+                type="text"
+                placeholder="Ex: AA123456789BR"
+                value={trackingCode}
+                onChange={(e) => setTrackingCode(e.target.value.toUpperCase())}
+                className="mt-2"
+                autoFocus
+              />
+            </div>
+            
+            <div>
+              <Label>Previsão de Entrega:</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full mt-2 justify-start text-left font-normal",
+                      !estimatedDelivery && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {estimatedDelivery ? (
+                      format(estimatedDelivery, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+                    ) : (
+                      <span>Selecione uma data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 z-[200]" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={estimatedDelivery}
+                    onSelect={setEstimatedDelivery}
+                    disabled={(date) => date < new Date()}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
               O rastreio será adicionado automaticamente na aba "Rastreio de Pedidos"
             </p>
           </div>

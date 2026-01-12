@@ -7,6 +7,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { ManagementProvider } from "@/contexts/ManagementContext";
+import { usePwaNavigation } from "@/hooks/usePwaNavigation";
 import Index from "./pages/Index";
 import Catalogo from "./pages/Catalogo";
 import AdminLogin from "./pages/AdminLogin";
@@ -27,6 +28,12 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Component to handle PWA navigation
+const PwaNavigationHandler = () => {
+  usePwaNavigation();
+  return null;
+};
+
 const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
@@ -37,6 +44,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
+                <PwaNavigationHandler />
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/catalogo" element={<Catalogo />} />

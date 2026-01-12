@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Truck, Copy, ExternalLink, Trash2, Loader2, Package, MessageCircle } from 'lucide-react';
+import { Plus, Truck, Copy, ExternalLink, Trash2, Loader2, Package, MessageCircle, CalendarClock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useManagement } from '@/contexts/ManagementContext';
 import { toast } from 'sonner';
@@ -33,6 +33,7 @@ interface TrackingItem {
   carrier: string;
   status: string;
   last_update?: string;
+  estimated_delivery?: string;
   events: TrackingEvent[];
   created_at: string;
   updated_at: string;
@@ -309,6 +310,12 @@ export default function TrackingPage() {
                         {tracking.client_name}
                         {tracking.order_number && ` • ${tracking.order_number}`}
                       </p>
+                      {tracking.estimated_delivery && (
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
+                          <CalendarClock className="w-3.5 h-3.5 text-primary" />
+                          <span>Previsão: <span className="font-medium text-foreground">{format(new Date(tracking.estimated_delivery + 'T12:00:00'), "dd/MM/yyyy", { locale: ptBR })}</span></span>
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">

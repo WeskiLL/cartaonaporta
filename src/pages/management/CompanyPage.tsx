@@ -12,11 +12,22 @@ import { toast } from 'sonner';
 import { maskPhone, maskCPFOrCNPJ, maskCEP, unmask } from '@/lib/masks';
 import { fetchAddressByCep } from '@/lib/cep-service';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export default function CompanyPage() {
   const { company, loadingCompany, fetchCompany, updateCompany } = useManagement();
   const [saving, setSaving] = useState(false);
   const [cleaningPdfs, setCleaningPdfs] = useState(false);
+  const [showCleanupDialog, setShowCleanupDialog] = useState(false);
+  const [cleanupPassword, setCleanupPassword] = useState('');
+  const [verifyingPassword, setVerifyingPassword] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -93,6 +104,43 @@ export default function CompanyPage() {
       toast.error('Erro ao executar limpeza de PDFs');
     } finally {
       setCleaningPdfs(false);
+      setShowCleanupDialog(false);
+      setCleanupPassword('');
+    }
+  };
+
+  const handleConfirmCleanup = async () => {
+    if (!cleanupPassword) {
+      toast.error('Digite sua senha para confirmar');
+      return;
+    }
+
+    setVerifyingPassword(true);
+    try {
+      // Get current user email
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) {
+        toast.error('Usuário não encontrado');
+        return;
+      }
+
+      // Verify password by attempting to sign in
+      const { error } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: cleanupPassword,
+      });
+
+      if (error) {
+        toast.error('Senha incorreta');
+        return;
+      }
+
+      // Password verified, proceed with cleanup
+      await handleCleanupPdfs();
+    } catch (err) {
+      toast.error('Erro ao verificar senha');
+    } finally {
+      setVerifyingPassword(false);
     }
   };
 
@@ -251,14 +299,10 @@ export default function CompanyPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={handleCleanupPdfs}
+                    onClick={() => setShowCleanupDialog(true)}
                     disabled={cleaningPdfs}
                   >
-                    {cleaningPdfs ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4 mr-2" />
-                    )}
+                    <Trash2 className="w-4 h-4 mr-2" />
                     Limpar PDFs Antigos
                   </Button>
                 </div>
@@ -274,6 +318,60 @@ export default function CompanyPage() {
           </Button>
         </div>
       </form>
+
+      {/* Cleanup Confirmation Dialog */}
+      <Dialog open={showCleanupDialog} onOpenChange={setShowCleanupDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Limpeza de PDFs</DialogTitle>
+            <DialogDescription>
+              Esta ação irá remover permanentemente todos os PDFs com mais de 60 dias.
+              Digite sua senha para confirmar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="cleanup-password">Senha</Label>
+              <Input
+                id="cleanup-password"
+                type="password"
+                value={cleanupPassword}
+                onChange={(e) => setCleanupPassword(e.target.value)}
+                placeholder="Digite sua senha"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleConfirmCleanup();
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCleanupDialog(false);
+                setCleanupPassword('');
+              }}
+              disabled={verifyingPassword || cleaningPdfs}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmCleanup}
+              disabled={verifyingPassword || cleaningPdfs || !cleanupPassword}
+            >
+              {verifyingPassword || cleaningPdfs ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              Confirmar Limpeza
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </ManagementLayout>
   );
 }

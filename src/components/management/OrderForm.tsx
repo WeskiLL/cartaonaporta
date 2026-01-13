@@ -353,6 +353,12 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
     
     // If creating new client
     if (clientMode === 'new') {
+      // Validate that new client has a name
+      if (!newClient.name.trim()) {
+        toast.error('Informe o nome do cliente');
+        return;
+      }
+      
       // Validate document if provided
       if (newClient.document) {
         const cleaned = unmask(newClient.document);
@@ -365,34 +371,31 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
         }
       }
       
-      // Create client if name provided
-      if (newClient.name.trim()) {
-        const createdClient = await addClient({
-          name: newClient.name,
-          email: newClient.email || '',
-          phone: newClient.phone || '',
-          document: newClient.document || '',
-          address: '',
-          city: '',
-          state: '',
-          zip_code: '',
-        });
-        
-        if (!createdClient) {
-          toast.error('Erro ao criar cliente');
-          return;
-        }
-        
-        clientId = createdClient.id;
-        clientName = createdClient.name;
-      } else {
-        clientName = newClient.name || 'Cliente não informado';
+      // Create client with the provided name
+      const createdClient = await addClient({
+        name: newClient.name.trim(),
+        email: newClient.email || '',
+        phone: newClient.phone || '',
+        document: newClient.document || '',
+        address: '',
+        city: '',
+        state: '',
+        zip_code: '',
+      });
+      
+      if (!createdClient) {
+        toast.error('Erro ao criar cliente');
+        return;
       }
-    }
-    
-    // Client name can be empty now (not required)
-    if (!clientName && !clientId) {
-      clientName = 'Cliente não informado';
+      
+      clientId = createdClient.id;
+      clientName = createdClient.name;
+    } else {
+      // Mode is 'select' - validate that a client is selected
+      if (!selectedClient) {
+        toast.error('Selecione um cliente');
+        return;
+      }
     }
 
     setLoading(true);

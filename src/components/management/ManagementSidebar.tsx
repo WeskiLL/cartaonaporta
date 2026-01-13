@@ -19,10 +19,12 @@ import {
   Globe,
   BookOpen,
   LogOut,
+  User,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 
 const menuItems = [
   { path: '/deep/gestao', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -47,8 +49,22 @@ interface ManagementSidebarProps {
 export function ManagementSidebar({ isCollapsed, onToggle }: ManagementSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAdminAuth();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+
+  // Get display name from email
+  const getUserDisplayName = () => {
+    if (!user?.email) return '';
+    const emailParts = user.email.split('@');
+    const namePart = emailParts[0];
+    // Capitalize first letter and replace dots/underscores with spaces
+    return namePart
+      .replace(/[._]/g, ' ')
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
 
   const toggleTheme = () => {
     const newIsDark = !isDark;
@@ -143,6 +159,27 @@ export function ManagementSidebar({ isCollapsed, onToggle }: ManagementSidebarPr
 
           {/* Footer */}
           <div className="p-4 border-t border-border space-y-2">
+            {/* User Info */}
+            {user && (
+              <div className={cn(
+                'flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/50 mb-2',
+                isCollapsed && 'justify-center px-0'
+              )}>
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <User className="h-4 w-4 text-primary" />
+                </div>
+                {!isCollapsed && (
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {getUserDisplayName()}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {user.email}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
             {/* Theme Toggle */}
             <Button
               variant="ghost"

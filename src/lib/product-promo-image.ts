@@ -60,6 +60,31 @@ const drawOrganicShape = (ctx: CanvasRenderingContext2D, width: number, height: 
   ctx.restore();
 };
 
+// Wrap text into multiple lines
+const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] => {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    const metrics = ctx.measureText(testLine);
+    
+    if (metrics.width > maxWidth && currentLine) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  }
+  
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+  
+  return lines;
+};
+
 // Format currency
 const formatPrice = (value: number): string => {
   return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -157,23 +182,37 @@ export const generateProductPromoImage = async (
 
   // === MARGIN ===
   const MARGIN = 40;
+  const MAX_NAME_WIDTH = WIDTH - MARGIN * 2 - 40;
 
   // === TITLE BLOCK ===
-  // Product name (black, bold, uppercase)
+  // Product name (black, bold, uppercase) - with text wrapping
   ctx.fillStyle = BLACK;
   ctx.font = 'bold 48px Arial, sans-serif';
   ctx.textAlign = 'center';
-  ctx.letterSpacing = '-1px';
-  ctx.fillText(product.name.toUpperCase(), WIDTH / 2, 120);
+  
+  const nameLines = wrapText(ctx, product.name.toUpperCase(), MAX_NAME_WIDTH);
+  let currentY = 120;
+  const lineHeight = 56;
+  
+  for (const line of nameLines) {
+    ctx.fillText(line, WIDTH / 2, currentY);
+    currentY += lineHeight;
+  }
+  
+  // Adjust spacing after name lines
+  const sizeY = currentY + 10;
 
   // Size (orange, extra bold, uppercase)
   ctx.fillStyle = ORANGE_PRIMARY;
   ctx.font = '900 56px Arial, sans-serif';
-  ctx.fillText(product.size?.toUpperCase() || '', WIDTH / 2, 185);
+  ctx.fillText(product.size?.toUpperCase() || '', WIDTH / 2, sizeY);
+
+  // Calculate dynamic card position based on title height
+  const titleBlockHeight = (nameLines.length * lineHeight) + 80;
 
   // === GREEN BLOCK (central area) ===
   const cardX = MARGIN + 30;
-  const cardY = 220;
+  const cardY = 60 + titleBlockHeight; // Dynamic position based on title height
   const cardWidth = WIDTH - (MARGIN + 30) * 2;
   const cardHeight = 420;
   const cardRadius = 40;

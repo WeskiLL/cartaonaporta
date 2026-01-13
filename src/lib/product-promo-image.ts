@@ -42,6 +42,24 @@ const roundRect = (
   ctx.closePath();
 };
 
+// Draw organic curved shape (top-left decoration)
+const drawOrganicShape = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+  const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, width * 0.4);
+  gradient.addColorStop(0, '#FFD4B8');
+  gradient.addColorStop(0.5, '#FFCAA8');
+  gradient.addColorStop(1, 'rgba(255, 220, 200, 0)');
+  
+  ctx.save();
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.bezierCurveTo(width * 0.35, 0, width * 0.4, height * 0.1, width * 0.3, height * 0.2);
+  ctx.bezierCurveTo(width * 0.15, height * 0.35, 0, height * 0.25, 0, height * 0.2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+};
+
 // Format currency
 const formatPrice = (value: number): string => {
   return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -97,9 +115,17 @@ const getSpecsText = (product: ManagementProduct): string => {
   
   // Default specs
   if (product.category === 'adesivos') {
-    return 'Couchê 90g / Frente e Verso colorido';
+    return 'Papel Couchê 90g / Frente e Verso colorido';
   }
-  return 'Papel Couche 250g / Frente e Verso colorido';
+  return 'Papel Couchê 250g / Frente e Verso colorido';
+};
+
+// Get verniz text based on product
+const getVernizText = (product: ManagementProduct): string => {
+  if (product.category === 'adesivos') {
+    return 'FRENTE E VERSO';
+  }
+  return 'VERNIZ TOTAL FRENTE';
 };
 
 export const generateProductPromoImage = async (
@@ -108,81 +134,88 @@ export const generateProductPromoImage = async (
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d')!;
   
-  // Canvas dimensions (similar to reference image proportions)
-  const WIDTH = 800;
-  const HEIGHT = 1200;
+  // Canvas dimensions (9:16 vertical proportion)
+  const WIDTH = 720;
+  const HEIGHT = 1280;
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
 
-  // Colors
-  const ORANGE_PRIMARY = '#e85616';
-  const ORANGE_SECONDARY = '#ee7e1a';
-  const TEAL = '#2a9d8f';
-  const WHITE = '#ffffff';
-  const DARK = '#1a1a1a';
+  // Colors from spec
+  const ORANGE_PRIMARY = '#F57C00';
+  const TEAL = '#2E8B7A';
+  const WHITE = '#FFFFFF';
+  const BLACK = '#000000';
+  const YELLOW_BADGE = '#FFC107';
+  const BEIGE = '#F2EFEA';
 
-  // Background gradient
-  const gradient = ctx.createLinearGradient(0, 0, WIDTH, 0);
-  gradient.addColorStop(0, WHITE);
-  gradient.addColorStop(0.7, '#fff5f0');
-  gradient.addColorStop(1, '#ffd4c4');
-  ctx.fillStyle = gradient;
+  // === WHITE BACKGROUND ===
+  ctx.fillStyle = WHITE;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-  // === TITLE (Product Name) ===
+  // === ORGANIC DECORATIVE SHAPE (top-left) ===
+  drawOrganicShape(ctx, WIDTH, HEIGHT);
+
+  // === MARGIN ===
+  const MARGIN = 40;
+
+  // === TITLE BLOCK ===
+  // Product name (black, bold, uppercase)
+  ctx.fillStyle = BLACK;
+  ctx.font = 'bold 48px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.letterSpacing = '-1px';
+  ctx.fillText(product.name.toUpperCase(), WIDTH / 2, 120);
+
+  // Size (orange, extra bold, uppercase)
   ctx.fillStyle = ORANGE_PRIMARY;
-  ctx.font = 'bold 52px Arial, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(product.name.toUpperCase(), WIDTH / 2, 70);
+  ctx.font = '900 56px Arial, sans-serif';
+  ctx.fillText(product.size?.toUpperCase() || '', WIDTH / 2, 185);
 
-  // === SIZE ===
-  ctx.fillStyle = ORANGE_SECONDARY;
-  ctx.font = 'bold italic 42px Arial, sans-serif';
-  ctx.fillText(product.size?.toUpperCase() || '', WIDTH / 2, 125);
+  // === GREEN BLOCK (central area) ===
+  const cardX = MARGIN + 30;
+  const cardY = 220;
+  const cardWidth = WIDTH - (MARGIN + 30) * 2;
+  const cardHeight = 420;
+  const cardRadius = 40;
+  const borderWidth = 12;
 
-  // === TEAL CARD BACKGROUND ===
-  const cardX = 50;
-  const cardY = 160;
-  const cardWidth = WIDTH - 100;
-  const cardHeight = 380;
-  
   // Orange border
-  ctx.fillStyle = ORANGE_SECONDARY;
-  roundRect(ctx, cardX - 6, cardY - 6, cardWidth + 12, cardHeight + 12, 30);
-  ctx.fill();
-  
-  // Teal card
-  ctx.fillStyle = TEAL;
-  roundRect(ctx, cardX, cardY, cardWidth, cardHeight, 24);
+  ctx.fillStyle = ORANGE_PRIMARY;
+  roundRect(ctx, cardX - borderWidth, cardY - borderWidth, cardWidth + borderWidth * 2, cardHeight + borderWidth * 2, cardRadius + borderWidth);
   ctx.fill();
 
-  // "RECORTE PADRÃO" text
+  // Teal/green card
+  ctx.fillStyle = TEAL;
+  roundRect(ctx, cardX, cardY, cardWidth, cardHeight, cardRadius);
+  ctx.fill();
+
+  // "RECORTE PADRÃO" text (top of block)
   ctx.fillStyle = WHITE;
-  ctx.font = 'bold 24px Arial, sans-serif';
+  ctx.font = 'bold 28px Arial, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('RECORTE PADRÃO', WIDTH / 2, cardY + 45);
+  ctx.fillText('RECORTE PADRÃO', WIDTH / 2, cardY + 55);
 
   // Product image in center of card
-  const imgSize = 200;
+  const imgSize = 240;
   const imgX = WIDTH / 2 - imgSize / 2;
-  const imgY = cardY + 70;
-  
+  const imgY = cardY + 80;
+
   if (product.image_url) {
     try {
       const productImg = await loadImage(product.image_url);
-      
+
       // Draw image with rounded corners
       ctx.save();
-      roundRect(ctx, imgX, imgY, imgSize, imgSize, 12);
+      roundRect(ctx, imgX, imgY, imgSize, imgSize, 16);
       ctx.clip();
-      
+
       // Calculate aspect ratio and center
       const aspectRatio = productImg.width / productImg.height;
       let drawWidth = imgSize;
       let drawHeight = imgSize;
       let drawX = imgX;
       let drawY = imgY;
-      
+
       if (aspectRatio > 1) {
         drawHeight = imgSize / aspectRatio;
         drawY = imgY + (imgSize - drawHeight) / 2;
@@ -190,124 +223,165 @@ export const generateProductPromoImage = async (
         drawWidth = imgSize * aspectRatio;
         drawX = imgX + (imgSize - drawWidth) / 2;
       }
-      
-      // White background for image
-      ctx.fillStyle = WHITE;
+
+      // White/beige background for image
+      ctx.fillStyle = BEIGE;
       ctx.fillRect(imgX, imgY, imgSize, imgSize);
-      
+
       ctx.drawImage(productImg, drawX, drawY, drawWidth, drawHeight);
       ctx.restore();
     } catch (e) {
       // Draw placeholder
       ctx.fillStyle = 'rgba(255,255,255,0.3)';
-      roundRect(ctx, imgX, imgY, imgSize, imgSize, 12);
+      roundRect(ctx, imgX, imgY, imgSize, imgSize, 16);
       ctx.fill();
       ctx.fillStyle = WHITE;
-      ctx.font = '14px Arial, sans-serif';
+      ctx.font = '16px Arial, sans-serif';
       ctx.fillText('Sem imagem', WIDTH / 2, imgY + imgSize / 2);
     }
   } else {
     // Draw placeholder
     ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    roundRect(ctx, imgX, imgY, imgSize, imgSize, 12);
+    roundRect(ctx, imgX, imgY, imgSize, imgSize, 16);
     ctx.fill();
     ctx.fillStyle = WHITE;
-    ctx.font = '14px Arial, sans-serif';
+    ctx.font = '16px Arial, sans-serif';
     ctx.fillText('Sem imagem', WIDTH / 2, imgY + imgSize / 2);
   }
 
-  // "VERNIZ TOTAL FRENTE" label at bottom of card
-  const labelY = cardY + cardHeight - 50;
-  ctx.fillStyle = ORANGE_SECONDARY;
-  roundRect(ctx, WIDTH / 2 - 140, labelY, 280, 40, 8);
+  // Orange label with verniz text at bottom of card
+  const vernizText = getVernizText(product);
+  const labelWidth = 300;
+  const labelHeight = 44;
+  const labelX = WIDTH / 2 - labelWidth / 2;
+  const labelY = cardY + cardHeight - 65;
+  
+  ctx.fillStyle = ORANGE_PRIMARY;
+  roundRect(ctx, labelX, labelY, labelWidth, labelHeight, 10);
   ctx.fill();
   ctx.fillStyle = WHITE;
-  ctx.font = 'bold 18px Arial, sans-serif';
-  ctx.fillText('VERNIZ TOTAL FRENTE', WIDTH / 2, labelY + 27);
+  ctx.font = 'bold 20px Arial, sans-serif';
+  ctx.fillText(vernizText, WIDTH / 2, labelY + 30);
 
-  // === SPECS TEXT ===
-  const specsY = cardY + cardHeight + 45;
-  ctx.fillStyle = TEAL;
-  roundRect(ctx, 80, specsY, WIDTH - 160, 40, 6);
+  // === SPECS PILL ===
+  const specsY = cardY + cardHeight + 35;
+  const specsText = getSpecsText(product);
+  const specsWidth = WIDTH - MARGIN * 2 - 40;
+  const specsHeight = 48;
+  const specsX = (WIDTH - specsWidth) / 2;
+
+  ctx.fillStyle = ORANGE_PRIMARY;
+  roundRect(ctx, specsX, specsY, specsWidth, specsHeight, specsHeight / 2);
   ctx.fill();
-  ctx.fillStyle = WHITE;
-  ctx.font = 'bold 16px Arial, sans-serif';
-  ctx.fillText(getSpecsText(product), WIDTH / 2, specsY + 26);
+  ctx.fillStyle = BLACK;
+  ctx.font = 'bold italic 18px Arial, sans-serif';
+  ctx.fillText(specsText, WIDTH / 2, specsY + 32);
 
   // === PRICE BOXES ===
   const prices = getAvailablePrices(product);
-  const boxY = specsY + 80;
-  const boxWidth = 160;
-  const boxHeight = 140;
-  const boxGap = 15;
+  const boxY = specsY + 85;
+  const boxWidth = 145;
+  const boxHeight = 160;
+  const boxGap = 12;
   const totalBoxesWidth = prices.length * boxWidth + (prices.length - 1) * boxGap;
   let boxStartX = (WIDTH - totalBoxesWidth) / 2;
 
   prices.forEach((priceBox, index) => {
     const x = boxStartX + index * (boxWidth + boxGap);
-    
-    // Box background
-    ctx.fillStyle = ORANGE_SECONDARY;
-    roundRect(ctx, x, boxY, boxWidth, boxHeight, 12);
+
+    // Box background (orange)
+    ctx.fillStyle = ORANGE_PRIMARY;
+    roundRect(ctx, x, boxY, boxWidth, boxHeight, 16);
     ctx.fill();
 
-    // Highlight badge
+    // Highlight badge (yellow "+ PEDIDO")
     if (priceBox.highlight) {
-      ctx.fillStyle = '#16a34a';
-      roundRect(ctx, x + boxWidth / 2 - 45, boxY - 15, 90, 30, 6);
+      const badgeWidth = 100;
+      const badgeHeight = 28;
+      const badgeX = x + boxWidth / 2 - badgeWidth / 2;
+      const badgeY = boxY - 14;
+      
+      ctx.fillStyle = YELLOW_BADGE;
+      roundRect(ctx, badgeX, badgeY, badgeWidth, badgeHeight, 6);
       ctx.fill();
       ctx.fillStyle = WHITE;
-      ctx.font = 'bold 12px Arial, sans-serif';
-      ctx.fillText('+ PEDIDO', x + boxWidth / 2, boxY + 5);
+      ctx.font = 'bold 14px Arial, sans-serif';
+      ctx.fillText('+ PEDIDO', x + boxWidth / 2, badgeY + 19);
     }
 
-    // Quantity
+    // Quantity (large, bold, white)
     ctx.fillStyle = WHITE;
-    ctx.font = 'bold 44px Arial, sans-serif';
-    ctx.fillText(priceBox.quantity.toString(), x + boxWidth / 2, boxY + 55);
-    
-    // "unidades"
-    ctx.font = '14px Arial, sans-serif';
-    ctx.fillText('unidades', x + boxWidth / 2, boxY + 75);
+    ctx.font = 'bold 52px Arial, sans-serif';
+    ctx.fillText(priceBox.quantity.toString(), x + boxWidth / 2, boxY + 60);
 
-    // Price
-    ctx.fillStyle = '#1a3d34';
-    ctx.font = 'bold 26px Arial, sans-serif';
-    ctx.fillText(formatPrice(priceBox.price), x + boxWidth / 2, boxY + 115);
+    // "unidades" (smaller, white)
+    ctx.font = '16px Arial, sans-serif';
+    ctx.fillText('unidades', x + boxWidth / 2, boxY + 85);
 
-    // Price per unit (below box)
-    ctx.fillStyle = ORANGE_PRIMARY;
-    ctx.font = 'bold 14px Arial, sans-serif';
+    // Price value (highlighted, in white)
+    ctx.fillStyle = WHITE;
+    ctx.font = 'bold 30px Arial, sans-serif';
+    ctx.fillText(formatPrice(priceBox.price), x + boxWidth / 2, boxY + 130);
+
+    // Price per unit (below box, smaller)
+    ctx.fillStyle = BLACK;
+    ctx.font = 'bold 13px Arial, sans-serif';
     ctx.fillText(
       `(R$ ${formatPrice(priceBox.pricePerUnit)}/UND)`,
       x + boxWidth / 2,
-      boxY + boxHeight + 25
+      boxY + boxHeight + 22
     );
   });
 
-  // === LOGOS ===
-  const logosY = HEIGHT - 100;
-  
+  // === FOOTER WITH LOGOS ===
+  const footerY = HEIGHT - 100;
+
   try {
     const [primePrintLogo, cartaoNaPortaLogo] = await Promise.all([
       loadImage(logoPrimePrint),
       loadImage(logoCartaoNaPorta),
     ]);
 
-    // Prime Print logo
-    const logoHeight = 50;
+    const logoHeight = 55;
     const primePrintWidth = (primePrintLogo.width / primePrintLogo.height) * logoHeight;
-    ctx.drawImage(primePrintLogo, WIDTH / 2 - primePrintWidth - 30, logosY, primePrintWidth, logoHeight);
+    const cartaoWidth = (cartaoNaPortaLogo.width / cartaoNaPortaLogo.height) * logoHeight;
+    const logoGap = 50;
+    
+    // Center both logos
+    const totalLogosWidth = primePrintWidth + logoGap + cartaoWidth;
+    const logosStartX = (WIDTH - totalLogosWidth) / 2;
+
+    // Prime Print logo
+    ctx.drawImage(primePrintLogo, logosStartX, footerY, primePrintWidth, logoHeight);
+
+    // Small airplane/delivery icon between logos (dotted line with plane)
+    const iconX = logosStartX + primePrintWidth + logoGap / 2;
+    ctx.fillStyle = ORANGE_PRIMARY;
+    ctx.beginPath();
+    ctx.moveTo(iconX - 12, footerY + logoHeight / 2);
+    ctx.lineTo(iconX + 12, footerY + logoHeight / 2);
+    ctx.strokeStyle = ORANGE_PRIMARY;
+    ctx.setLineDash([3, 3]);
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // Simple plane icon
+    ctx.beginPath();
+    ctx.moveTo(iconX + 8, footerY + logoHeight / 2 - 6);
+    ctx.lineTo(iconX + 16, footerY + logoHeight / 2);
+    ctx.lineTo(iconX + 8, footerY + logoHeight / 2 + 6);
+    ctx.closePath();
+    ctx.fill();
 
     // Cartão na Porta logo
-    const cartaoWidth = (cartaoNaPortaLogo.width / cartaoNaPortaLogo.height) * logoHeight;
-    ctx.drawImage(cartaoNaPortaLogo, WIDTH / 2 + 30, logosY, cartaoWidth, logoHeight);
+    ctx.drawImage(cartaoNaPortaLogo, logosStartX + primePrintWidth + logoGap, footerY, cartaoWidth, logoHeight);
   } catch (e) {
     // Fallback: draw text
     ctx.fillStyle = ORANGE_PRIMARY;
-    ctx.font = 'bold 20px Arial, sans-serif';
-    ctx.fillText('Prime Print', WIDTH / 2 - 80, logosY + 30);
-    ctx.fillText('Cartão na Porta', WIDTH / 2 + 80, logosY + 30);
+    ctx.font = 'bold 22px Arial, sans-serif';
+    ctx.fillText('Prime Print', WIDTH / 2 - 90, footerY + 35);
+    ctx.fillText('Cartão na Porta', WIDTH / 2 + 90, footerY + 35);
   }
 
   // Convert canvas to blob
@@ -321,7 +395,7 @@ export const generateProductPromoImage = async (
         }
       },
       'image/jpeg',
-      0.92
+      0.95
     );
   });
 };
@@ -332,7 +406,7 @@ export const downloadProductPromoImage = async (
 ): Promise<void> => {
   const blob = await generateProductPromoImage(product);
   const url = URL.createObjectURL(blob);
-  
+
   const link = document.createElement('a');
   link.href = url;
   link.download = `${product.name.replace(/\s+/g, '-').toLowerCase()}-promo.jpg`;

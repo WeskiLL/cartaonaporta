@@ -391,10 +391,6 @@ export default function OrdersPage() {
             ? generateOrderPDF(pdfItem as Order, company, client, products)
             : generateQuotePDF(pdfItem as Quote, company, client, products);
         }}
-        documentType={pdfType}
-        documentNumber={pdfItem?.number || ''}
-        clientName={pdfItem?.client_name || ''}
-        clientPhone={pdfItem?.client_id ? getClientById(pdfItem.client_id)?.phone : undefined}
       />
     </ManagementLayout>
   );

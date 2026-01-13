@@ -335,18 +335,53 @@ export function ManagementProvider({ children }: { children: ReactNode }) {
 
   const deleteQuote = async (id: string): Promise<boolean> => {
     try {
+      // Find the quote to get its number for PDF deletion
+      const quote = quotes.find(q => q.id === id);
+      
       const { error } = await supabase
         .from('quotes')
         .delete()
         .eq('id', id);
       
       if (error) throw error;
+      
+      // Delete associated PDFs from storage
+      if (quote?.number) {
+        const quoteNumber = quote.number.replace('ORC', '');
+        await deletePdfsFromStorage('Orcamento', quoteNumber);
+      }
+      
       setQuotes(prev => prev.filter(q => q.id !== id));
       return true;
     } catch (error) {
       console.error('Error deleting quote:', error);
       toast.error('Erro ao excluir orçamento');
       return false;
+    }
+  };
+
+  const deletePdfsFromStorage = async (typeLabel: string, docNumber: string) => {
+    try {
+      // List all files in the bucket
+      const { data: files, error: listError } = await supabase.storage
+        .from('pdf-exports')
+        .list();
+      
+      if (listError || !files) return;
+      
+      // Find files that match the pattern (e.g., "Pedido_12345_" or "Orcamento_12345_")
+      const pattern = `${typeLabel}_${docNumber}_`;
+      const filesToDelete = files
+        .filter(file => file.name.startsWith(pattern))
+        .map(file => file.name);
+      
+      if (filesToDelete.length > 0) {
+        await supabase.storage.from('pdf-exports').remove(filesToDelete);
+        console.log(`Deleted ${filesToDelete.length} PDF(s) from storage`);
+      }
+    } catch (error) {
+      console.error('Error deleting PDFs from storage:', error);
+      // Don't throw - PDF deletion is not critical
     }
   };
 
@@ -517,12 +552,22 @@ export function ManagementProvider({ children }: { children: ReactNode }) {
 
   const deleteOrder = async (id: string): Promise<boolean> => {
     try {
+      // Find the order to get its number for PDF deletion
+      const order = orders.find(o => o.id === id);
+      
       const { error } = await supabase
         .from('orders')
         .delete()
         .eq('id', id);
       
       if (error) throw error;
+      
+      // Delete associated PDFs from storage
+      if (order?.number) {
+        const orderNumber = order.number.replace('PED', '');
+        await deletePdfsFromStorage('Pedido', orderNumber);
+      }
+      
       setOrders(prev => prev.filter(o => o.id !== id));
       return true;
     } catch (error) {

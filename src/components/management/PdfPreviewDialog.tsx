@@ -1,35 +1,24 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Download, X, MessageCircle } from 'lucide-react';
+import { Loader2, Download, X } from 'lucide-react';
 import jsPDF from 'jspdf';
-import { uploadAndSharePdf } from '@/lib/pdf-whatsapp';
-import { toast } from 'sonner';
 
 interface PdfPreviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
   generatePdf: () => jsPDF | Promise<jsPDF>;
-  documentType?: 'order' | 'quote';
-  documentNumber?: string;
-  clientName?: string;
-  clientPhone?: string;
 }
 
 export function PdfPreviewDialog({ 
   open, 
   onOpenChange, 
   title, 
-  generatePdf,
-  documentType,
-  documentNumber,
-  clientName,
-  clientPhone
+  generatePdf
 }: PdfPreviewDialogProps) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sharing, setSharing] = useState(false);
   const [doc, setDoc] = useState<jsPDF | null>(null);
 
   useEffect(() => {
@@ -65,35 +54,6 @@ export function PdfPreviewDialog({
     }
   };
 
-  const handleShareWhatsApp = async () => {
-    if (!doc || !documentType || !documentNumber) {
-      toast.error('Dados insuficientes para compartilhar');
-      return;
-    }
-    
-    setSharing(true);
-    try {
-      const success = await uploadAndSharePdf(
-        doc,
-        documentType,
-        documentNumber,
-        clientName || '',
-        clientPhone
-      );
-      
-      if (success) {
-        toast.success('WhatsApp aberto com sucesso!');
-      } else {
-        toast.error('Erro ao fazer upload do PDF. Tente novamente.');
-      }
-    } catch (error) {
-      console.error('Error sharing via WhatsApp:', error);
-      toast.error('Erro ao compartilhar. Tente novamente.');
-    } finally {
-      setSharing(false);
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
@@ -126,21 +86,6 @@ export function PdfPreviewDialog({
             <X className="mr-2 h-4 w-4" />
             Fechar
           </Button>
-          {documentType && documentNumber && (
-            <Button 
-              variant="outline" 
-              onClick={handleShareWhatsApp} 
-              disabled={!doc || sharing}
-              className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
-            >
-              {sharing ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <MessageCircle className="mr-2 h-4 w-4" />
-              )}
-              Enviar WhatsApp
-            </Button>
-          )}
           <Button onClick={handleDownload} disabled={!doc}>
             <Download className="mr-2 h-4 w-4" />
             Baixar PDF

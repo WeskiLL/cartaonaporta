@@ -11,12 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Search, Edit, Trash2, Loader2, Package, ExternalLink } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Loader2, Package, ExternalLink, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { ManagementProduct } from '@/types/management';
 import { maskCurrency, parseCurrencyToNumber } from '@/lib/masks';
 import { Link } from 'react-router-dom';
 import { ImageUploadField } from '@/components/management/ImageUploadField';
+import { downloadProductPromoImage } from '@/lib/product-promo-image';
 
 const categories = [
   { id: 'tags', label: 'Tags' },
@@ -32,6 +33,7 @@ export default function ProductsPage() {
   const [activeCategory, setActiveCategory] = useState('tags');
   const [formOpen, setFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ManagementProduct | null>(null);
+  const [downloadingPromo, setDownloadingPromo] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     size: '',
@@ -168,6 +170,19 @@ export default function ProductsPage() {
     }
   };
 
+  const handleDownloadPromo = async (product: ManagementProduct) => {
+    setDownloadingPromo(product.id);
+    try {
+      await downloadProductPromoImage(product);
+      toast.success('Imagem promocional baixada!');
+    } catch (error) {
+      console.error('Error generating promo image:', error);
+      toast.error('Erro ao gerar imagem promocional');
+    } finally {
+      setDownloadingPromo(null);
+    }
+  };
+
   return (
     <ManagementLayout>
       <PageHeader
@@ -258,6 +273,19 @@ export default function ProductsPage() {
                               </div>
                             </div>
                             <div className="flex gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleDownloadPromo(product)}
+                                disabled={downloadingPromo === product.id}
+                                title="Baixar imagem promocional"
+                              >
+                                {downloadingPromo === product.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Download className="w-4 h-4" />
+                                )}
+                              </Button>
                               <Button variant="ghost" size="icon" onClick={() => openEdit(product)}>
                                 <Edit className="w-4 h-4" />
                               </Button>

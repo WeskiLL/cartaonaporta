@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -18,8 +18,11 @@ import {
   Truck,
   Globe,
   BookOpen,
+  LogOut,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const menuItems = [
   { path: '/deep/gestao', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -43,6 +46,7 @@ interface ManagementSidebarProps {
 
 export function ManagementSidebar({ isCollapsed, onToggle }: ManagementSidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
 
@@ -51,6 +55,12 @@ export function ManagementSidebar({ isCollapsed, onToggle }: ManagementSidebarPr
     setIsDark(newIsDark);
     document.documentElement.classList.toggle('dark', newIsDark);
     localStorage.setItem('theme', newIsDark ? 'dark' : 'light');
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success('Logout realizado com sucesso');
+    navigate('/deep');
   };
 
   return (
@@ -132,7 +142,7 @@ export function ManagementSidebar({ isCollapsed, onToggle }: ManagementSidebarPr
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-border">
+          <div className="p-4 border-t border-border space-y-2">
             {/* Theme Toggle */}
             <Button
               variant="ghost"
@@ -154,6 +164,20 @@ export function ManagementSidebar({ isCollapsed, onToggle }: ManagementSidebarPr
                   {!isCollapsed && <span className="ml-3 text-sm font-medium">Modo Escuro</span>}
                 </>
               )}
+            </Button>
+            
+            {/* Logout Button */}
+            <Button
+              variant="ghost"
+              size={isCollapsed ? "icon" : "default"}
+              onClick={handleLogout}
+              className={cn(
+                'w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10',
+                isCollapsed && 'justify-center'
+              )}
+            >
+              <LogOut className="h-5 w-5 shrink-0" />
+              {!isCollapsed && <span className="ml-3 text-sm font-medium">Sair</span>}
             </Button>
           </div>
         </div>

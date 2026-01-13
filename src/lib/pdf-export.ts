@@ -326,13 +326,18 @@ export const generateQuotePDF = async (quote: Quote, company: Company | null, cl
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(60, 60, 60);
   doc.text(`Subtotal: ${formatCurrency(quote.subtotal)}`, 140, y, { align: 'left' });
-  if (quote.discount > 0) {
-    doc.text(`Desconto: ${formatCurrency(quote.discount)}`, 140, y + 6, { align: 'left' });
+  y += 6;
+  if (quote.shipping && quote.shipping > 0) {
+    doc.text(`Frete: ${formatCurrency(quote.shipping)}`, 140, y, { align: 'left' });
+    y += 6;
+  }
+  if (quote.discount && quote.discount > 0) {
+    doc.text(`Desconto: -${formatCurrency(quote.discount)}`, 140, y, { align: 'left' });
     y += 6;
   }
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...BRAND_ORANGE);
-  doc.text(`Total: ${formatCurrency(quote.total)}`, 140, y + 6, { align: 'left' });
+  doc.text(`Total: ${formatCurrency(quote.total)}`, 140, y, { align: 'left' });
   
   // Custom notes
   if (quote.notes) {

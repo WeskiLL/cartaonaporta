@@ -17,19 +17,52 @@ const formatDate = (date: string) =>
 const formatDateTime = (date: string) =>
   format(new Date(date), "dd/MM/yyyy HH:mm:ss", { locale: ptBR });
 
-// Helper to load image as base64 with dimensions
-const loadImageAsBase64WithDimensions = (url: string): Promise<{ data: string; width: number; height: number } | null> => {
+// Image compression settings
+const IMAGE_QUALITY = 0.7; // JPEG quality (0-1)
+const MAX_IMAGE_SIZE = 150; // Max width/height in pixels for thumbnails
+const LOGO_MAX_SIZE = 200; // Max width/height in pixels for logos
+
+// Helper to load and compress image as base64 with dimensions
+const loadImageAsBase64WithDimensions = (
+  url: string, 
+  maxSize: number = MAX_IMAGE_SIZE
+): Promise<{ data: string; width: number; height: number } | null> => {
   return new Promise((resolve) => {
     const img = new Image();
     
     const loadImage = () => {
+      // Calculate scaled dimensions
+      let targetWidth = img.width;
+      let targetHeight = img.height;
+      
+      // Scale down if larger than maxSize
+      if (img.width > maxSize || img.height > maxSize) {
+        const aspectRatio = img.width / img.height;
+        if (img.width > img.height) {
+          targetWidth = maxSize;
+          targetHeight = Math.round(maxSize / aspectRatio);
+        } else {
+          targetHeight = maxSize;
+          targetWidth = Math.round(maxSize * aspectRatio);
+        }
+      }
+      
       const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
       const ctx = canvas.getContext('2d');
-      ctx?.drawImage(img, 0, 0);
+      
+      // Enable image smoothing for better quality when downscaling
+      if (ctx) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+      }
+      
       try {
-        resolve({ data: canvas.toDataURL('image/png'), width: img.width, height: img.height });
+        // Use JPEG format with compression for smaller file size
+        const data = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
+        resolve({ data, width: targetWidth, height: targetHeight });
       } catch {
         resolve(null);
       }
@@ -52,6 +85,11 @@ const loadImageAsBase64WithDimensions = (url: string): Promise<{ data: string; w
   });
 };
 
+// Helper to load logo with higher quality
+const loadLogoAsBase64 = (url: string): Promise<{ data: string; width: number; height: number } | null> => {
+  return loadImageAsBase64WithDimensions(url, LOGO_MAX_SIZE);
+};
+
 // Helper to detect CPF or CNPJ based on digit count
 const getDocumentLabel = (document: string): string => {
   const digits = document.replace(/\D/g, '');
@@ -72,7 +110,7 @@ const addHeader = async (doc: jsPDF, company: Company | null, title: string): Pr
   // Add company logo if available
   if (company?.logo_url) {
     try {
-      const imgData = await loadImageAsBase64WithDimensions(company.logo_url);
+      const imgData = await loadLogoAsBase64(company.logo_url);
       if (imgData) {
         // Calculate proportional dimensions (max height 25mm, max width 50mm)
         const maxHeight = 25;
@@ -87,7 +125,7 @@ const addHeader = async (doc: jsPDF, company: Company | null, title: string): Pr
           height = maxWidth / aspectRatio;
         }
         
-        doc.addImage(imgData.data, 'PNG', 14, startY, width, height);
+        doc.addImage(imgData.data, 'JPEG', 14, startY, width, height);
         startY += height + 5;
       }
     } catch {
@@ -271,7 +309,7 @@ export const generateQuotePDF = async (quote: Quote, company: Company | null, cl
           }
           const imgX = margin + 2 + (imgSize - imgW) / 2;
           const imgY = y + (rowHeight - imgH) / 2;
-          doc.addImage(imgData.data, 'PNG', imgX, imgY, imgW, imgH);
+          doc.addImage(imgData.data, 'JPEG', imgX, imgY, imgW, imgH);
         } else {
           // Placeholder
           doc.setFillColor(240, 240, 240);
@@ -428,7 +466,7 @@ export const generateOrderPDF = async (order: Order, company: Company | null, cl
   // Add logo if available
   if (company?.logo_url) {
     try {
-      const imgData = await loadImageAsBase64WithDimensions(company.logo_url);
+      const imgData = await loadLogoAsBase64(company.logo_url);
       if (imgData) {
         // Calculate proportional dimensions maintaining aspect ratio
         const aspectRatio = imgData.width / imgData.height;
@@ -440,7 +478,7 @@ export const generateOrderPDF = async (order: Order, company: Company | null, cl
           height = logoMaxWidth / aspectRatio;
         }
         
-        doc.addImage(imgData.data, 'PNG', margin, y, width, height);
+        doc.addImage(imgData.data, 'JPEG', margin, y, width, height);
         logoEndX = margin + width + 8;
       }
     } catch {
@@ -691,7 +729,7 @@ export const generateOrderPDF = async (order: Order, company: Company | null, cl
           }
           const imgX = margin + 2 + (imgSize - imgW) / 2;
           const imgY = y + (rowHeight - imgH) / 2;
-          doc.addImage(imgData.data, 'PNG', imgX, imgY, imgW, imgH);
+          doc.addImage(imgData.data, 'JPEG', imgX, imgY, imgW, imgH);
         } else {
           // Placeholder
           doc.setFillColor(240, 240, 240);

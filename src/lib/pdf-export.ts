@@ -85,9 +85,64 @@ const loadImageAsBase64WithDimensions = (
   });
 };
 
-// Helper to load logo with higher quality
+// Helper to load logo with PNG format (better quality for logos with transparency)
 const loadLogoAsBase64 = (url: string): Promise<{ data: string; width: number; height: number } | null> => {
-  return loadImageAsBase64WithDimensions(url, LOGO_MAX_SIZE);
+  return new Promise((resolve) => {
+    const img = new Image();
+    
+    const loadImage = () => {
+      // Calculate scaled dimensions
+      let targetWidth = img.width;
+      let targetHeight = img.height;
+      
+      // Scale down if larger than maxSize
+      if (img.width > LOGO_MAX_SIZE || img.height > LOGO_MAX_SIZE) {
+        const aspectRatio = img.width / img.height;
+        if (img.width > img.height) {
+          targetWidth = LOGO_MAX_SIZE;
+          targetHeight = Math.round(LOGO_MAX_SIZE / aspectRatio);
+        } else {
+          targetHeight = LOGO_MAX_SIZE;
+          targetWidth = Math.round(LOGO_MAX_SIZE * aspectRatio);
+        }
+      }
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const ctx = canvas.getContext('2d');
+      
+      // Enable image smoothing for better quality when downscaling
+      if (ctx) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+      }
+      
+      try {
+        // Use PNG format for logos (preserves transparency, better quality)
+        const data = canvas.toDataURL('image/png');
+        resolve({ data, width: targetWidth, height: targetHeight });
+      } catch {
+        resolve(null);
+      }
+    };
+    
+    img.onload = loadImage;
+    img.onerror = () => {
+      // Try without CORS if it fails
+      if (img.crossOrigin) {
+        img.crossOrigin = '';
+        img.src = url;
+      } else {
+        resolve(null);
+      }
+    };
+    
+    // Try with CORS first
+    img.crossOrigin = 'anonymous';
+    img.src = url;
+  });
 };
 
 // Helper to detect CPF or CNPJ based on digit count
@@ -125,7 +180,7 @@ const addHeader = async (doc: jsPDF, company: Company | null, title: string): Pr
           height = maxWidth / aspectRatio;
         }
         
-        doc.addImage(imgData.data, 'JPEG', 14, startY, width, height);
+        doc.addImage(imgData.data, 'PNG', 14, startY, width, height);
         startY += height + 5;
       }
     } catch {
@@ -478,7 +533,7 @@ export const generateOrderPDF = async (order: Order, company: Company | null, cl
           height = logoMaxWidth / aspectRatio;
         }
         
-        doc.addImage(imgData.data, 'JPEG', margin, y, width, height);
+        doc.addImage(imgData.data, 'PNG', margin, y, width, height);
         logoEndX = margin + width + 8;
       }
     } catch {

@@ -7,14 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, Loader2, Save } from 'lucide-react';
+import { Building2, Loader2, Save, Trash2, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { maskPhone, maskCPFOrCNPJ, maskCEP, unmask } from '@/lib/masks';
 import { fetchAddressByCep } from '@/lib/cep-service';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function CompanyPage() {
   const { company, loadingCompany, fetchCompany, updateCompany } = useManagement();
   const [saving, setSaving] = useState(false);
+  const [cleaningPdfs, setCleaningPdfs] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -75,6 +77,23 @@ export default function CompanyPage() {
       toast.success('Dados da empresa atualizados!');
     }
     setSaving(false);
+  };
+
+  const handleCleanupPdfs = async () => {
+    setCleaningPdfs(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('cleanup-old-pdfs');
+      
+      if (error) {
+        toast.error('Erro ao limpar PDFs: ' + error.message);
+      } else {
+        toast.success(`${data.deleted} PDFs antigos removidos!`);
+      }
+    } catch (err) {
+      toast.error('Erro ao executar limpeza de PDFs');
+    } finally {
+      setCleaningPdfs(false);
+    }
   };
 
   if (loadingCompany) {
@@ -212,6 +231,36 @@ export default function CompanyPage() {
                     value={formData.address}
                     onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                   />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Maintenance */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <FileText className="w-5 h-5" />
+                  Manutenção
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Remove PDFs de orçamentos e pedidos com mais de 60 dias do armazenamento.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCleanupPdfs}
+                    disabled={cleaningPdfs}
+                  >
+                    {cleaningPdfs ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4 mr-2" />
+                    )}
+                    Limpar PDFs Antigos
+                  </Button>
                 </div>
               </CardContent>
             </Card>

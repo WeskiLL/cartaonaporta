@@ -67,9 +67,26 @@ const KPICard = ({ title, value, description, icon, trend, trendValue, className
   );
 };
 
+const MONTHS = [
+  { value: 'all', label: 'Todo o ano' },
+  { value: '0', label: 'Janeiro' },
+  { value: '1', label: 'Fevereiro' },
+  { value: '2', label: 'Março' },
+  { value: '3', label: 'Abril' },
+  { value: '4', label: 'Maio' },
+  { value: '5', label: 'Junho' },
+  { value: '6', label: 'Julho' },
+  { value: '7', label: 'Agosto' },
+  { value: '8', label: 'Setembro' },
+  { value: '9', label: 'Outubro' },
+  { value: '10', label: 'Novembro' },
+  { value: '11', label: 'Dezembro' },
+];
+
 export default function BusinessPage() {
   const { orders, transactions, clients, fetchOrders, fetchTransactions, fetchClients } = useManagement();
   const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
 
   const availableYears = useMemo(() => {
     const currentYear = new Date().getFullYear();
@@ -87,25 +104,35 @@ export default function BusinessPage() {
 
   const kpis = useMemo(() => {
     const filterYear = parseInt(selectedYear, 10);
+    const isAllYear = selectedMonth === 'all';
+    const filterMonth = isAllYear ? null : parseInt(selectedMonth, 10);
     const previousYear = filterYear - 1;
+    const previousMonth = filterMonth !== null ? filterMonth : null;
 
-    // Filter data by year
+    // Filter data by year and optionally month
+    const filterByPeriod = (date: Date, year: number, month: number | null) => {
+      if (month === null) {
+        return date.getFullYear() === year;
+      }
+      return date.getFullYear() === year && date.getMonth() === month;
+    };
+
     const yearTransactions = transactions.filter(t => 
-      new Date(t.date).getFullYear() === filterYear
+      filterByPeriod(new Date(t.date), filterYear, filterMonth)
     );
     const previousYearTransactions = transactions.filter(t => 
-      new Date(t.date).getFullYear() === previousYear
+      filterByPeriod(new Date(t.date), previousYear, previousMonth)
     );
 
     const yearOrders = orders.filter(o => 
-      new Date(o.created_at).getFullYear() === filterYear
+      filterByPeriod(new Date(o.created_at), filterYear, filterMonth)
     );
     const previousYearOrders = orders.filter(o => 
-      new Date(o.created_at).getFullYear() === previousYear
+      filterByPeriod(new Date(o.created_at), previousYear, previousMonth)
     );
 
     const yearClients = clients.filter(c => 
-      new Date(c.created_at).getFullYear() === filterYear
+      filterByPeriod(new Date(c.created_at), filterYear, filterMonth)
     );
 
     // Calculate revenue and expenses
@@ -242,7 +269,7 @@ export default function BusinessPage() {
       monthlyData,
       marketingExpenses
     };
-  }, [transactions, orders, clients, selectedYear]);
+  }, [transactions, orders, clients, selectedYear, selectedMonth]);
 
   const getTrend = (current: number, previous: number): 'up' | 'down' | 'neutral' => {
     if (current > previous) return 'up';
@@ -254,6 +281,13 @@ export default function BusinessPage() {
     return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
   };
 
+  const getPeriodLabel = () => {
+    if (selectedMonth === 'all') return 'do período';
+    const monthName = MONTHS.find(m => m.value === selectedMonth)?.label || '';
+    return `de ${monthName}`;
+  };
+
+
   return (
     <ManagementLayout>
       <PageHeader
@@ -261,14 +295,26 @@ export default function BusinessPage() {
         description="Análise de KPIs e métricas financeiras da empresa"
       />
 
-      {/* Year Filter */}
-      <div className="flex items-center gap-3 mb-6">
+      {/* Period Filter */}
+      <div className="flex flex-wrap items-center gap-3 mb-6">
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-muted-foreground">Ano:</span>
+          <span className="text-sm font-medium text-muted-foreground">Período:</span>
         </div>
+        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Mês" />
+          </SelectTrigger>
+          <SelectContent>
+            {MONTHS.map((month) => (
+              <SelectItem key={month.value} value={month.value}>
+                {month.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={selectedYear} onValueChange={setSelectedYear}>
-          <SelectTrigger className="w-[120px]">
+          <SelectTrigger className="w-[100px]">
             <SelectValue placeholder="Ano" />
           </SelectTrigger>
           <SelectContent>
@@ -288,7 +334,7 @@ export default function BusinessPage() {
           <KPICard
             title="Receita Total"
             value={maskCurrency(kpis.revenue)}
-            description="Receita do ano"
+            description={`Receita ${getPeriodLabel()}`}
             icon={<DollarSign className="h-4 w-4 text-primary" />}
             trend={getTrend(kpis.revenue, kpis.previousRevenue)}
             trendValue={kpis.previousRevenue > 0 ? formatPercent(kpis.revenueCAGR) : undefined}
@@ -296,7 +342,7 @@ export default function BusinessPage() {
           <KPICard
             title="Despesas Totais"
             value={maskCurrency(kpis.expenses)}
-            description="Despesas do ano"
+            description={`Despesas ${getPeriodLabel()}`}
             icon={<Wallet className="h-4 w-4 text-primary" />}
             trend={getTrend(kpis.previousExpenses, kpis.expenses)}
             trendValue={kpis.previousExpenses > 0 ? formatPercent(((kpis.expenses - kpis.previousExpenses) / kpis.previousExpenses) * 100) : undefined}
@@ -304,7 +350,7 @@ export default function BusinessPage() {
           <KPICard
             title="Lucro Líquido"
             value={maskCurrency(kpis.profit)}
-            description="Lucro do ano"
+            description={`Lucro ${getPeriodLabel()}`}
             icon={<TrendingUp className="h-4 w-4 text-primary" />}
             trend={getTrend(kpis.profit, kpis.previousProfit)}
             trendValue={kpis.previousProfit > 0 ? formatPercent(kpis.profitCAGR) : undefined}
@@ -312,7 +358,7 @@ export default function BusinessPage() {
           <KPICard
             title="Pedidos"
             value={kpis.ordersCount}
-            description="Total de pedidos"
+            description={`Total ${getPeriodLabel()}`}
             icon={<ShoppingCart className="h-4 w-4 text-primary" />}
             trend={getTrend(kpis.ordersCount, kpis.previousOrdersCount)}
             trendValue={kpis.previousOrdersCount > 0 ? formatPercent(kpis.ordersGrowth) : undefined}

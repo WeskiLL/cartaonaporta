@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 type OrderStatus = 'awaiting_payment' | 'creating_art' | 'production' | 'shipping' | 'delivered';
 
 const MONTHS = [
+  { value: 'all', label: 'Todo o ano' },
   { value: '0', label: 'Janeiro' },
   { value: '1', label: 'Fevereiro' },
   { value: '2', label: 'Março' },
@@ -53,7 +54,7 @@ export default function ManagementDashboard() {
   const [orderFormOpen, setOrderFormOpen] = useState(false);
   const [orderFormMode, setOrderFormMode] = useState<'quote' | 'order'>('order');
   const [convertingQuoteId, setConvertingQuoteId] = useState<string | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth()));
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
   const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
 
   // Generate available years (current year and 2 years back)
@@ -74,16 +75,23 @@ export default function ManagementDashboard() {
   }, [fetchOrders, fetchQuotes, fetchTransactions, fetchClients]);
 
   const stats = useMemo(() => {
-    const filterMonth = parseInt(selectedMonth, 10);
     const filterYear = parseInt(selectedYear, 10);
+    const isAllYear = selectedMonth === 'all';
+    const filterMonth = isAllYear ? null : parseInt(selectedMonth, 10);
 
     const monthlyOrders = orders.filter(o => {
       const orderDate = new Date(o.created_at);
+      if (isAllYear) {
+        return orderDate.getFullYear() === filterYear;
+      }
       return orderDate.getMonth() === filterMonth && orderDate.getFullYear() === filterYear;
     });
 
     const monthlyTransactions = transactions.filter(t => {
       const transDate = new Date(t.date);
+      if (isAllYear) {
+        return transDate.getFullYear() === filterYear;
+      }
       return transDate.getMonth() === filterMonth && transDate.getFullYear() === filterYear;
     });
 

@@ -19,6 +19,7 @@ import ProductsPage from "./pages/management/ProductsPage";
 import MockupsPage from "./pages/management/MockupsPage";
 import CompanyPage from "./pages/management/CompanyPage";
 import ReportsPage from "./pages/management/ReportsPage";
+import BusinessPage from "./pages/management/BusinessPage";
 import UsersPage from "./pages/management/UsersPage";
 import TrackingPage from "./pages/management/TrackingPage";
 import SitePage from "./pages/management/SitePage";
@@ -58,6 +59,7 @@ const App = () => (
                   <Route path="/deep/gestao/financeiro" element={<FinancialPage />} />
                   <Route path="/deep/gestao/produtos" element={<ProductsPage />} />
                   <Route path="/deep/gestao/relatorios" element={<ReportsPage />} />
+                  <Route path="/deep/gestao/negocios" element={<BusinessPage />} />
                   <Route path="/deep/gestao/mockups" element={<MockupsPage />} />
                   <Route path="/deep/gestao/site" element={<SitePage />} />
                   <Route path="/deep/gestao/catalogo" element={<CatalogoSettingsPage />} />

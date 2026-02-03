@@ -78,6 +78,9 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
     state: '',
   });
   const [loadingCep, setLoadingCep] = useState(false);
+  
+  // Quote validity date
+  const [validUntil, setValidUntil] = useState('');
 
   // Track if we've initialized the form for the current open state
   const [initialized, setInitialized] = useState(false);
@@ -179,6 +182,14 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
       } else {
         setDeliveryAddress({ zip_code: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '' });
       }
+      
+      // Populate validity date for quotes
+      if (mode === 'quote' && 'valid_until' in editingItem && editingItem.valid_until) {
+        const validDate = new Date(editingItem.valid_until);
+        setValidUntil(validDate.toISOString().split('T')[0]);
+      } else {
+        setValidUntil('');
+      }
     } else {
       // Reset form for new item
       setSelectedClient(null);
@@ -190,6 +201,14 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
       setNewClient({ name: '', email: '', phone: '', document: '' });
       setDeliveryAddress({ zip_code: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '' });
       setDocumentError('');
+      // Set default validity to 30 days from now for new quotes
+      if (mode === 'quote') {
+        const defaultDate = new Date();
+        defaultDate.setDate(defaultDate.getDate() + 30);
+        setValidUntil(defaultDate.toISOString().split('T')[0]);
+      } else {
+        setValidUntil('');
+      }
     }
     
     setInitialized(true);
@@ -409,6 +428,7 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
       total,
       notes: notes || undefined,
       status: mode === 'quote' ? 'pending' as const : 'awaiting_payment' as const,
+      ...(mode === 'quote' && validUntil ? { valid_until: new Date(validUntil).toISOString() } : {}),
     };
     
     // Add delivery address for orders
@@ -661,6 +681,22 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
                   </div>
                 </CardContent>
               </Card>
+            </div>
+          )}
+
+          {/* Quote Validity Date (only for quotes) */}
+          {mode === 'quote' && (
+            <div className="space-y-2">
+              <Label>Validade do Orçamento</Label>
+              <Input
+                type="date"
+                value={validUntil}
+                onChange={(e) => setValidUntil(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+              />
+              <p className="text-xs text-muted-foreground">
+                Data até a qual este orçamento é válido
+              </p>
             </div>
           )}
 

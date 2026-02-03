@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Package, FileText, Eye, Trash2, Loader2, ArrowRightLeft, Plus, Download, Pencil } from 'lucide-react';
-import { format } from 'date-fns';
+import { Search, Package, FileText, Eye, Trash2, Loader2, ArrowRightLeft, Plus, Download, Pencil, AlertTriangle } from 'lucide-react';
+import { format, isPast, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Order, Quote, OrderStatus, QuoteStatus } from '@/types/management';
@@ -256,20 +256,36 @@ export default function OrdersPage() {
             </Card>
           ) : (
             <div className="grid gap-3 sm:gap-4">
-              {filteredQuotes.map(quote => (
-                <Card key={quote.id}>
+              {filteredQuotes.map(quote => {
+                const isExpired = quote.valid_until && isPast(parseISO(quote.valid_until)) && quote.status === 'pending';
+                
+                return (
+                <Card key={quote.id} className={isExpired ? 'border-destructive/50 bg-destructive/5' : ''}>
                   <CardContent className="p-3 sm:p-4">
                     <div className="flex flex-col gap-3">
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-2 mb-2">
                           <span className="font-semibold text-foreground text-sm sm:text-base">Orçamento_{quote.number.replace('ORC', '')}</span>
                           <StatusBadge status={quote.status} type="quote" />
+                          {isExpired && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive">
+                              <AlertTriangle className="w-3 h-3" />
+                              Expirado
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs sm:text-sm text-muted-foreground">{quote.client_name}</p>
                         <div className="flex items-center justify-between mt-1">
-                          <p className="text-xs sm:text-sm text-muted-foreground">
-                            {format(new Date(quote.created_at), "dd/MM/yy", { locale: ptBR })}
-                          </p>
+                          <div className="flex flex-col">
+                            <p className="text-xs sm:text-sm text-muted-foreground">
+                              {format(new Date(quote.created_at), "dd/MM/yy", { locale: ptBR })}
+                            </p>
+                            {quote.valid_until && (
+                              <p className={`text-xs ${isExpired ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+                                Válido até: {format(parseISO(quote.valid_until), "dd/MM/yy", { locale: ptBR })}
+                              </p>
+                            )}
+                          </div>
                           <p className="text-sm sm:text-base font-medium text-primary">
                             {formatCurrency(quote.total)}
                           </p>
@@ -313,7 +329,7 @@ export default function OrdersPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+              )})}
             </div>
           )}
         </TabsContent>

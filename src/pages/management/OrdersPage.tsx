@@ -195,15 +195,32 @@ export default function OrdersPage() {
                         <div className="flex flex-wrap items-center gap-2 mb-2">
                           <span className="font-semibold text-foreground text-sm sm:text-base">Pedido_{order.number.replace('PED', '')}</span>
                           <StatusBadge status={order.status} type="order" />
-                          {order.scheduled_date && (
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                              isToday(parseISO(order.scheduled_date)) 
-                                ? 'bg-primary/20 text-primary' 
-                                : 'bg-muted text-muted-foreground'
-                            }`}>
-                              <Calendar className="w-3 h-3" />
-                              {isToday(parseISO(order.scheduled_date)) ? 'Agendado p/ hoje' : `Agendado: ${format(parseISO(order.scheduled_date), 'dd/MM')}`}
-                            </span>
+                          {order.scheduled_date && order.status !== 'delivered' && (
+                            (() => {
+                              const scheduledDate = parseISO(order.scheduled_date);
+                              const isOverdue = isPast(scheduledDate) && !isToday(scheduledDate);
+                              const isTodayScheduled = isToday(scheduledDate);
+                              
+                              if (isOverdue) {
+                                return (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-destructive/20 text-destructive">
+                                    <AlertTriangle className="w-3 h-3" />
+                                    Em Atraso
+                                  </span>
+                                );
+                              }
+                              
+                              return (
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                                  isTodayScheduled 
+                                    ? 'bg-primary/20 text-primary' 
+                                    : 'bg-muted text-muted-foreground'
+                                }`}>
+                                  <Calendar className="w-3 h-3" />
+                                  {isTodayScheduled ? 'Agendado p/ hoje' : `Agendado: ${format(scheduledDate, 'dd/MM')}`}
+                                </span>
+                              );
+                            })()
                           )}
                         </div>
                         <p className="text-xs sm:text-sm text-muted-foreground">{order.client_name}</p>

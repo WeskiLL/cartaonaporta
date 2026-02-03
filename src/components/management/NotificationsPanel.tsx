@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, X, Calendar, Check, Trash2 } from 'lucide-react';
+import { Bell, X, Calendar, Check, Trash2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -55,32 +55,62 @@ export function NotificationsPanel() {
     const today = new Date().toISOString().split('T')[0];
 
     // Check for orders scheduled for today
-    const { data: orders, error } = await supabase
+    const { data: scheduledOrders, error: scheduledError } = await supabase
       .from('orders')
       .select('id, number, client_name, scheduled_date')
       .eq('scheduled_date', today);
 
-    if (error || !orders) return;
+    if (!scheduledError && scheduledOrders) {
+      // For each scheduled order, check if notification already exists
+      for (const order of scheduledOrders) {
+        const { data: existing } = await supabase
+          .from('notifications')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('link', `/deep/gestao/pedidos?order=${order.id}`)
+          .eq('type', 'scheduled_order')
+          .gte('created_at', today);
 
-    // For each scheduled order, check if notification already exists
-    for (const order of orders) {
-      const { data: existing } = await supabase
-        .from('notifications')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('link', `/deep/gestao/pedidos?order=${order.id}`)
-        .eq('type', 'scheduled_order')
-        .gte('created_at', today);
+        if (!existing || existing.length === 0) {
+          // Create notification
+          await supabase.from('notifications').insert({
+            user_id: user.id,
+            type: 'scheduled_order',
+            title: 'Pedido Agendado',
+            message: `O pedido ${order.number} de ${order.client_name} está agendado para hoje.`,
+            link: `/deep/gestao/pedidos?order=${order.id}`,
+          });
+        }
+      }
+    }
 
-      if (!existing || existing.length === 0) {
-        // Create notification
-        await supabase.from('notifications').insert({
-          user_id: user.id,
-          type: 'scheduled_order',
-          title: 'Pedido Agendado',
-          message: `O pedido ${order.number} de ${order.client_name} está agendado para hoje.`,
-          link: `/deep/gestao/pedidos?order=${order.id}`,
-        });
+    // Check for overdue orders (scheduled_date < today AND status != 'delivered')
+    const { data: overdueOrders, error: overdueError } = await supabase
+      .from('orders')
+      .select('id, number, client_name, scheduled_date, status')
+      .lt('scheduled_date', today)
+      .neq('status', 'delivered');
+
+    if (!overdueError && overdueOrders) {
+      for (const order of overdueOrders) {
+        const { data: existing } = await supabase
+          .from('notifications')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('link', `/deep/gestao/pedidos?order=${order.id}`)
+          .eq('type', 'overdue_order')
+          .gte('created_at', today);
+
+        if (!existing || existing.length === 0) {
+          // Create overdue notification
+          await supabase.from('notifications').insert({
+            user_id: user.id,
+            type: 'overdue_order',
+            title: 'Pedido em Atraso',
+            message: `O pedido ${order.number} de ${order.client_name} estava agendado para ${format(parseISO(order.scheduled_date), 'dd/MM/yyyy')} e ainda não foi entregue.`,
+            link: `/deep/gestao/pedidos?order=${order.id}`,
+          });
+        }
       }
     }
 
@@ -127,6 +157,8 @@ export function NotificationsPanel() {
     switch (type) {
       case 'scheduled_order':
         return <Calendar className="h-4 w-4 text-primary" />;
+      case 'overdue_order':
+        return <AlertTriangle className="h-4 w-4 text-destructive" />;
       default:
         return <Bell className="h-4 w-4 text-muted-foreground" />;
     }

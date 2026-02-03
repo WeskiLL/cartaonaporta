@@ -81,6 +81,9 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
   
   // Quote validity date
   const [validUntil, setValidUntil] = useState('');
+  
+  // Order scheduled date
+  const [scheduledDate, setScheduledDate] = useState('');
 
   // Track if we've initialized the form for the current open state
   const [initialized, setInitialized] = useState(false);
@@ -190,6 +193,13 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
       } else {
         setValidUntil('');
       }
+      
+      // Populate scheduled date for orders
+      if (mode === 'order' && 'scheduled_date' in editingItem && editingItem.scheduled_date) {
+        setScheduledDate(String(editingItem.scheduled_date));
+      } else {
+        setScheduledDate('');
+      }
     } else {
       // Reset form for new item
       setSelectedClient(null);
@@ -201,6 +211,7 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
       setNewClient({ name: '', email: '', phone: '', document: '' });
       setDeliveryAddress({ zip_code: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '' });
       setDocumentError('');
+      setScheduledDate('');
       // Set default validity to 30 days from now for new quotes
       if (mode === 'quote') {
         const defaultDate = new Date();
@@ -434,6 +445,11 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
     // Add delivery address for orders
     if (mode === 'order' && deliveryAddress.zip_code) {
       data.delivery_address = deliveryAddress;
+    }
+    
+    // Add scheduled date for orders
+    if (mode === 'order' && scheduledDate) {
+      data.scheduled_date = scheduledDate;
     }
 
     const itemsData = items.map(item => ({
@@ -696,6 +712,22 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
               />
               <p className="text-xs text-muted-foreground">
                 Data até a qual este orçamento é válido
+              </p>
+            </div>
+          )}
+
+          {/* Scheduled Date - only for orders */}
+          {mode === 'order' && (
+            <div className="space-y-2">
+              <Label>Agendar Pedido (opcional)</Label>
+              <Input
+                type="date"
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+              />
+              <p className="text-xs text-muted-foreground">
+                Você será notificado quando esta data chegar
               </p>
             </div>
           )}

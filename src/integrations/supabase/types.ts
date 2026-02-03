@@ -242,6 +242,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          link: string | null
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          message: string
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       order_trackings: {
         Row: {
           carrier: string
@@ -308,6 +341,7 @@ export type Database = {
           number: string
           quote_id: string | null
           revenue_added: boolean | null
+          scheduled_date: string | null
           shipping: number | null
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number | null
@@ -326,6 +360,7 @@ export type Database = {
           number: string
           quote_id?: string | null
           revenue_added?: boolean | null
+          scheduled_date?: string | null
           shipping?: number | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number | null
@@ -344,6 +379,7 @@ export type Database = {
           number?: string
           quote_id?: string | null
           revenue_added?: boolean | null
+          scheduled_date?: string | null
           shipping?: number | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number | null

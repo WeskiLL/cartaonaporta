@@ -3,6 +3,12 @@ import { ManagementLayout } from '@/components/management/ManagementLayout';
 import { PageHeader } from '@/components/management/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useManagement } from '@/contexts/ManagementContext';
 import { 
   TrendingUp, 
@@ -18,9 +24,33 @@ import {
   Minus,
   Calendar,
   ShoppingCart,
-  Wallet
+  Wallet,
+  Plus,
+  Trash2,
+  Banknote,
+  PiggyBank,
+  Briefcase,
+  UserCircle,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Loader2
 } from 'lucide-react';
-import { maskCurrency } from '@/lib/masks';
+import { maskCurrency, unmask } from '@/lib/masks';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { TransactionType } from '@/types/management';
+
+// Financial organization categories
+const FINANCIAL_CATEGORIES = {
+  caixa: { label: 'Caixa', icon: Banknote, color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
+  retirada: { label: 'Retiradas', icon: ArrowDownCircle, color: 'text-orange-500', bgColor: 'bg-orange-500/10' },
+  salario: { label: 'Salários', icon: Users, color: 'text-purple-500', bgColor: 'bg-purple-500/10' },
+  prolabore: { label: 'Pró-labore', icon: UserCircle, color: 'text-indigo-500', bgColor: 'bg-indigo-500/10' },
+  investimento: { label: 'Investimentos', icon: PiggyBank, color: 'text-green-500', bgColor: 'bg-green-500/10' },
+};
+
+type FinancialCategory = keyof typeof FINANCIAL_CATEGORIES;
 
 interface KPICardProps {
   title: string;
@@ -84,9 +114,20 @@ const MONTHS = [
 ];
 
 export default function BusinessPage() {
-  const { orders, transactions, clients, fetchOrders, fetchTransactions, fetchClients } = useManagement();
+  const { orders, transactions, clients, loadingTransactions, fetchOrders, fetchTransactions, fetchClients, addTransaction, deleteTransaction } = useManagement();
   const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
+  const [activeSection, setActiveSection] = useState<'kpis' | 'finance'>('kpis');
+  const [financeTab, setFinanceTab] = useState<FinancialCategory>('caixa');
+  const [formOpen, setFormOpen] = useState(false);
+  const [formCategory, setFormCategory] = useState<FinancialCategory>('caixa');
+  const [formType, setFormType] = useState<TransactionType>('expense');
+  const [formData, setFormData] = useState({
+    description: '',
+    amount: '',
+    date: format(new Date(), 'yyyy-MM-dd'),
+    notes: '',
+  });
 
   const availableYears = useMemo(() => {
     const currentYear = new Date().getFullYear();
@@ -101,6 +142,106 @@ export default function BusinessPage() {
     fetchTransactions();
     fetchClients();
   }, [fetchOrders, fetchTransactions, fetchClients]);
+
+  // Financial organization data
+  const financialData = useMemo(() => {
+    const categoryMap: Record<FinancialCategory, string[]> = {
+      caixa: ['vendas', 'serviços', 'outros', 'caixa', 'entrada'],
+      retirada: ['retirada', 'retiradas', 'saque', 'saques'],
+      salario: ['salário', 'salários', 'salario', 'salarios', 'folha'],
+      prolabore: ['pró-labore', 'prolabore', 'pro-labore', 'pro labore'],
+      investimento: ['investimento', 'investimentos', 'aplicação', 'aplicações', 'aporte'],
+    };
+
+    const getTransactionsByCategory = (category: FinancialCategory) => {
+      const keywords = categoryMap[category];
+      return transactions.filter(t => {
+        const catLower = t.category.toLowerCase();
+        const descLower = t.description.toLowerCase();
+        return keywords.some(kw => catLower.includes(kw) || descLower.includes(kw));
+      });
+    };
+
+    const result: Record<FinancialCategory, { transactions: typeof transactions; total: number; income: number; expense: number }> = {
+      caixa: { transactions: [], total: 0, income: 0, expense: 0 },
+      retirada: { transactions: [], total: 0, income: 0, expense: 0 },
+      salario: { transactions: [], total: 0, income: 0, expense: 0 },
+      prolabore: { transactions: [], total: 0, income: 0, expense: 0 },
+      investimento: { transactions: [], total: 0, income: 0, expense: 0 },
+    };
+
+    // Get specific category transactions
+    for (const cat of Object.keys(categoryMap) as FinancialCategory[]) {
+      if (cat === 'caixa') continue; // Caixa is calculated separately
+      const txs = getTransactionsByCategory(cat);
+      const income = txs.filter(t => t.type === 'income').reduce((acc, t) => acc + Number(t.amount), 0);
+      const expense = txs.filter(t => t.type === 'expense').reduce((acc, t) => acc + Number(t.amount), 0);
+      result[cat] = {
+        transactions: txs,
+        total: income - expense,
+        income,
+        expense
+      };
+    }
+
+    // Caixa is the overall cash flow
+    const allIncome = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + Number(t.amount), 0);
+    const allExpense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + Number(t.amount), 0);
+    result.caixa = {
+      transactions: transactions,
+      total: allIncome - allExpense,
+      income: allIncome,
+      expense: allExpense
+    };
+
+    return result;
+  }, [transactions]);
+
+  const openNewFinancialEntry = (category: FinancialCategory, type: TransactionType) => {
+    setFormCategory(category);
+    setFormType(type);
+    setFormData({
+      description: '',
+      amount: '',
+      date: format(new Date(), 'yyyy-MM-dd'),
+      notes: '',
+    });
+    setFormOpen(true);
+  };
+
+  const handleFinancialSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amount = parseFloat(unmask(formData.amount).replace(',', '.')) / 100;
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Valor inválido');
+      return;
+    }
+
+    const categoryLabel = FINANCIAL_CATEGORIES[formCategory].label;
+    const result = await addTransaction({
+      type: formType,
+      description: formData.description,
+      amount,
+      category: categoryLabel,
+      date: formData.date,
+      notes: formData.notes || undefined,
+    });
+
+    if (result) {
+      toast.success('Lançamento adicionado!');
+      setFormOpen(false);
+    }
+  };
+
+  const handleDeleteTransaction = async (id: string) => {
+    if (confirm('Excluir este lançamento?')) {
+      const success = await deleteTransaction(id);
+      if (success) toast.success('Lançamento excluído!');
+    }
+  };
+
+  const formatCurrency = (value: number) => 
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
   const kpis = useMemo(() => {
     const filterYear = parseInt(selectedYear, 10);
@@ -291,41 +432,56 @@ export default function BusinessPage() {
   return (
     <ManagementLayout>
       <PageHeader
-        title="Indicadores de Negócio"
-        description="Análise de KPIs e métricas financeiras da empresa"
+        title="Negócios"
+        description="Indicadores, KPIs e organização financeira da empresa"
       />
 
-      {/* Period Filter */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-muted-foreground">Período:</span>
-        </div>
-        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Mês" />
-          </SelectTrigger>
-          <SelectContent>
-            {MONTHS.map((month) => (
-              <SelectItem key={month.value} value={month.value}>
-                {month.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={selectedYear} onValueChange={setSelectedYear}>
-          <SelectTrigger className="w-[100px]">
-            <SelectValue placeholder="Ano" />
-          </SelectTrigger>
-          <SelectContent>
-            {availableYears.map((year) => (
-              <SelectItem key={year.value} value={year.value}>
-                {year.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Section Tabs */}
+      <Tabs value={activeSection} onValueChange={(v) => setActiveSection(v as 'kpis' | 'finance')} className="mb-6">
+        <TabsList>
+          <TabsTrigger value="kpis" className="gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Indicadores
+          </TabsTrigger>
+          <TabsTrigger value="finance" className="gap-2">
+            <Briefcase className="h-4 w-4" />
+            Organização Financeira
+          </TabsTrigger>
+        </TabsList>
+
+        {/* KPIs Section */}
+        <TabsContent value="kpis" className="mt-6">
+          {/* Period Filter */}
+          <div className="flex flex-wrap items-center gap-3 mb-6">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-muted-foreground">Período:</span>
+            </div>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Mês" />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTHS.map((month) => (
+                  <SelectItem key={month.value} value={month.value}>
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="Ano" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableYears.map((year) => (
+                  <SelectItem key={year.value} value={year.value}>
+                    {year.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
       {/* Main Financial KPIs */}
       <div className="mb-6">
@@ -563,6 +719,228 @@ export default function BusinessPage() {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        {/* Financial Organization Section */}
+        <TabsContent value="finance" className="mt-6">
+          {/* Financial Category Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+            {(Object.keys(FINANCIAL_CATEGORIES) as FinancialCategory[]).map((cat) => {
+              const config = FINANCIAL_CATEGORIES[cat];
+              const Icon = config.icon;
+              const data = financialData[cat];
+              const isActive = financeTab === cat;
+              return (
+                <Card 
+                  key={cat}
+                  className={`cursor-pointer transition-all ${isActive ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
+                  onClick={() => setFinanceTab(cat)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg ${config.bgColor}`}>
+                        <Icon className={`h-5 w-5 ${config.color}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-muted-foreground truncate">{config.label}</p>
+                        <p className={`text-lg font-bold ${data.total >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {formatCurrency(cat === 'caixa' ? data.total : data.expense)}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Selected Category Details */}
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    {(() => {
+                      const Icon = FINANCIAL_CATEGORIES[financeTab].icon;
+                      return <Icon className={`h-5 w-5 ${FINANCIAL_CATEGORIES[financeTab].color}`} />;
+                    })()}
+                    {FINANCIAL_CATEGORIES[financeTab].label}
+                  </CardTitle>
+                  <CardDescription>
+                    {financeTab === 'caixa' && 'Visão geral do fluxo de caixa da empresa'}
+                    {financeTab === 'retirada' && 'Retiradas de dinheiro do caixa'}
+                    {financeTab === 'salario' && 'Pagamentos de salários aos funcionários'}
+                    {financeTab === 'prolabore' && 'Retiradas de pró-labore dos sócios'}
+                    {financeTab === 'investimento' && 'Aportes e investimentos na empresa'}
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  {financeTab === 'caixa' ? (
+                    <>
+                      <Button size="sm" variant="outline" onClick={() => openNewFinancialEntry('caixa', 'expense')}>
+                        <ArrowDownCircle className="h-4 w-4 mr-2" />
+                        Saída
+                      </Button>
+                      <Button size="sm" onClick={() => openNewFinancialEntry('caixa', 'income')}>
+                        <ArrowUpCircle className="h-4 w-4 mr-2" />
+                        Entrada
+                      </Button>
+                    </>
+                  ) : financeTab === 'investimento' ? (
+                    <Button size="sm" onClick={() => openNewFinancialEntry(financeTab, 'income')}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Novo Aporte
+                    </Button>
+                  ) : (
+                    <Button size="sm" onClick={() => openNewFinancialEntry(financeTab, 'expense')}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Novo Lançamento
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Summary for current category */}
+              {financeTab === 'caixa' && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                  <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                    <p className="text-sm text-muted-foreground">Entradas</p>
+                    <p className="text-xl font-bold text-green-600">{formatCurrency(financialData.caixa.income)}</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <p className="text-sm text-muted-foreground">Saídas</p>
+                    <p className="text-xl font-bold text-red-600">{formatCurrency(financialData.caixa.expense)}</p>
+                  </div>
+                  <div className={`p-4 rounded-lg ${financialData.caixa.total >= 0 ? 'bg-blue-500/10 border-blue-500/20' : 'bg-orange-500/10 border-orange-500/20'} border`}>
+                    <p className="text-sm text-muted-foreground">Saldo Atual</p>
+                    <p className={`text-xl font-bold ${financialData.caixa.total >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
+                      {formatCurrency(financialData.caixa.total)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Transactions List */}
+              {loadingTransactions ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : financialData[financeTab].transactions.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Wallet className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhum lançamento encontrado</p>
+                  <p className="text-sm">Clique no botão acima para adicionar</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  {financialData[financeTab].transactions
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .slice(0, financeTab === 'caixa' ? 20 : 50)
+                    .map((transaction) => (
+                    <div key={transaction.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-full ${transaction.type === 'income' ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+                          {transaction.type === 'income' 
+                            ? <ArrowUpCircle className="h-4 w-4 text-green-500" />
+                            : <ArrowDownCircle className="h-4 w-4 text-red-500" />
+                          }
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{transaction.description}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {transaction.category} • {format(new Date(transaction.date), "dd/MM/yyyy", { locale: ptBR })}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                          {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
+                        </span>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteTransaction(transaction.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Financial Entry Form Dialog */}
+      <Dialog open={formOpen} onOpenChange={setFormOpen}>
+        <DialogContent className="z-[200]">
+          <DialogHeader>
+            <DialogTitle>
+              {formType === 'income' ? 'Nova Entrada' : 'Nova Saída'} - {FINANCIAL_CATEGORIES[formCategory].label}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleFinancialSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição *</Label>
+              <Input
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder={
+                  formCategory === 'salario' ? 'Ex: Salário João - Janeiro' :
+                  formCategory === 'prolabore' ? 'Ex: Pró-labore Sócio 1' :
+                  formCategory === 'investimento' ? 'Ex: Aporte de capital' :
+                  formCategory === 'retirada' ? 'Ex: Retirada para despesas' :
+                  'Descrição do lançamento'
+                }
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="amount">Valor *</Label>
+                <Input
+                  id="amount"
+                  value={formData.amount}
+                  onChange={(e) => setFormData(prev => ({ ...prev, amount: maskCurrency(e.target.value) }))}
+                  placeholder="R$ 0,00"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="date">Data *</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Observações</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                rows={2}
+                placeholder="Observações adicionais (opcional)"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">Adicionar</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </ManagementLayout>
   );
 }

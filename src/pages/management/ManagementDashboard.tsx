@@ -99,8 +99,21 @@ export default function ManagementDashboard() {
       .filter(t => t.type === 'income')
       .reduce((acc, t) => acc + Number(t.amount), 0);
 
+    // Excluir retiradas do cálculo de despesas para o lucro
+    const withdrawalKeywords = ['retirada', 'retirar', 'saque'];
+    
     const totalExpenses = monthlyTransactions
       .filter(t => t.type === 'expense')
+      .reduce((acc, t) => acc + Number(t.amount), 0);
+    
+    const expensesForProfit = monthlyTransactions
+      .filter(t => {
+        if (t.type !== 'expense') return false;
+        const desc = t.description.toLowerCase();
+        const cat = t.category.toLowerCase();
+        const isWithdrawal = withdrawalKeywords.some(kw => desc.includes(kw) || cat.includes(kw));
+        return !isWithdrawal;
+      })
       .reduce((acc, t) => acc + Number(t.amount), 0);
 
     return {
@@ -109,7 +122,7 @@ export default function ManagementDashboard() {
       clientsCount: clients.length,
       revenue: totalRevenue,
       expenses: totalExpenses,
-      profit: totalRevenue - totalExpenses,
+      profit: totalRevenue - expensesForProfit,
     };
   }, [orders, quotes, transactions, clients, selectedMonth, selectedYear]);
 

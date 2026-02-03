@@ -99,8 +99,8 @@ export default function ManagementDashboard() {
       .filter(t => t.type === 'income')
       .reduce((acc, t) => acc + Number(t.amount), 0);
 
-    // Excluir retiradas do cálculo de despesas para o lucro
-    const withdrawalKeywords = ['retirada', 'retirar', 'saque'];
+    // Excluir retiradas e pró-labore do cálculo de despesas para o lucro
+    const withdrawalKeywords = ['retirada', 'retirar', 'saque', 'pró-labore', 'pro-labore', 'prolabore'];
     
     const totalExpenses = monthlyTransactions
       .filter(t => t.type === 'expense')

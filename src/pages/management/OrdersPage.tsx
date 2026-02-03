@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Package, FileText, Eye, Trash2, Loader2, ArrowRightLeft, Plus, Download, Pencil, AlertTriangle } from 'lucide-react';
-import { format, isPast, parseISO } from 'date-fns';
+import { Search, Package, FileText, Eye, Trash2, Loader2, ArrowRightLeft, Plus, Download, Pencil, AlertTriangle, Calendar } from 'lucide-react';
+import { format, isPast, parseISO, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Order, Quote, OrderStatus, QuoteStatus } from '@/types/management';
@@ -195,6 +195,16 @@ export default function OrdersPage() {
                         <div className="flex flex-wrap items-center gap-2 mb-2">
                           <span className="font-semibold text-foreground text-sm sm:text-base">Pedido_{order.number.replace('PED', '')}</span>
                           <StatusBadge status={order.status} type="order" />
+                          {order.scheduled_date && (
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                              isToday(parseISO(order.scheduled_date)) 
+                                ? 'bg-primary/20 text-primary' 
+                                : 'bg-muted text-muted-foreground'
+                            }`}>
+                              <Calendar className="w-3 h-3" />
+                              {isToday(parseISO(order.scheduled_date)) ? 'Agendado p/ hoje' : `Agendado: ${format(parseISO(order.scheduled_date), 'dd/MM')}`}
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs sm:text-sm text-muted-foreground">{order.client_name}</p>
                         <div className="flex items-center justify-between mt-1">

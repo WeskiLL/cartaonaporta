@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import { NotificationsPanel } from './NotificationsPanel';
 
 const menuItems = [
   { path: '/deep/gestao', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -118,17 +119,20 @@ export function ManagementSidebar({ isCollapsed, onToggle }: ManagementSidebarPr
                   <p className="text-xs text-muted-foreground">Prime Print</p>
                 </div>
               )}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onToggle}
-                className="hidden lg:flex"
-              >
-                <ChevronLeft className={cn(
-                  "h-4 w-4 transition-transform",
-                  isCollapsed && "rotate-180"
-                )} />
-              </Button>
+              <div className="flex items-center gap-1">
+                <NotificationsPanel />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onToggle}
+                  className="hidden lg:flex"
+                >
+                  <ChevronLeft className={cn(
+                    "h-4 w-4 transition-transform",
+                    isCollapsed && "rotate-180"
+                  )} />
+                </Button>
+              </div>
             </div>
           </div>
 

@@ -102,6 +102,7 @@ export interface Order {
   status: 'awaiting_payment' | 'creating_art' | 'production' | 'shipping' | 'delivered';
   delivery_address?: Json;
   revenue_added?: boolean;
+  scheduled_date?: string;
   created_at: string;
   completed_at?: string;
   updated_at: string;

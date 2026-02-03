@@ -109,9 +109,14 @@ export default function ManagementDashboard() {
     const expensesForProfit = monthlyTransactions
       .filter(t => {
         if (t.type !== 'expense') return false;
-        const desc = t.description.toLowerCase();
-        const cat = t.category.toLowerCase();
-        const isWithdrawal = withdrawalKeywords.some(kw => desc.includes(kw) || cat.includes(kw));
+        // Normalizar texto removendo acentos para comparação
+        const normalize = (str: string) => str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/-/g, '');
+        const desc = normalize(t.description);
+        const cat = normalize(t.category);
+        const isWithdrawal = withdrawalKeywords.some(kw => {
+          const kwNorm = normalize(kw);
+          return desc.includes(kwNorm) || cat.includes(kwNorm);
+        });
         return !isWithdrawal;
       })
       .reduce((acc, t) => acc + Number(t.amount), 0);

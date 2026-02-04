@@ -121,8 +121,9 @@ export default function ManagementDashboard() {
       })
       .reduce((acc, t) => acc + Number(t.amount), 0);
 
-    // Ajuste para compensar valor de pró-labore subtraído incorretamente
-    const profitAdjustment = 688.63;
+    // Ajuste para compensar valor de pró-labore subtraído incorretamente em janeiro/2025
+    const shouldApplyAdjustment = filterYear === 2025 && (isAllYear || filterMonth === 0);
+    const profitAdjustment = shouldApplyAdjustment ? 688.63 : 0;
 
     return {
       ordersCount: monthlyOrders.length,

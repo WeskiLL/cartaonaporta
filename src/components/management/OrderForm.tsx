@@ -20,6 +20,7 @@ interface OrderFormProps {
   mode: 'quote' | 'order';
   onSave: () => void;
   editingItem?: Order | Quote | null;
+  sourceQuote?: Quote | null;
 }
 
 interface NewClientData {
@@ -42,8 +43,11 @@ interface DeliveryAddressData {
 // Available quantities that products can have prices for
 const QUANTITY_OPTIONS = [100, 200, 250, 500, 1000, 2000];
 
-export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: OrderFormProps) {
+export function OrderForm({ open, onOpenChange, mode, onSave, editingItem, sourceQuote }: OrderFormProps) {
   const { clients, products, fetchClients, fetchProducts, addQuote, addOrder, addClient, updateQuote, updateOrder } = useManagement();
+  
+  // Determine if we're converting a quote to an order
+  const isConvertingQuote = mode === 'order' && sourceQuote != null;
   const [loading, setLoading] = useState(false);
   const [clientSearch, setClientSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -102,8 +106,11 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
   useEffect(() => {
     if (!open || initialized) return;
     
+    // Determine the source data (editingItem for editing, sourceQuote for converting)
+    const sourceData = editingItem || sourceQuote;
+    
     // Wait for clients to be loaded before initializing
-    if (clients.length === 0 && !editingItem) {
+    if (clients.length === 0 && !sourceData) {
       // For new items, we can initialize without waiting
       setSelectedClient(null);
       setItems([]);
@@ -118,18 +125,18 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
       return;
     }
 
-    if (editingItem) {
+    if (sourceData) {
       // Populate form with existing data
-      const client = clients.find(c => c.id === editingItem.client_id);
+      const client = clients.find(c => c.id === sourceData.client_id);
       setSelectedClient(client || null);
       setClientMode('select');
-      setDiscount(editingItem.discount ? maskCurrency(editingItem.discount) : '');
-      setShipping(editingItem.shipping ? maskCurrency(editingItem.shipping) : '');
-      setNotes(editingItem.notes || '');
+      setDiscount(sourceData.discount ? maskCurrency(sourceData.discount) : '');
+      setShipping(sourceData.shipping ? maskCurrency(sourceData.shipping) : '');
+      setNotes(sourceData.notes || '');
       
       // Populate items
-      if (editingItem.items && editingItem.items.length > 0) {
-        const mappedItems = editingItem.items.map(item => {
+      if (sourceData.items && sourceData.items.length > 0) {
+        const mappedItems = sourceData.items.map(item => {
           // Check if product exists in catalog by ID
           const product = item.product_id ? products.find(p => p.id === item.product_id) : null;
           
@@ -170,9 +177,9 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
         setItems([]);
       }
       
-      // Populate delivery address for orders
-      if (mode === 'order' && 'delivery_address' in editingItem && editingItem.delivery_address) {
-        const addr = editingItem.delivery_address as unknown as DeliveryAddressData;
+      // Populate delivery address for orders (only from editingItem, not from sourceQuote since quotes don't have addresses)
+      if (mode === 'order' && editingItem && 'delivery_address' in editingItem && editingItem.delivery_address) {
+        const addr = (editingItem as Order).delivery_address as unknown as DeliveryAddressData;
         setDeliveryAddress({
           zip_code: addr.zip_code || '',
           street: addr.street || '',
@@ -187,16 +194,16 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
       }
       
       // Populate validity date for quotes
-      if (mode === 'quote' && 'valid_until' in editingItem && editingItem.valid_until) {
-        const validDate = new Date(editingItem.valid_until);
+      if (mode === 'quote' && editingItem && 'valid_until' in editingItem && editingItem.valid_until) {
+        const validDate = new Date((editingItem as Quote).valid_until!);
         setValidUntil(validDate.toISOString().split('T')[0]);
       } else {
         setValidUntil('');
       }
       
       // Populate scheduled date for orders
-      if (mode === 'order' && 'scheduled_date' in editingItem && editingItem.scheduled_date) {
-        setScheduledDate(String(editingItem.scheduled_date));
+      if (mode === 'order' && editingItem && 'scheduled_date' in editingItem && (editingItem as Order).scheduled_date) {
+        setScheduledDate(String((editingItem as Order).scheduled_date));
       } else {
         setScheduledDate('');
       }
@@ -223,7 +230,7 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
     }
     
     setInitialized(true);
-  }, [open, initialized, editingItem, clients, products, mode]);
+  }, [open, initialized, editingItem, sourceQuote, clients, products, mode]);
 
   // Filter products by search
   const filteredProducts = products.filter(p =>
@@ -490,7 +497,16 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
       if (mode === 'quote') {
         result = await addQuote(data, itemsData);
       } else {
+        // If converting from quote, add the quote_id reference
+        if (isConvertingQuote && sourceQuote) {
+          data.quote_id = sourceQuote.id;
+        }
         result = await addOrder(data, itemsData);
+        
+        // If successfully converted, update the quote status to 'converted'
+        if (result && isConvertingQuote && sourceQuote) {
+          await updateQuote(sourceQuote.id, { status: 'converted' });
+        }
       }
     }
 
@@ -509,7 +525,9 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem }: Ord
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {editingItem 
+            {isConvertingQuote
+              ? `Gerar Pedido a partir de ${sourceQuote?.number}`
+              : editingItem 
               ? (mode === 'quote' ? `Editar Orçamento_${editingItem.number.replace('ORC', '')}` : `Editar Pedido_${editingItem.number.replace('PED', '')}`)
               : (mode === 'quote' ? 'Novo Orçamento' : 'Novo Pedido')
             }

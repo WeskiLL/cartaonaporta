@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ShoppingCart, DollarSign, Users, FileText, Plus, TrendingUp, TrendingDown, RefreshCw, Loader2, Calendar } from 'lucide-react';
 import { maskCurrency } from '@/lib/masks';
 import { toast } from 'sonner';
+import { Quote } from '@/types/management';
 
 type OrderStatus = 'awaiting_payment' | 'creating_art' | 'production' | 'shipping' | 'delivered';
 
@@ -53,7 +54,7 @@ export default function ManagementDashboard() {
 
   const [orderFormOpen, setOrderFormOpen] = useState(false);
   const [orderFormMode, setOrderFormMode] = useState<'quote' | 'order'>('order');
-  const [convertingQuoteId, setConvertingQuoteId] = useState<string | null>(null);
+  const [sourceQuote, setSourceQuote] = useState<Quote | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
   const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
 
@@ -203,15 +204,10 @@ export default function ManagementDashboard() {
     }
   }, [orders, transactions, updateOrder, addTransaction, deleteTransaction, fetchOrders, fetchTransactions]);
 
-  const handleConvertQuote = async (quoteId: string) => {
-    setConvertingQuoteId(quoteId);
-    const order = await convertQuoteToOrder(quoteId);
-    if (order) {
-      toast.success(`Pedido ${order.number} criado com sucesso`);
-      fetchQuotes();
-      fetchOrders();
-    }
-    setConvertingQuoteId(null);
+  const handleConvertQuote = (quote: Quote) => {
+    setSourceQuote(quote);
+    setOrderFormMode('order');
+    setOrderFormOpen(true);
   };
 
 
@@ -388,17 +384,10 @@ export default function ManagementDashboard() {
                         <p className="font-medium text-foreground">{maskCurrency(Number(quote.total))}</p>
                         <Button
                           size="sm"
-                          onClick={() => handleConvertQuote(quote.id)}
-                          disabled={convertingQuoteId === quote.id}
+                          onClick={() => handleConvertQuote(quote)}
                         >
-                          {convertingQuoteId === quote.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <>
-                              <RefreshCw className="h-4 w-4 mr-1" />
-                              Gerar Pedido
-                            </>
-                          )}
+                          <RefreshCw className="h-4 w-4 mr-1" />
+                          Gerar Pedido
                         </Button>
                       </div>
                     </div>
@@ -412,11 +401,16 @@ export default function ManagementDashboard() {
 
       <OrderForm
         open={orderFormOpen}
-        onOpenChange={setOrderFormOpen}
+        onOpenChange={(open) => {
+          setOrderFormOpen(open);
+          if (!open) setSourceQuote(null);
+        }}
         mode={orderFormMode}
+        sourceQuote={sourceQuote}
         onSave={() => {
           fetchOrders();
           fetchQuotes();
+          setSourceQuote(null);
         }}
       />
     </ManagementLayout>

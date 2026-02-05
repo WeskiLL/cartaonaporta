@@ -49,6 +49,7 @@ export default function OrdersPage() {
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [pdfItem, setPdfItem] = useState<Order | Quote | null>(null);
   const [pdfType, setPdfType] = useState<'order' | 'quote'>('order');
+  const [sourceQuote, setSourceQuote] = useState<Quote | null>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -86,12 +87,11 @@ export default function OrdersPage() {
     if (success) toast.success('Status atualizado!');
   };
 
-  const handleConvertQuote = async (quoteId: string) => {
-    const order = await convertQuoteToOrder(quoteId);
-    if (order) {
-      toast.success(`Pedido ${order.number} criado!`);
-      setActiveTab('orders');
-    }
+  const handleConvertQuote = (quote: Quote) => {
+    setSourceQuote(quote);
+    setFormMode('order');
+    setEditingItem(null);
+    setFormOpen(true);
   };
 
   const handleDeleteOrder = async (id: string) => {
@@ -334,7 +334,7 @@ export default function OrdersPage() {
                         </Select>
                         <div className="flex items-center gap-1.5 ml-auto sm:ml-0">
                           {quote.status === 'approved' && (
-                            <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => handleConvertQuote(quote.id)}>
+                            <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => handleConvertQuote(quote)}>
                               <ArrowRightLeft className="w-3.5 h-3.5 mr-1" />
                               Converter
                             </Button>
@@ -367,13 +367,19 @@ export default function OrdersPage() {
         open={formOpen}
         onOpenChange={(open) => {
           setFormOpen(open);
-          if (!open) setEditingItem(null);
+          if (!open) {
+            setEditingItem(null);
+            setSourceQuote(null);
+          }
         }}
         mode={formMode}
         editingItem={editingItem}
+        sourceQuote={sourceQuote}
         onSave={() => {
           fetchOrders();
           fetchQuotes();
+          setSourceQuote(null);
+          setActiveTab('orders');
         }}
       />
 

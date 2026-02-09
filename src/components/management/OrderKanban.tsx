@@ -205,8 +205,8 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
         const order = localOrders.find(o => o.id === pendingDrag.orderId);
         const existingNotes = order?.notes || '';
         const newNotes = existingNotes 
-          ? `${existingNotes}\nLink do produto: ${link}` 
-          : `Link do produto: ${link}`;
+          ? `${existingNotes}\nLink do pedido: ${link}` 
+          : `Link do pedido: ${link}`;
         await supabase
           .from('orders')
           .update({ notes: newNotes })
@@ -420,7 +420,7 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
             </div>
             <div>
               <Label htmlFor="product-link">
-                Link do produto:
+                Link do pedido:
               </Label>
               <Input
                 id="product-link"

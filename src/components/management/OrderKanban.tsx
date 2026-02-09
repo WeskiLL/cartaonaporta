@@ -60,6 +60,7 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
   // Expense modal state
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [expenseAmount, setExpenseAmount] = useState('');
+  const [productLink, setProductLink] = useState('');
   const [pendingDrag, setPendingDrag] = useState<{
     orderId: string;
     orderNumber: string;
@@ -125,6 +126,7 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
         revenueAction,
       });
       setExpenseAmount('');
+      setProductLink('');
       setExpenseModalOpen(true);
       return;
     }
@@ -195,6 +197,24 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
     }
 
     setExpenseModalOpen(false);
+
+    // Save product link to order notes if provided
+    const link = productLink.trim();
+    if (link) {
+      try {
+        const order = localOrders.find(o => o.id === pendingDrag.orderId);
+        const existingNotes = order?.notes || '';
+        const newNotes = existingNotes 
+          ? `${existingNotes}\nLink do produto: ${link}` 
+          : `Link do produto: ${link}`;
+        await supabase
+          .from('orders')
+          .update({ notes: newNotes })
+          .eq('id', pendingDrag.orderId);
+      } catch (error) {
+        console.error('Error saving product link:', error);
+      }
+    }
     
     await executeStatusChange(
       pendingDrag.orderId,
@@ -383,19 +403,34 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
           <DialogHeader>
             <DialogTitle>Despesa de Produção</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="expense-amount">
-              Informe o valor da despesa para o pedido {pendingDrag?.orderNumber}:
-            </Label>
-            <Input
-              id="expense-amount"
-              type="text"
-              placeholder="0,00"
-              value={expenseAmount}
-              onChange={(e) => setExpenseAmount(e.target.value)}
-              className="mt-2"
-              autoFocus
-            />
+         <div className="py-4 space-y-4">
+            <div>
+              <Label htmlFor="expense-amount">
+                Valor da despesa para o pedido {pendingDrag?.orderNumber}:
+              </Label>
+              <Input
+                id="expense-amount"
+                type="text"
+                placeholder="0,00"
+                value={expenseAmount}
+                onChange={(e) => setExpenseAmount(e.target.value)}
+                className="mt-2"
+                autoFocus
+              />
+            </div>
+            <div>
+              <Label htmlFor="product-link">
+                Link do produto:
+              </Label>
+              <Input
+                id="product-link"
+                type="url"
+                placeholder="https://..."
+                value={productLink}
+                onChange={(e) => setProductLink(e.target.value)}
+                className="mt-2"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleExpenseCancel}>

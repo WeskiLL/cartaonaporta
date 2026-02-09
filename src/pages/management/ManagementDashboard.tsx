@@ -40,10 +40,14 @@ export default function ManagementDashboard() {
     quotes, 
     transactions, 
     clients, 
+    company,
+    products,
     fetchOrders, 
     fetchQuotes, 
     fetchTransactions, 
-    fetchClients, 
+    fetchClients,
+    fetchCompany,
+    fetchProducts,
     loadingOrders,
     loadingQuotes,
     updateOrder,
@@ -73,7 +77,9 @@ export default function ManagementDashboard() {
     fetchQuotes();
     fetchTransactions();
     fetchClients();
-  }, [fetchOrders, fetchQuotes, fetchTransactions, fetchClients]);
+    fetchCompany();
+    fetchProducts();
+  }, [fetchOrders, fetchQuotes, fetchTransactions, fetchClients, fetchCompany, fetchProducts]);
 
   const stats = useMemo(() => {
     const filterYear = parseInt(selectedYear, 10);
@@ -343,7 +349,7 @@ export default function ManagementDashboard() {
                   Nenhum pedido encontrado
                 </p>
               ) : (
-                <OrderKanban orders={orders} onStatusChange={handleStatusChange} />
+                <OrderKanban orders={orders} clients={clients} company={company} products={products} onStatusChange={handleStatusChange} />
               )}
             </CardContent>
           </Card>

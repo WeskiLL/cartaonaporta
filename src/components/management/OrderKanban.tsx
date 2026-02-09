@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Order } from '@/types/management';
+import { Order, Client, Company, ManagementProduct } from '@/types/management';
 import { maskCurrency } from '@/lib/masks';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, ExternalLink, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { exportOrderToPDF } from '@/lib/pdf-export';
+import whatsappIcon from '@/assets/whatsapp-icon.png';
 import {
   Dialog,
   DialogContent,
@@ -43,6 +45,9 @@ interface ExpenseAction {
 
 interface OrderKanbanProps {
   orders: Order[];
+  clients?: Client[];
+  company?: Company | null;
+  products?: ManagementProduct[];
   onStatusChange: (
     orderId: string,
     newStatus: OrderStatus,
@@ -52,7 +57,7 @@ interface OrderKanbanProps {
   onViewOrder?: (order: Order) => void;
 }
 
-export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanbanProps) {
+export function OrderKanban({ orders, clients, company, products, onStatusChange, onViewOrder }: OrderKanbanProps) {
   // Local state for optimistic updates
   const [localOrders, setLocalOrders] = useState<Order[]>(orders);
   const [pendingUpdates, setPendingUpdates] = useState<Set<string>>(new Set());
@@ -340,6 +345,8 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
                       <div className="space-y-2">
                         {statusOrders.map((order, index) => {
                           const isPending = pendingUpdates.has(order.id);
+                          const client = clients?.find(c => c.id === order.client_id);
+                          const orderLink = order.notes?.match(/Link do pedido:\s*(https?:\/\/\S+)/)?.[1];
                           return (
                             <Draggable key={order.id} draggableId={order.id} index={index}>
                               {(provided, snapshot) => (
@@ -378,6 +385,56 @@ export function OrderKanban({ orders, onStatusChange, onViewOrder }: OrderKanban
                                             Ver
                                           </Button>
                                         )}
+                                      </div>
+                                      {/* Action icons */}
+                                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border">
+                                        {/* WhatsApp */}
+                                        <button
+                                          title="WhatsApp do cliente"
+                                          className="p-1 rounded hover:bg-muted transition-colors"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const phone = client?.phone?.replace(/\D/g, '');
+                                            if (phone) {
+                                              window.open(`https://wa.me/55${phone}`, '_blank');
+                                            } else {
+                                              toast.error('Telefone do cliente não encontrado');
+                                            }
+                                          }}
+                                        >
+                                          <img src={whatsappIcon} alt="WhatsApp" className="w-4 h-4" />
+                                        </button>
+                                        {/* Link do pedido */}
+                                        <button
+                                          title="Link do pedido"
+                                          className={`p-1 rounded hover:bg-muted transition-colors ${!orderLink ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (orderLink) {
+                                              window.open(orderLink, '_blank');
+                                            } else {
+                                              toast.error('Nenhum link cadastrado para este pedido');
+                                            }
+                                          }}
+                                        >
+                                          <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                                        </button>
+                                        {/* Download PDF */}
+                                        <button
+                                          title="Baixar PDF do pedido"
+                                          className="p-1 rounded hover:bg-muted transition-colors"
+                                          onClick={async (e) => {
+                                            e.stopPropagation();
+                                            try {
+                                              await exportOrderToPDF(order, company || null, client || null, products);
+                                              toast.success('PDF baixado!');
+                                            } catch (error) {
+                                              toast.error('Erro ao gerar PDF');
+                                            }
+                                          }}
+                                        >
+                                          <Download className="w-4 h-4 text-muted-foreground" />
+                                        </button>
                                       </div>
                                     </div>
                                   </div>

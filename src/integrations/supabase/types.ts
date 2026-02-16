@@ -155,6 +155,27 @@ export type Database = {
         }
         Relationships: []
       }
+      counters: {
+        Row: {
+          created_at: string
+          id: string
+          last_value: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          last_value?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       login_attempts: {
         Row: {
           attempted_at: string

@@ -26,6 +26,7 @@ export default function FinancialPage() {
   const { transactions, loadingTransactions, fetchTransactions, addTransaction, deleteTransaction, company } = useManagement();
   const [activeTab, setActiveTab] = useState<'all' | 'income' | 'expense'>('all');
   const [filterMonth, setFilterMonth] = useState<string>('all');
+  const [filterCategory, setFilterCategory] = useState<string>('all');
   const [formOpen, setFormOpen] = useState(false);
   const [formType, setFormType] = useState<TransactionType>('income');
   const [formData, setFormData] = useState({
@@ -55,10 +56,15 @@ export default function FinancialPage() {
     new Set(transactions.map(t => format(parseISO(t.date), 'yyyy-MM')))
   ).sort((a, b) => b.localeCompare(a));
 
+  const availableCategories = Array.from(
+    new Set(transactions.map(t => t.category))
+  ).sort();
+
   const filteredTransactions = transactions.filter(t => {
     const matchesType = activeTab === 'all' ? true : t.type === activeTab;
     const matchesMonth = filterMonth === 'all' ? true : format(parseISO(t.date), 'yyyy-MM') === filterMonth;
-    return matchesType && matchesMonth;
+    const matchesCategory = filterCategory === 'all' ? true : t.category === filterCategory;
+    return matchesType && matchesMonth && matchesCategory;
   });
 
   const formatCurrency = (value: number) => 
@@ -196,6 +202,17 @@ export default function FinancialPage() {
                 <SelectItem key={month} value={month}>
                   {format(parseISO(month + '-01'), 'MMMM yyyy', { locale: ptBR })}
                 </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas categorias</SelectItem>
+              {availableCategories.map(cat => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
               ))}
             </SelectContent>
           </Select>

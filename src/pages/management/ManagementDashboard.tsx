@@ -109,10 +109,6 @@ export default function ManagementDashboard() {
     // Excluir retiradas e pró-labore do cálculo de despesas para o lucro
     const withdrawalKeywords = ['retirada', 'retirar', 'saque', 'pró-labore', 'pro-labore', 'prolabore'];
     
-    const totalExpenses = monthlyTransactions
-      .filter(t => t.type === 'expense')
-      .reduce((acc, t) => acc + Number(t.amount), 0);
-    
     const expensesForProfit = monthlyTransactions
       .filter(t => {
         if (t.type !== 'expense') return false;
@@ -137,7 +133,7 @@ export default function ManagementDashboard() {
       quotesCount: quotes.filter(q => q.status === 'pending').length,
       clientsCount: clients.length,
       revenue: totalRevenue,
-      expenses: totalExpenses,
+      expenses: expensesForProfit,
       profit: totalRevenue - expensesForProfit + profitAdjustment,
     };
   }, [orders, quotes, transactions, clients, selectedMonth, selectedYear]);

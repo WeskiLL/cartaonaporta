@@ -25,6 +25,7 @@ import TrackingPage from "./pages/management/TrackingPage";
 import SitePage from "./pages/management/SitePage";
 import CatalogoSettingsPage from "./pages/management/CatalogoSettingsPage";
 import TrackingPublic from "./pages/TrackingPublic";
+import ClientArea from "./pages/ClientArea";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -67,6 +68,8 @@ const App = () => (
                   <Route path="/deep/gestao/empresa" element={<CompanyPage />} />
                   {/* Public Tracking */}
                   <Route path="/rastreio/:trackingCode" element={<TrackingPublic />} />
+                  {/* Client Area */}
+                  <Route path="/areadocliente/:orderNumber" element={<ClientArea />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

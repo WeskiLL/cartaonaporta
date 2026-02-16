@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarIcon, ExternalLink, Download } from 'lucide-react';
+import { CalendarIcon, ExternalLink, Download, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { exportOrderToPDF } from '@/lib/pdf-export';
 import whatsappIcon from '@/assets/whatsapp-icon.png';
@@ -433,7 +433,20 @@ export function OrderKanban({ orders, clients, company, products, onStatusChange
                                             }
                                           }}
                                         >
-                                          <Download className="w-4 h-4 text-muted-foreground" />
+                                        <Download className="w-4 h-4 text-muted-foreground" />
+                                        </button>
+                                        {/* Área do Cliente */}
+                                        <button
+                                          title="Copiar link da área do cliente"
+                                          className="p-1 rounded hover:bg-muted transition-colors"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const link = `https://cartaonaporta.com.br/areadocliente/${order.number}`;
+                                            navigator.clipboard.writeText(link);
+                                            toast.success('Link da área do cliente copiado!');
+                                          }}
+                                        >
+                                          <UserCheck className="w-4 h-4 text-muted-foreground" />
                                         </button>
                                       </div>
                                     </div>

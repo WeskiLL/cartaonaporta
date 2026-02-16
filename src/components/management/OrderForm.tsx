@@ -408,25 +408,31 @@ export function OrderForm({ open, onOpenChange, mode, onSave, editingItem, sourc
         }
       }
       
-      // Create client with the provided name
-      const createdClient = await addClient({
-        name: newClient.name.trim(),
-        email: newClient.email || '',
-        phone: newClient.phone || '',
-        document: newClient.document || '',
-        address: '',
-        city: '',
-        state: '',
-        zip_code: '',
-      });
-      
-      if (!createdClient) {
-        toast.error('Erro ao criar cliente');
-        return;
+      if (mode === 'order') {
+        // For orders: create client and save delivery address
+        const createdClient = await addClient({
+          name: newClient.name.trim(),
+          email: newClient.email || '',
+          phone: newClient.phone || '',
+          document: newClient.document || '',
+          address: deliveryAddress.street ? `${deliveryAddress.street}, ${deliveryAddress.number}${deliveryAddress.complement ? ` - ${deliveryAddress.complement}` : ''} - ${deliveryAddress.neighborhood}` : '',
+          city: deliveryAddress.city || '',
+          state: deliveryAddress.state || '',
+          zip_code: deliveryAddress.zip_code ? unmask(deliveryAddress.zip_code) : '',
+        });
+        
+        if (!createdClient) {
+          toast.error('Erro ao criar cliente');
+          return;
+        }
+        
+        clientId = createdClient.id;
+        clientName = createdClient.name;
+      } else {
+        // For quotes: do NOT save client, just use the name
+        clientName = newClient.name.trim();
+        clientId = undefined;
       }
-      
-      clientId = createdClient.id;
-      clientName = createdClient.name;
     } else {
       // Mode is 'select' - validate that a client is selected
       if (!selectedClient) {

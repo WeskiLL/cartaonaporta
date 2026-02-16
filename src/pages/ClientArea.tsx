@@ -119,8 +119,6 @@ export default function ClientArea() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center mb-6">
-              <p className="text-sm text-gray-500 mb-1">Pedido</p>
-              <h1 className="text-2xl font-bold text-gray-900">{order.number}</h1>
               <p className="text-sm text-gray-500 mt-1">
                 Cliente: <span className="font-medium text-gray-700">{order.client_name}</span>
               </p>

@@ -273,22 +273,21 @@ export function ManagementProvider({ children }: { children: ReactNode }) {
     items: Omit<QuoteItem, 'id' | 'quote_id'>[]
   ): Promise<Quote | null> => {
     try {
-      // Get ALL quote numbers and find the maximum to avoid duplicates
-      const { data: allQuotes } = await supabase
-        .from('quotes')
-        .select('number');
+      // Get next number from counters table (persists even after deletion)
+      const { data: counter } = await supabase
+        .from('counters')
+        .select('last_value')
+        .eq('id', 'ORC')
+        .maybeSingle();
       
-      let maxNumber = 0;
-      if (allQuotes && allQuotes.length > 0) {
-        allQuotes.forEach(q => {
-          const num = parseInt(q.number.replace('ORC', ''), 10);
-          if (!isNaN(num) && num > maxNumber) {
-            maxNumber = num;
-          }
-        });
-      }
+      const nextVal = (counter?.last_value ?? 0) + 1;
       
-      const number = generateNumber('ORC', maxNumber + 1);
+      // Update counter
+      await supabase
+        .from('counters')
+        .upsert({ id: 'ORC', last_value: nextVal, updated_at: new Date().toISOString() });
+      
+      const number = generateNumber('ORC', nextVal);
       const { data, error } = await supabase
         .from('quotes')
         .insert([{ ...quote, number }])
@@ -390,22 +389,21 @@ export function ManagementProvider({ children }: { children: ReactNode }) {
     if (!quote) return null;
 
     try {
-      // Get ALL order numbers and find the maximum to avoid duplicates
-      const { data: allOrders } = await supabase
-        .from('orders')
-        .select('number');
+      // Get next number from counters table (persists even after deletion)
+      const { data: counter } = await supabase
+        .from('counters')
+        .select('last_value')
+        .eq('id', 'PED')
+        .maybeSingle();
       
-      let maxNumber = 0;
-      if (allOrders && allOrders.length > 0) {
-        allOrders.forEach(o => {
-          const num = parseInt(o.number.replace('PED', ''), 10);
-          if (!isNaN(num) && num > maxNumber) {
-            maxNumber = num;
-          }
-        });
-      }
+      const nextVal = (counter?.last_value ?? 0) + 1;
       
-      const number = generateNumber('PED', maxNumber + 1);
+      // Update counter
+      await supabase
+        .from('counters')
+        .upsert({ id: 'PED', last_value: nextVal, updated_at: new Date().toISOString() });
+      
+      const number = generateNumber('PED', nextVal);
       const orderData = {
         number,
         quote_id: quoteId,
@@ -487,22 +485,21 @@ export function ManagementProvider({ children }: { children: ReactNode }) {
     items: Omit<QuoteItem, 'id' | 'order_id'>[]
   ): Promise<Order | null> => {
     try {
-      // Get ALL order numbers and find the maximum to avoid duplicates
-      const { data: allOrders } = await supabase
-        .from('orders')
-        .select('number');
+      // Get next number from counters table (persists even after deletion)
+      const { data: counter } = await supabase
+        .from('counters')
+        .select('last_value')
+        .eq('id', 'PED')
+        .maybeSingle();
       
-      let maxNumber = 0;
-      if (allOrders && allOrders.length > 0) {
-        allOrders.forEach(o => {
-          const num = parseInt(o.number.replace('PED', ''), 10);
-          if (!isNaN(num) && num > maxNumber) {
-            maxNumber = num;
-          }
-        });
-      }
+      const nextVal = (counter?.last_value ?? 0) + 1;
       
-      const number = generateNumber('PED', maxNumber + 1);
+      // Update counter
+      await supabase
+        .from('counters')
+        .upsert({ id: 'PED', last_value: nextVal, updated_at: new Date().toISOString() });
+      
+      const number = generateNumber('PED', nextVal);
       const { data, error } = await supabase
         .from('orders')
         .insert([{ ...order, number }])

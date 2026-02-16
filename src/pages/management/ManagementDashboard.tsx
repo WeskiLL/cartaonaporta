@@ -59,7 +59,7 @@ export default function ManagementDashboard() {
   const [orderFormOpen, setOrderFormOpen] = useState(false);
   const [orderFormMode, setOrderFormMode] = useState<'quote' | 'order'>('order');
   const [sourceQuote, setSourceQuote] = useState<Quote | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState<string>('all');
+  const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth()));
   const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
 
   // Generate available years (current year and 2 years back)

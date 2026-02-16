@@ -80,6 +80,8 @@ export default function ClientArea() {
     ? STATUS_CONFIG.findIndex(s => s.id === order.status)
     : -1;
 
+  const isDelivered = order?.status === 'delivered';
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex items-center justify-center">
@@ -115,6 +117,23 @@ export default function ClientArea() {
 
       {/* Content */}
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+        {/* Delivered banner */}
+        {isDelivered && (
+          <Card className="border-green-300 bg-green-50">
+            <CardContent className="pt-6 pb-6">
+              <div className="flex flex-col items-center text-center gap-3">
+                <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center">
+                  <CheckCircle className="w-9 h-9 text-white" />
+                </div>
+                <h2 className="text-xl font-bold text-green-700">Pedido Entregue!</h2>
+                <p className="text-sm text-green-600">
+                  Seu pedido foi entregue com sucesso. Obrigado pela preferência!
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Order info */}
         <Card>
           <CardContent className="pt-6">
@@ -139,24 +158,34 @@ export default function ClientArea() {
                     {/* Timeline line + dot */}
                     <div className="flex flex-col items-center">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors ${
-                        isCurrent
-                          ? 'bg-[#e85616] border-[#e85616] text-white'
-                          : isActive
-                            ? 'bg-green-100 border-green-500 text-green-600'
-                            : 'bg-gray-100 border-gray-300 text-gray-400'
+                        isDelivered
+                          ? 'bg-green-500 border-green-500 text-white'
+                          : isCurrent
+                            ? 'bg-[#e85616] border-[#e85616] text-white'
+                            : isActive
+                              ? 'bg-green-100 border-green-500 text-green-600'
+                              : 'bg-gray-100 border-gray-300 text-gray-400'
                       }`}>
                         <Icon className="w-4 h-4" />
                       </div>
                       {index < STATUS_CONFIG.length - 1 && (
                         <div className={`w-0.5 h-8 ${
-                          isActive && index < currentStatusIndex ? 'bg-green-500' : 'bg-gray-200'
+                          isDelivered || (isActive && index < currentStatusIndex) ? 'bg-green-500' : 'bg-gray-200'
                         }`} />
                       )}
                     </div>
                     {/* Label */}
-                    <div className={`pt-1 ${isCurrent ? 'font-bold text-gray-900' : isActive ? 'text-gray-700' : 'text-gray-400'}`}>
+                    <div className={`pt-1 ${
+                      isDelivered
+                        ? 'font-bold text-green-700'
+                        : isCurrent
+                          ? 'font-bold text-gray-900'
+                          : isActive
+                            ? 'text-gray-700'
+                            : 'text-gray-400'
+                    }`}>
                       <p className="text-sm">{status.label}</p>
-                      {isCurrent && (
+                      {isCurrent && !isDelivered && (
                         <p className="text-xs text-[#e85616] font-medium mt-0.5">Status atual</p>
                       )}
                     </div>

@@ -25,6 +25,7 @@ const EXPENSE_CATEGORIES = ['Material', 'Frete', 'Marketing', 'Salários', 'Alug
 export default function FinancialPage() {
   const { transactions, loadingTransactions, fetchTransactions, addTransaction, deleteTransaction, company } = useManagement();
   const [activeTab, setActiveTab] = useState<'all' | 'income' | 'expense'>('all');
+  const [filterMonth, setFilterMonth] = useState<string>('all');
   const [formOpen, setFormOpen] = useState(false);
   const [formType, setFormType] = useState<TransactionType>('income');
   const [formData, setFormData] = useState({
@@ -49,9 +50,16 @@ export default function FinancialPage() {
   const totalExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   const balance = totalIncome - totalExpense;
 
-  const filteredTransactions = transactions.filter(t => 
-    activeTab === 'all' ? true : t.type === activeTab
-  );
+  // Build unique months from transactions for the filter
+  const availableMonths = Array.from(
+    new Set(transactions.map(t => format(parseISO(t.date), 'yyyy-MM')))
+  ).sort((a, b) => b.localeCompare(a));
+
+  const filteredTransactions = transactions.filter(t => {
+    const matchesType = activeTab === 'all' ? true : t.type === activeTab;
+    const matchesMonth = filterMonth === 'all' ? true : format(parseISO(t.date), 'yyyy-MM') === filterMonth;
+    return matchesType && matchesMonth;
+  });
 
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -171,11 +179,27 @@ export default function FinancialPage() {
 
       {/* Transactions List */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="all">Todas</TabsTrigger>
-          <TabsTrigger value="income">Receitas</TabsTrigger>
-          <TabsTrigger value="expense">Despesas</TabsTrigger>
-        </TabsList>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+          <TabsList>
+            <TabsTrigger value="all">Todas</TabsTrigger>
+            <TabsTrigger value="income">Receitas</TabsTrigger>
+            <TabsTrigger value="expense">Despesas</TabsTrigger>
+          </TabsList>
+          <Select value={filterMonth} onValueChange={setFilterMonth}>
+            <SelectTrigger className="w-[180px]">
+              <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Mês" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os meses</SelectItem>
+              {availableMonths.map(month => (
+                <SelectItem key={month} value={month}>
+                  {format(parseISO(month + '-01'), 'MMMM yyyy', { locale: ptBR })}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         <TabsContent value={activeTab}>
           {loadingTransactions ? (

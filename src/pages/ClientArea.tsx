@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, Truck, CheckCircle, Clock, Paintbrush, ExternalLink, Loader2 } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, Paintbrush, ExternalLink, Loader2, Copy, Info } from 'lucide-react';
+import { toast } from 'sonner';
 
 import logoPrimePrint from '@/assets/logo-prime-print.png';
 import logoCartaoNaPorta from '@/assets/logo-cartao-na-porta.png';
@@ -208,7 +209,19 @@ export default function ClientArea() {
               <div className="space-y-3">
                 <div>
                   <p className="text-sm text-gray-500">Código de Rastreio</p>
-                  <p className="text-lg font-mono font-bold text-[#e85616]">{tracking.tracking_code}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-mono font-bold text-[#e85616]">{tracking.tracking_code}</p>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(tracking.tracking_code);
+                        toast.success('Código copiado!');
+                      }}
+                      className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                      title="Copiar código"
+                    >
+                      <Copy className="w-4 h-4 text-gray-500" />
+                    </button>
+                  </div>
                 </div>
 
                 {tracking.estimated_delivery && (
@@ -221,6 +234,13 @@ export default function ClientArea() {
                         year: 'numeric',
                       })}
                     </p>
+                  </div>
+                )}
+
+                {order.status === 'shipping' && (
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs">
+                    <Info className="w-4 h-4 mt-0.5 shrink-0" />
+                    <p>O rastreio dos Correios costuma atualizar quando o material chega no estado de destino. Fique tranquilo, seu pedido está a caminho!</p>
                   </div>
                 )}
 

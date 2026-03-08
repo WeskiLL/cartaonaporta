@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, Truck, CheckCircle, Clock, Paintbrush, ExternalLink, Loader2, Copy, Info } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, Paintbrush, ExternalLink, Loader2, Copy, Info, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 
 import logoPrimePrint from '@/assets/logo-prime-print.png';

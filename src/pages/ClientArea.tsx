@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, Truck, CheckCircle, Clock, Paintbrush, ExternalLink, Loader2, Copy, Info } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, Paintbrush, ExternalLink, Loader2, Copy, Info, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 
 import logoPrimePrint from '@/assets/logo-prime-print.png';
@@ -21,6 +21,13 @@ interface OrderData {
   status: string;
   created_at: string;
   client_name: string;
+}
+
+interface OrderItem {
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
 }
 
 interface TrackingData {
@@ -42,6 +49,7 @@ export default function ClientArea() {
   const [order, setOrder] = useState<OrderData | null>(null);
   const [tracking, setTracking] = useState<TrackingData | null>(null);
   const [company, setCompany] = useState<CompanyData | null>(null);
+  const [items, setItems] = useState<OrderItem[]>([]);
 
   useEffect(() => {
     if (!orderNumber) return;
@@ -65,6 +73,7 @@ export default function ClientArea() {
 
         const result = await response.json();
         setOrder(result.order);
+        setItems(result.items || []);
         setTracking(result.tracking);
         setCompany(result.company);
       } catch (err) {
@@ -197,7 +206,37 @@ export default function ClientArea() {
           </CardContent>
         </Card>
 
-        {/* Tracking info */}
+        {/* Order items */}
+        {items.length > 0 && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <ShoppingBag className="w-5 h-5 text-[#e85616]" />
+                <h2 className="text-lg font-bold text-gray-900">Itens do Pedido</h2>
+              </div>
+
+              <div className="divide-y">
+                {items.map((item, index) => (
+                  <div key={index} className="flex justify-between items-center py-3">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{item.product_name}</p>
+                      <p className="text-xs text-gray-500">{item.quantity} un × R$ {item.unit_price.toFixed(2).replace('.', ',')}</p>
+                    </div>
+                    <p className="text-sm font-bold text-gray-700">R$ {item.total.toFixed(2).replace('.', ',')}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-3 pt-3 border-t-2 flex justify-between items-center">
+                <p className="text-sm font-bold text-gray-900">Total</p>
+                <p className="text-lg font-bold text-[#e85616]">
+                  R$ {items.reduce((sum, i) => sum + i.total, 0).toFixed(2).replace('.', ',')}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {tracking && (
           <Card>
             <CardContent className="pt-6">

@@ -39,6 +39,12 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Fetch order items
+    const { data: items } = await supabase
+      .from("quote_items")
+      .select("product_name, quantity, unit_price, total")
+      .eq("order_id", order.id);
+
     // Fetch tracking info if order is in shipping or delivered
     let tracking = null;
     if (order.status === "shipping" || order.status === "delivered") {

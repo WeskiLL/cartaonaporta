@@ -206,7 +206,37 @@ export default function ClientArea() {
           </CardContent>
         </Card>
 
-        {/* Tracking info */}
+        {/* Order items */}
+        {items.length > 0 && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <ShoppingBag className="w-5 h-5 text-[#e85616]" />
+                <h2 className="text-lg font-bold text-gray-900">Itens do Pedido</h2>
+              </div>
+
+              <div className="divide-y">
+                {items.map((item, index) => (
+                  <div key={index} className="flex justify-between items-center py-3">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{item.product_name}</p>
+                      <p className="text-xs text-gray-500">{item.quantity} un × R$ {item.unit_price.toFixed(2).replace('.', ',')}</p>
+                    </div>
+                    <p className="text-sm font-bold text-gray-700">R$ {item.total.toFixed(2).replace('.', ',')}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-3 pt-3 border-t-2 flex justify-between items-center">
+                <p className="text-sm font-bold text-gray-900">Total</p>
+                <p className="text-lg font-bold text-[#e85616]">
+                  R$ {items.reduce((sum, i) => sum + i.total, 0).toFixed(2).replace('.', ',')}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {tracking && (
           <Card>
             <CardContent className="pt-6">

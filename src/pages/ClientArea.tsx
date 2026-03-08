@@ -49,6 +49,7 @@ export default function ClientArea() {
   const [order, setOrder] = useState<OrderData | null>(null);
   const [tracking, setTracking] = useState<TrackingData | null>(null);
   const [company, setCompany] = useState<CompanyData | null>(null);
+  const [items, setItems] = useState<OrderItem[]>([]);
 
   useEffect(() => {
     if (!orderNumber) return;

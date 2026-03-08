@@ -23,6 +23,13 @@ interface OrderData {
   client_name: string;
 }
 
+interface OrderItem {
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+}
+
 interface TrackingData {
   tracking_code: string;
   status: string;

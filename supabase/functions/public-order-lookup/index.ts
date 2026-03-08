@@ -81,6 +81,7 @@ Deno.serve(async (req) => {
           created_at: order.created_at,
           client_name: order.client_name,
         },
+        items: items || [],
         tracking,
         company,
       }),

@@ -73,6 +73,7 @@ export default function ClientArea() {
 
         const result = await response.json();
         setOrder(result.order);
+        setItems(result.items || []);
         setTracking(result.tracking);
         setCompany(result.company);
       } catch (err) {

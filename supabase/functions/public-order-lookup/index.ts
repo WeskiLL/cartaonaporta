@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     // Fetch order (only safe fields)
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("id, number, status, created_at, client_name")
+      .select("id, number, status, created_at, client_name, shipping, discount")
       .eq("number", orderNumber)
       .single();
 

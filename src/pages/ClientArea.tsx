@@ -21,6 +21,8 @@ interface OrderData {
   status: string;
   created_at: string;
   client_name: string;
+  shipping: number;
+  discount: number;
 }
 
 interface OrderItem {

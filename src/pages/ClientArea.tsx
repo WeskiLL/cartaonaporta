@@ -229,10 +229,25 @@ export default function ClientArea() {
                 ))}
               </div>
 
+              <div className="mt-3 pt-3 border-t space-y-1">
+                {order.discount > 0 && (
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm text-gray-500">Desconto</p>
+                    <p className="text-sm font-medium text-green-600">- R$ {order.discount.toFixed(2).replace('.', ',')}</p>
+                  </div>
+                )}
+                {order.shipping > 0 && (
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm text-gray-500">Frete</p>
+                    <p className="text-sm font-medium text-gray-700">R$ {order.shipping.toFixed(2).replace('.', ',')}</p>
+                  </div>
+                )}
+              </div>
+
               <div className="mt-3 pt-3 border-t-2 flex justify-between items-center">
                 <p className="text-sm font-bold text-gray-900">Total</p>
                 <p className="text-lg font-bold text-[#e85616]">
-                  R$ {items.reduce((sum, i) => sum + i.total, 0).toFixed(2).replace('.', ',')}
+                  R$ {(items.reduce((sum, i) => sum + i.total, 0) - (order.discount || 0) + (order.shipping || 0)).toFixed(2).replace('.', ',')}
                 </p>
               </div>
             </CardContent>

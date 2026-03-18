@@ -80,6 +80,8 @@ Deno.serve(async (req) => {
           status: order.status,
           created_at: order.created_at,
           client_name: order.client_name,
+          shipping: order.shipping || 0,
+          discount: order.discount || 0,
         },
         items: items || [],
         tracking,
